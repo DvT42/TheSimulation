@@ -8,8 +8,8 @@ class Simulation:
     DIFF_AGE = 15 * 12
 
     def __init__(self):
-        self.Adam = Person([1])
-        self.Eve = Person([0])
+        self.Adam = Person([1, 100])
+        self.Eve = Person([0, 100])
         self.Population = np.array([self.Adam, self.Eve], dtype=object)  # [self.Adam, self.Eve]
         self.Time = 0
         self.Pregnant_Women = []
@@ -47,7 +47,7 @@ class Simulation:
     def display(self):
         txt = f"Year: {self.Time // 12}\n\n"
         for p in self.Population:
-            txt += f"{p}\n\n"
+            txt += f"{p.display()}\n\n"
         print(txt)
 
 
