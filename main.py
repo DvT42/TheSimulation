@@ -21,6 +21,7 @@ class Simulation:
         newborns = np.array([], dtype=object)
         for i, p in enumerate(self.Population):
             # handle self avancement.
+            #  - handle pregnancy
             if p.gender == 0 and p.father_of_child is not None:
                 if p.pregnancy == 9:
                     newborn = p.birth()
@@ -28,14 +29,24 @@ class Simulation:
                 else:
                     p.pregnancy += 1
 
+            # handle advencemnt
+            if p.year() < 15:
+                p.strength += 0.5
+            act = p.action()
+
             # handle interactions between people.
             for o in self.Population[i+1::]:  # for not intracting with yourself.
+                pass
 
+        # handle people who want to merge
+        for i, p in enumerate(Person.merging):
+            for o in Person.merging[i+1::]:
                 if o.gender != p.gender and abs(p.age() - o.age()) < Simulation.DIFF_AGE and \
                         p.age() > Simulation.MARRIAGE_AGE and o.age() > Simulation.MARRIAGE_AGE:
                     p.merge(o)
+        Person.merging = []
 
-            # self advancement
+        # self advancement
         self.Population = np.concatenate((self.Population, newborns))
 
     def __repr__(self):
