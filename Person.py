@@ -1,5 +1,6 @@
 import random
 import numpy as np
+from scipy.stats import norm
 
 
 class Person:
@@ -55,6 +56,9 @@ class Person:
 
             # [1]
             self.strength = father[1]
+
+            # [2]
+            self.deathdate = father[2]
 
         # procreation availability.
         if self.isWoman:
@@ -141,9 +145,21 @@ class Person:
         dec = self.decision_making()[0][0]
         if dec == 0:
             # should improve attitudes/merge
-            Person.merging = np.append(Person.merging, np.array([self], dtype=object))
+            Person.merging = np.append(Person.merging, np.array([self]))
         if dec == 1:
-            self.strength += 1
+            self.strength += 0.5
+
+    def isDeadNaturally(self):
+        if not self.manual:
+            mu = 0
+            sigma = 40
+            # ^^ I need to change that value... to big of a sigma leads to little chance of dying for each
+            # strength, and too little obviously makes it worse. maybe I should reconsider methods other that normal.
+            x = self.strength
+            prob = (norm.cdf(x, mu, sigma) - norm.cdf(x - 1, mu, sigma)) * 2
+            return np.random.random() < prob
+        else:
+            return self.deathdate <= self.year()
 
     # Override of the conversion to string
     def __repr__(self):
