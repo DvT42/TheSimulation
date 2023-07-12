@@ -1,7 +1,9 @@
 import random
 import numpy as np
 from scipy.stats import norm
-
+import math
+import tensorflow as tf
+from tensorflow import keras
 
 class Person:
     runningID = 0
@@ -151,13 +153,15 @@ class Person:
 
     def isDeadNaturally(self):
         if not self.manual:
-            mu = 0
-            sigma = 40
-            # ^^ I need to change that value... to big of a sigma leads to little chance of dying for each
-            # strength, and too little obviously makes it worse. maybe I should reconsider methods other that normal.
-            x = self.strength
-            prob = (norm.cdf(x, mu, sigma) - norm.cdf(x - 1, mu, sigma)) * 2
-            return np.random.random() < prob
+            # calculate death probability using normal distribution
+            death_prob = 1 - np.random.normal(loc=240, scale=144) / 240
+
+            # calculate death probability using normal distribution
+            death_prob = 1 - np.random.normal(loc=240, scale=144, size=1) / (240 / (self.strength / 150))
+
+            if death_prob < 0:
+                death_prob = 0
+            return np.random.random() < death_prob
         else:
             return self.deathdate <= self.year()
 

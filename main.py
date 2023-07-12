@@ -39,8 +39,15 @@ class Simulation:
                     p.pregnancy += 1
 
             # handle advencemnt
-            if p.year() < 15:
-                p.strength += 0.5
+            if not p.manual:
+                if p.year() < 15:
+                    p.strength += 0.5
+                if p.year() > 25:
+                    p.strength -= 0.5
+                if p.year() > 40:
+                    p.strength -= 1
+                if p.year() > 70:
+                    p.strength -= 2
             p.action()
 
             # handle interactions between people.
