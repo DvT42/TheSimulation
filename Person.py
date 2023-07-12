@@ -1,9 +1,8 @@
 import random
 import numpy as np
-from scipy.stats import norm
-import math
 import tensorflow as tf
 from tensorflow import keras
+
 
 class Person:
     runningID = 0
@@ -58,9 +57,6 @@ class Person:
 
             # [1]
             self.strength = father[1]
-
-            # [2]
-            self.deathdate = father[2]
 
         # procreation availability.
         if self.isWoman:
@@ -147,23 +143,9 @@ class Person:
         dec = self.decision_making()[0][0]
         if dec == 0:
             # should improve attitudes/merge
-            Person.merging = np.append(Person.merging, np.array([self]))
+            Person.merging = np.append(Person.merging, np.array([self], dtype=object))
         if dec == 1:
-            self.strength += 0.5
-
-    def isDeadNaturally(self):
-        if not self.manual:
-            # calculate death probability using normal distribution
-            death_prob = 1 - np.random.normal(loc=240, scale=144) / 240
-
-            # calculate death probability using normal distribution
-            death_prob = 1 - np.random.normal(loc=240, scale=144, size=1) / (240 / (self.strength / 150))
-
-            if death_prob < 0:
-                death_prob = 0
-            return np.random.random() < death_prob
-        else:
-            return self.deathdate <= self.year()
+            self.strength += 1
 
     # Override of the conversion to string
     def __repr__(self):
