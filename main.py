@@ -1,5 +1,4 @@
 import numpy as np
-
 from Person import Person
 
 
@@ -32,7 +31,11 @@ class Simulation:
             # handle advencemnt
             if p.year() < 15:
                 p.strength += 0.5
-            act = p.action()
+
+            # taking actions
+            action = p.action()
+            p.brain.evolvement()
+            p.history[p.age()] = action
 
             # handle interactions between people.
             for o in self.Population[i+1::]:  # for not intracting with yourself.
