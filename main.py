@@ -1,54 +1,41 @@
 import numpy as np
-
 from Person import Person
 
 
 class Simulation:
-    MARRIAGE_AGE_YEARS = 12
-    DIFF_AGE_YEARS = 15
+    MARRIAGE_AGE = 12 * 12
+    DIFF_AGE = 15 * 12
 
     def __init__(self):
-        self.Adam = Person([1, 100, 100])
-        self.Eve = Person([0, 100, 100])
-        self.Population = np.array([self.Adam, self.Eve])  # [self.Adam, self.Eve]
+        self.Adam = Person([1, 100])
+        self.Eve = Person([0, 100])
+        self.Population = np.array([self.Adam, self.Eve], dtype=object)  # [self.Adam, self.Eve]
         self.Time = 0
         self.Pregnant_Women = []
-        self.deadpeople = 0
 
     def month_avancement(self):
         self.Time += 1
         # p => any person.
         Person.newMonth()  # that means that dead people will also age(). Take that into consideration.
-        newborns = np.array([])
-        p: Person
-        for i in range(len(self.Population) - 1, -1, -1):  # for not provoking outofindex. look in chatgpt.
-            p = self.Population[i]
+        newborns = np.array([], dtype=object)
+        for i, p in enumerate(self.Population):
             # handle self avancement.
-            #  - handle natural death
-            if p.isDeadNaturally():
-                self.deadpeople += 1
-                self.Population = np.delete(self.Population, i)
-                continue
-
             #  - handle pregnancy
             if p.gender == 0 and p.father_of_child is not None:
                 if p.pregnancy == 9:
                     newborn = p.birth()
-                    newborns = np.append(newborns, np.array([newborn]))
+                    newborns = np.append(newborns, np.array([newborn], dtype=object))
                 else:
                     p.pregnancy += 1
 
             # handle advencemnt
-            if not p.manual:
-                if p.year() < 15:
-                    p.strength += 0.5
-                if p.year() > 25:
-                    p.strength -= 0.5
-                if p.year() > 40:
-                    p.strength -= 1
-                if p.year() > 70:
-                    p.strength -= 2
-            p.action()
+            if p.year() < 15:
+                p.strength += 0.5
+
+            # taking actions
+            action = p.action()
+            p.brain.evolvement()
+            p.history[p.age()] = action
 
             # handle interactions between people.
             for o in self.Population[i+1::]:  # for not intracting with yourself.
@@ -57,8 +44,8 @@ class Simulation:
         # handle people who want to merge
         for i, p in enumerate(Person.merging):
             for o in Person.merging[i+1::]:
-                if o.gender != p.gender and abs(p.year() - o.year()) < Simulation.DIFF_AGE_YEARS and \
-                        p.year() > Simulation.MARRIAGE_AGE_YEARS and o.year() > Simulation.MARRIAGE_AGE_YEARS:
+                if o.gender != p.gender and abs(p.age() - o.age()) < Simulation.DIFF_AGE and \
+                        p.age() > Simulation.MARRIAGE_AGE and o.age() > Simulation.MARRIAGE_AGE:
                     p.merge(o)
         Person.merging = []
 
@@ -75,7 +62,6 @@ class Simulation:
         txt = f"Year: {self.Time // 12}\n\n"
         for p in self.Population:
             txt += f"{p.display()}\n\n"
-        txt += f'Dead: {self.deadpeople}'
         print(txt)
 
 
