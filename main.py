@@ -1,5 +1,15 @@
 import numpy as np
 from Person import Person
+import tensorflow as tf
+from datetime import datetime
+
+# Get the list of available physical GPUs
+gpus = tf.config.list_physical_devices('GPU')
+
+if gpus:
+    # Set memory growth for each GPU
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
 
 
 class Simulation:
@@ -38,8 +48,8 @@ class Simulation:
             p.history[p.age()] = action
 
             # handle interactions between people.
-            for o in self.Population[i+1::]:  # for not intracting with yourself.
-                pass
+            # for o in self.Population[i+1::]:  # for not intracting with yourself.
+            #     pass
 
         # handle people who want to merge
         for i, p in enumerate(Person.merging):
@@ -69,20 +79,21 @@ class Simulation:
 TS = Simulation()
 while True:
     command = input("please input command: ")
-
+    start = datetime.now()
     if command[0] == "s" or command[0] == "S":
         for j in range(int(command[1::])):
             TS.month_avancement()
         TS.display()
-
+        print(f"{(datetime.now() - start).total_seconds():.03f}s")
     elif command[0] == "y" or command[0] == "Y":
         for j in range(int(command[1::]) * 12):
             TS.month_avancement()
         TS.display()
-
+        print(f"{(datetime.now() - start).total_seconds():.03f}s")
     elif command[0] == "x" or command[0] == "X":
         break
 
     else:
         TS.month_avancement()
         TS.display()
+        print(f"{(datetime.now() - start).total_seconds():.03f}s")

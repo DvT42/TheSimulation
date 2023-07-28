@@ -11,7 +11,7 @@ class Brain:
         model.add(keras.layers.Activation('sigmoid'))
         model.add(keras.layers.Dense(60, input_shape=(3605,)))  # hidden layer (2)
         model.add(keras.layers.Activation('relu'))
-        model.add(keras.layers.Dense(1, input_shape=(120,)))  # output layer (3)
+        model.add(keras.layers.Dense(1, input_shape=(60,)))  # output layer (3)
         model.add(keras.layers.Activation('sigmoid'))
         model.compile(optimizer='adam',
                       loss='mse',
