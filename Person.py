@@ -26,7 +26,8 @@ class Person:
             print("Reached Max Person.runningID")
 
         # list to save former actions in
-        self.history = np.zeros(100*12)
+        self.history = np.zeros(100*12, dtype=int)
+        self.readiness = 12 * 12 + int(random.normalvariate(0, 12))
 
         # Attributes that depend on the parents:
         # - standard creation
@@ -46,7 +47,7 @@ class Person:
             self.brain = Brain(self)
             self.brain.model.set_weights(self.brain.gene_inhritance())
 
-        # - isManual creation
+        # - Manual creation
         else:
             self.isManual = True
 
@@ -65,11 +66,14 @@ class Person:
         if self.isWoman:
             self.pregnancy = 0
             self.father_of_child = None
+            self.biowatch = 30*12 + int(random.normalvariate(0, 24))
+            if self.isManual:
+                self.biowatch -= 8*12
 
     def merge(self, mate):
         # empregnantating ('cause I just made that word up)
         if self.isWoman:
-            if self.pregnancy == 0:
+            if self.pregnancy == 0 and self.age() >= self.readiness and self.biowatch > 0:
                 self.father_of_child = mate
         elif mate.pregnancy == 0:
             mate.father_of_child = self
@@ -83,18 +87,23 @@ class Person:
     def action(self):
         if self.isWoman:
             preg = self.pregnancy
+            biowatch = self.biowatch
         else:
             preg = 0
+            biowatch = 0
         if self.isManual:
-            dec = self.brain.decision_making(self.gender, self.age(), self.strength, preg, np.zeros(100*12),
-                                       np.zeros(100*12), self.history, self.history[self.age() - 1])
+            dec = self.brain.decision_making(self.gender, self.age(), self.strength, preg, biowatch, self.readiness,
+                                             np.zeros(100*12, dtype=int), np.zeros(100*12, dtype=int), self.history,
+                                             self.history[self.age() - 1])
         else:
-            dec = self.brain.decision_making(self.gender, self.age(), self.strength, preg, self.father.history,
-                                   self.mother.history, self.history, self.history[self.age() - 1])
+            dec = self.brain.decision_making(self.gender, self.age(), self.strength, preg, biowatch, self.readiness,
+                                             self.father.history, self.mother.history, self.history,
+                                             self.history[self.age() - 1])
 
         if dec == 0:
             # should improve attitudes/merge
-            Person.merging = np.append(Person.merging, np.array([self], dtype=object))
+            if self.age() > self.readiness:
+                Person.merging = np.append(Person.merging, np.array([self], dtype=object))
             return 1
         if dec == 1:
             self.strength += 1
@@ -119,15 +128,20 @@ class Person:
             txt = f"{self.id}: \n" \
                   f"parents: [{self.father.id}, {self.mother.id}] \n" \
                   f"gender: {self.gender}, age: {self.year()} \n" \
-                  f"strength: {self.strength}"
+                  f"strength: {self.strength} \n" \
+                  f"last action: {self.history[self.age()]}"
         else:
             txt = f"{self.id}: \n" \
                   f"gender: {self.gender}, age: {self.year()} \n" \
-                  f"strength: {self.strength}"
+                  f"strength: {self.strength}\n" \
+                  f"last action: {self.history[self.age()]}"
 
         # pregnancy data
-        if self.isWoman and self.pregnancy != 0:
-            txt += f"\n pregnancy: {self.pregnancy}, mate: {self.father_of_child.id}"
+        if self.isWoman:
+            if self.pregnancy != 0:
+                txt += f"\n pregnancy: {self.pregnancy}, mate: {self.father_of_child.id}"
+            else:
+                txt += f"\n timer: {self.biowatch}"
 
         return txt
 

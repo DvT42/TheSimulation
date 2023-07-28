@@ -31,12 +31,15 @@ class Simulation:
         for i, p in enumerate(self.Population):
             # handle self avancement.
             #  - handle pregnancy
-            if p.gender == 0 and p.father_of_child is not None:
-                if p.pregnancy == 9:
-                    newborn = p.birth()
-                    newborns = np.append(newborns, np.array([newborn], dtype=object))
-                else:
-                    p.pregnancy += 1
+            if p.gender == 0:
+                if p.father_of_child is not None:
+                    if p.pregnancy == 9:
+                        newborn = p.birth()
+                        newborns = np.append(newborns, np.array([newborn], dtype=object))
+                    else:
+                        p.pregnancy += 1
+                elif p.age() > p.readiness and p.biowatch > 0:
+                    p.biowatch -= 1
 
             # handle advencemnt
             if p.year() < 15:
@@ -54,8 +57,7 @@ class Simulation:
         # handle people who want to merge
         for i, p in enumerate(Person.merging):
             for o in Person.merging[i+1::]:
-                if o.gender != p.gender and abs(p.age() - o.age()) < Simulation.DIFF_AGE and \
-                        p.age() > Simulation.MARRIAGE_AGE and o.age() > Simulation.MARRIAGE_AGE:
+                if o.gender != p.gender and abs(p.age() - o.age()) < Simulation.DIFF_AGE:
                     p.merge(o)
         Person.merging = []
 
@@ -84,16 +86,16 @@ while True:
         for j in range(int(command[1::])):
             TS.month_avancement()
         TS.display()
-        print(f"{(datetime.now() - start).total_seconds():.03f}s")
+        print(f"{(datetime.now() - start).total_seconds():.02f}s")
     elif command[0] == "y" or command[0] == "Y":
         for j in range(int(command[1::]) * 12):
             TS.month_avancement()
         TS.display()
-        print(f"{(datetime.now() - start).total_seconds():.03f}s")
+        print(f"{(datetime.now() - start).total_seconds():.02f}s")
     elif command[0] == "x" or command[0] == "X":
         break
 
     else:
         TS.month_avancement()
         TS.display()
-        print(f"{(datetime.now() - start).total_seconds():.03f}s")
+        print(f"{(datetime.now() - start).total_seconds():.02f}s")
