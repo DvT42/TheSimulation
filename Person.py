@@ -23,7 +23,7 @@ class Person:
         self.mother = mother
 
         # Attributes that don't depend on the parents
-        self.gender = random.randint(0, 1)
+        self.gender = random.choice(list(Gender))
         if Person.MAX_POPULATION < Person.runningID:
             print("Reached Max Person.runningID")
 
@@ -115,7 +115,7 @@ class Person:
     def __repr__(self):
         # basic information
         txt = f"{self.id}: " \
-              f"gender: {self.gender}, age: {self.year()}, " \
+              f"gender: {self.gender.name}, age: {self.year()}, " \
               f"str: {self.strength}"
 
         # pregnancy data
@@ -129,12 +129,12 @@ class Person:
         if not self.isManual:
             txt = f"{self.id}: \n" \
                   f"parents: [{self.father.id}, {self.mother.id}] \n" \
-                  f"gender: {self.gender}, age: {self.year()} \n" \
+                  f"gender: {self.gender.name}, age: {self.year()} \n" \
                   f"strength: {self.strength} \n" \
                   f"last action: {self.history[self.age()]}"
         else:
             txt = f"{self.id}: \n" \
-                  f"gender: {self.gender}, age: {self.year()} \n" \
+                  f"gender: {self.gender.name}, age: {self.year()} \n" \
                   f"strength: {self.strength}\n" \
                   f"last action: {self.history[self.age()]}"
 
