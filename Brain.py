@@ -7,13 +7,13 @@ from tensorflow import keras
 class Brain:
     def __init__(self, person):
         model = keras.Sequential()
-        model.add(keras.layers.Dense(8, input_shape=(8,)))  # input layer (1)
+        model.add(keras.layers.Dense(12, input_shape=(12,)))  # input layer (1)
         model.add(keras.layers.Activation('tanh'))
-        model.add(keras.layers.Dense(6, input_shape=(8,)))  # hidden layer (2)
+        model.add(keras.layers.Dense(6, input_shape=(12,)))  # hidden layer (2)
         model.add(keras.layers.Activation('tanh'))
-        model.add(keras.layers.Dense(4, input_shape=(6,)))  # hidden layer (2)
+        model.add(keras.layers.Dense(4, input_shape=(6,)))  # hidden layer (3)
         model.add(keras.layers.Activation('tanh'))
-        model.add(keras.layers.Dense(2, input_shape=(4,)))  # output layer (3)
+        model.add(keras.layers.Dense(2, input_shape=(4,)))  # output layer (4)
         model.add(keras.layers.Activation('softmax'))
         model.compile(optimizer='adam',
                       loss='mse',
@@ -21,18 +21,20 @@ class Brain:
         self.model = model
         self.person = person
 
-    def decision_making(self, gender, age, strength, pregnancy, biowatch, readyness, previous_choice):
+    def decision_making(
+            self, gender, age, strength, pregnancy, biowatch, readiness, previous_choice, father_choice,
+            mother_choice
+    ):
         if random.randint(1, 10) > 3:
             # this list is for convinience, to know what does each index of option means.
             # choices = ["connection", "strength"]
 
             # flatten histories & prepare input
-            neural_input = [gender, age, strength, pregnancy, biowatch, readyness]
+            neural_input = [gender, age, strength, pregnancy, biowatch, readiness]
 
-            previous_choices = [0 for _ in range(2)]
-            if previous_choice:
-                previous_choices[previous_choice-1] = 1
-            neural_input.extend(previous_choices)
+            neural_input.extend(get_choice_nodes(previous_choice))
+            neural_input.extend(get_choice_nodes(father_choice))
+            neural_input.extend(get_choice_nodes(mother_choice))
 
             # handle input
             neural_input = np.asarray([neural_input])
@@ -74,3 +76,12 @@ class Brain:
             )
 
         self.model.set_weights(new_weights)
+
+
+def get_choice_nodes(choice):
+    """Returns a list of zeroes with 1 at the index of the choice - 1, or no 1 at all if 0 is supplied"""
+
+    nodes = [0 for _ in range(2)]
+    if choice:
+        nodes[choice - 1] = 1
+    return nodes
