@@ -42,9 +42,9 @@ class Person:
             Person.ages[self.id] = 0
 
             # strength - represents physical ability and health. {mean strength of parents}/2 + {normal distribution}/2
-            self.strength = ((father.starting_strength + mother.starting_strength) // 4 +
-                             int(random.normalvariate(50, 10))) // 10
-            self.starting_strength = self.strength
+            self.starting_strength = (
+                    (father.starting_strength + mother.starting_strength) // 4 + int(random.normalvariate(50, 10)))
+            self.strength = self.starting_strength // 10
 
             # inherit parents' brain
             self.brain.model.set_weights(self.brain.gene_inhritance())
@@ -58,7 +58,7 @@ class Person:
 
             # [1]
             self.strength = father[1]
-            self.starting_strength = self.strength * 10
+            self.starting_strength = self.strength
 
         # procreation availability.
         if self.gender == Gender.Female:
