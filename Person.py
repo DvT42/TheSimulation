@@ -91,10 +91,11 @@ class Person:
             biowatch = 0
         if self.isManual:
             dec = self.brain.decision_making(self.gender, self.age(), self.strength, preg, biowatch, self.readiness,
-                                             self.history[self.age() - 1])
+                                             self.history[self.age() - 1], 0, 0)
         else:
             dec = self.brain.decision_making(self.gender, self.age(), self.strength, preg, biowatch, self.readiness,
-                                             self.history[self.age() - 1])
+                                             self.history[self.age() - 1], self.father.history[self.age()],
+                                             self.mother.history[self.age()])
 
         if dec == 0:
             # should improve attitudes/merge
@@ -109,7 +110,7 @@ class Person:
     def __repr__(self):
         # basic information
         txt = f"{self.id}: " \
-              f"gender: {self.gender}, age: {self.year()}" \
+              f"gender: {self.gender}, age: {self.year()}, " \
               f"str: {self.strength}"
 
         # pregnancy data
