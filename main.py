@@ -1,15 +1,9 @@
 import numpy as np
-from Person import Person
+import tqdm
+
+from Person import Person, Gender
 import tensorflow as tf
 from datetime import datetime
-
-# Get the list of available physical GPUs
-gpus = tf.config.list_physical_devices('GPU')
-
-if gpus:
-    # Set memory growth for each GPU
-    for gpu in gpus:
-        tf.config.experimental.set_memory_growth(gpu, True)
 
 
 class Simulation:
@@ -17,8 +11,8 @@ class Simulation:
     DIFF_AGE = 15 * 12
 
     def __init__(self):
-        self.Adam = Person([1, 100])
-        self.Eve = Person([0, 100])
+        self.Adam = Person([Gender.Male, 100])
+        self.Eve = Person([Gender.Female, 100])
         self.Population = np.array([self.Adam, self.Eve], dtype=object)  # [self.Adam, self.Eve]
         self.Time = 0
         self.Pregnant_Women = []
@@ -77,19 +71,26 @@ class Simulation:
         print(txt)
 
 
+class ProgressBar(tqdm.tqdm):
+    def __init__(self, iterations):
+        super().__init__(range(iterations), ncols=80, ascii="░▒▓█", unit="m", colour="blue")
+
+
 # running code
 TS = Simulation()
 while True:
     command = input("please input command: ")
     start = datetime.now()
     if command[0] == "s" or command[0] == "S":
-        for j in range(int(command[1::])):
+        for j in ProgressBar(int(command[1::])):
             TS.month_avancement()
+            tf.keras.backend.clear_session()
         TS.display()
         print(f"{(datetime.now() - start).total_seconds():.02f}s")
     elif command[0] == "y" or command[0] == "Y":
-        for j in range(int(command[1::]) * 12):
+        for j in ProgressBar(int(command[1::]) * 12):
             TS.month_avancement()
+            tf.keras.backend.clear_session()
         TS.display()
         print(f"{(datetime.now() - start).total_seconds():.02f}s")
     elif command[0] == "x" or command[0] == "X":
@@ -99,3 +100,4 @@ while True:
         TS.month_avancement()
         TS.display()
         print(f"{(datetime.now() - start).total_seconds():.02f}s")
+        tf.keras.backend.clear_session()
