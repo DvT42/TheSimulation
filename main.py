@@ -13,7 +13,8 @@ class Simulation:
     def __init__(self):
         self.Adam = Person([Gender.Male, 100])
         self.Eve = Person([Gender.Female, 100])
-        self.Population = np.array([self.Adam, self.Eve], dtype=object)  # [self.Adam, self.Eve]
+        self.Population = np.empty(Person.MAX_POPULATION, dtype=object)
+        self.Population[0], self.Population[1] = self.Adam, self.Eve
         self.Time = 0
         self.Pregnant_Women = []
 
@@ -21,15 +22,17 @@ class Simulation:
         self.Time += 1
         # p => any person.
         Person.newMonth()  # that means that dead people will also age(). Take that into consideration.
-        newborns = np.array([], dtype=object)
-        for i, p in enumerate(self.Population):
-            # handle self avancement.
+        newborns = []
+        for i, p in enumerate(self):
+            p: Person
+
+            # handle self advancement.
             #  - handle pregnancy
             if p.gender == 0:
                 if p.father_of_child is not None:
                     if p.pregnancy == 9:
                         newborn = p.birth()
-                        newborns = np.append(newborns, np.array([newborn], dtype=object))
+                        newborns.append(newborn)
                     else:
                         p.pregnancy += 1
                 elif p.age() > p.readiness and p.biowatch > 0:
@@ -56,17 +59,21 @@ class Simulation:
         Person.merging = []
 
         # self advancement
-        self.Population = np.concatenate((self.Population, newborns))
+        for newborn in newborns:
+            self.Population[newborn.id] = newborn
+
+    def __iter__(self):
+        return (person for person in self.Population[:Person.runningID] if person)
 
     def __repr__(self):
         txt = f"Year: {self.Time // 12};"
-        for p in self.Population:
+        for p in self:
             txt += f" {p}"
         return txt
 
     def display(self):
         txt = f"Year: {self.Time // 12}\n\n"
-        for p in self.Population:
+        for p in self:
             txt += f"{p.display()}\n\n"
         print(txt)
 
