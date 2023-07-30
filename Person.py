@@ -103,7 +103,7 @@ class Person:
                 Person.merging = np.append(Person.merging, np.array([self], dtype=object))
             return 1
         if dec == 1:
-            self.strength += 1
+            self.strength += 0.5
             return 2
 
     # Override of the conversion to string
