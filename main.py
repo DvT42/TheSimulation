@@ -40,7 +40,7 @@ class Simulation:
 
             # handle advencemnt
             if p.year() < 15:
-                p.strength += 0.5
+                p.strength += 0.25
 
             # taking actions
             action = p.action()
