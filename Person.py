@@ -1,4 +1,5 @@
 import random
+import enum
 import numpy as np
 from Brain import Brain
 
@@ -29,6 +30,8 @@ class Person:
         self.history = np.zeros(100*12, dtype=int)
         self.readiness = 12 * 12 + int(random.normalvariate(0, 12))
 
+        self.brain = Brain(self)
+
         # Attributes that depend on the parents:
         # - standard creation
         if type(father) is Person:
@@ -36,34 +39,29 @@ class Person:
             self.fatherID = father.id
             self.motherID = mother.id
 
-            self.isMan = self.gender == 1
-            self.isWoman = not self.isMan
             Person.ages[self.id] = 0
 
             # strength - represents physical ability and health. {mean strength of parents}/2 + {normal distribution}/2
-            self.strength = ((father.strength + mother.strength) // 4 + int(random.normalvariate(50, 10))) // 10
+            self.strength = ((father.starting_strength + mother.starting_strength) // 4 +
+                             int(random.normalvariate(50, 10))) // 10
+            self.starting_strength = self.strength
 
             # inherit parents' brain
-            self.brain = Brain(self)
             self.brain.model.set_weights(self.brain.gene_inhritance())
 
         # - Manual creation
         else:
             self.isManual = True
 
-            # create a brain
-            self.brain = Brain(self)
-
             # [0]
             self.gender = father[0]
-            self.isMan = self.gender == 1
-            self.isWoman = not self.isMan
 
             # [1]
             self.strength = father[1]
+            self.starting_strength = self.strength * 10
 
         # procreation availability.
-        if self.isWoman:
+        if self.gender == Gender.Female:
             self.pregnancy = 0
             self.father_of_child = None
             self.biowatch = 30*12 + int(random.normalvariate(0, 24))
@@ -72,7 +70,7 @@ class Person:
 
     def merge(self, mate):
         # empregnantating ('cause I just made that word up)
-        if self.isWoman:
+        if self.gender == Gender.Female:
             if self.pregnancy == 0 and self.age() >= self.readiness and self.biowatch > 0:
                 self.father_of_child = mate
         elif mate.pregnancy == 0:
@@ -85,7 +83,7 @@ class Person:
         return Person(f, self)
 
     def action(self):
-        if self.isWoman:
+        if self.gender == Gender.Female:
             preg = self.pregnancy
             biowatch = self.biowatch
         else:
@@ -93,11 +91,9 @@ class Person:
             biowatch = 0
         if self.isManual:
             dec = self.brain.decision_making(self.gender, self.age(), self.strength, preg, biowatch, self.readiness,
-                                             np.zeros(100*12, dtype=int), np.zeros(100*12, dtype=int), self.history,
                                              self.history[self.age() - 1])
         else:
             dec = self.brain.decision_making(self.gender, self.age(), self.strength, preg, biowatch, self.readiness,
-                                             self.father.history, self.mother.history, self.history,
                                              self.history[self.age() - 1])
 
         if dec == 0:
@@ -117,7 +113,7 @@ class Person:
               f"str: {self.strength}"
 
         # pregnancy data
-        if self.isWoman and self.pregnancy != 0:
+        if self.gender == Gender.Female and self.pregnancy != 0:
             txt += f", pregnancy: {self.pregnancy}, mate: {self.father_of_child.id}"
 
         return txt + ";"
@@ -137,7 +133,7 @@ class Person:
                   f"last action: {self.history[self.age()]}"
 
         # pregnancy data
-        if self.isWoman:
+        if self.gender == Gender.Female:
             if self.pregnancy != 0:
                 txt += f"\n pregnancy: {self.pregnancy}, mate: {self.father_of_child.id}"
             else:
@@ -154,3 +150,8 @@ class Person:
 
     def year(self):
         return self.age() // 12
+
+
+class Gender(enum.IntEnum):
+    Female = 0
+    Male = 1
