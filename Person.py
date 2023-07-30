@@ -70,7 +70,6 @@ class Person:
                 self.biowatch -= 8*12
 
     def merge(self, mate):
-        # empregnantating ('cause I just made that word up)
         if self.gender == Gender.Female:
             if self.pregnancy == 0 and self.age() >= self.readiness and self.biowatch > 0:
                 self.father_of_child = mate

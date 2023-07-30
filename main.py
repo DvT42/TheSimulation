@@ -28,7 +28,7 @@ class Simulation:
 
             # handle self advancement.
             #  - handle pregnancy
-            if p.gender == 0:
+            if p.gender == Gender.Female:
                 if p.father_of_child is not None:
                     if p.pregnancy == 9:
                         newborn = p.birth()
@@ -56,7 +56,7 @@ class Simulation:
 
         # handle people who want to merge
         for i, p in enumerate(Person.merging):
-            for o in Person.merging[i+1::]:
+            for o in Person.merging[i+1:]:
                 if o.gender != p.gender and abs(p.age() - o.age()) < Simulation.DIFF_AGE:
                     p.merge(o)
         Person.merging = []
