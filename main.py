@@ -43,6 +43,9 @@ class Simulation:
                 p.strength += 0.25
 
             # taking actions
+            if p.death() and self.Time > 10 * 12:
+                self.Population[p.id] = None
+                continue
             action = p.action()
             p.brain.evolvement()
             p.history[p.age()] = action

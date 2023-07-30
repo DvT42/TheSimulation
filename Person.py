@@ -1,3 +1,4 @@
+import math
 import random
 import enum
 import numpy as np
@@ -81,6 +82,11 @@ class Person:
         self.father_of_child = None
         self.pregnancy = 0
         return Person(f, self)
+
+    def death(self):
+        death_chance = 0.06 * math.exp(-0.02 * self.strength)
+        random_number = random.random()
+        return random_number < death_chance
 
     def action(self):
         if self.gender == Gender.Female:
