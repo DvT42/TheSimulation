@@ -28,7 +28,7 @@ class Person:
             print("Reached Max Person.runningID")
 
         # list to save former actions in
-        self.history = np.zeros(100*12, dtype=int)
+        self.history = np.zeros(140*12, dtype=int)
         self.readiness = 12 * 12 + int(random.normalvariate(0, 12))
 
         self.brain = Brain(self)
@@ -48,7 +48,7 @@ class Person:
             self.strength = self.starting_strength // 10
 
             # inherit parents' brain
-            self.brain.model.set_weights(self.brain.gene_inhritance())
+            self.brain.inherit(self)
 
         # - Manual creation
         else:
@@ -82,25 +82,14 @@ class Person:
         self.pregnancy = 0
         return Person(f, self)
 
+    # TODO: try to find waysfor death to be less emennent.
     def death(self):
         death_chance = 0.06 * math.exp(-0.02 * self.strength)
         random_number = random.random()
         return random_number < death_chance
 
     def action(self):
-        if self.gender == Gender.Female:
-            preg = self.pregnancy
-            biowatch = self.biowatch
-        else:
-            preg = 0
-            biowatch = 0
-        if self.isManual:
-            dec = self.brain.decision_making(self.gender, self.age(), self.strength, preg, biowatch, self.readiness,
-                                             self.history[self.age() - 1], 0, 0)
-        else:
-            dec = self.brain.decision_making(self.gender, self.age(), self.strength, preg, biowatch, self.readiness,
-                                             self.history[self.age() - 1], self.father.history[self.age()],
-                                             self.mother.history[self.age()])
+        dec = self.brain.decision_making()
 
         if dec == 0:
             # should improve attitudes/merge

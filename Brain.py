@@ -1,10 +1,79 @@
 import random
 import numpy as np
-# import tensorflow as tf
 from tensorflow import keras
+from abc import ABC, abstractmethod
 
 
 class Brain:
+    def __init__(self, person):
+        self.person = person
+        self.brainparts = {"PFC": PrefrontalCortex(person)}
+
+    def inherit(self, person):
+        for brainpart in self.brainparts.values():
+            brainpart.model.set_weights(brainpart.gene_inheritance(person))
+
+    def decision_making(self):
+        if self.person.gender == 0:
+            preg = self.person.pregnancy
+            biowatch = self.person.biowatch
+        else:
+            preg = 0
+            biowatch = 0
+        if self.person.isManual:
+            return self.brainparts.get("PFC").decision_making(
+                self.person.gender, self.person.age(), self.person.strength, preg, biowatch, self.person.readiness,
+                self.person.history[self.person.age() - 1], 0, 0
+            )
+        else:
+            return self.brainparts.get("PFC").decision_making(
+                self.person.gender, self.person.age(), self.person.strength, preg, biowatch, self.person.readiness,
+                self.person.history[self.person.age() - 1], self.person.father.history[self.person.age()],
+                self.person.mother.history[self.person.age()]
+            )
+
+    def evolve(self):
+        for brainpart in self.brainparts.values():
+            brainpart.evolvement(brainpart.model)
+
+
+class BrainPart(ABC):
+    @abstractmethod
+    def gene_inheritance(self, person):
+        father_weights = person.father.brain.brainparts.get("PFC").model.get_weights()
+        mother_weights = person.mother.brain.brainparts.get("PFC").model.get_weights()
+
+        # inheritance of parent's weights
+        new_weights = father_weights
+        for i in range(len(new_weights)):
+            if random.uniform(0, 1) > 0.5:
+                new_weights[i] = mother_weights[i]
+
+        # mutation and personal uniqueness
+        for i in new_weights:
+            if random.uniform(0, 1) > 0.8:
+                i += random.uniform(-0.5, 0.5)
+
+        return new_weights
+
+    @abstractmethod
+    def evolvement(self, model):
+        new_weights: list[np.ndarray] = model.get_weights()
+
+        for matrix in new_weights[::2]:
+            matrix += np.array(
+                [[(random.uniform(-0.01, 0.01) if random.random() < 0.2 else 0) for _ in range(matrix.shape[1])]
+                for _ in range(matrix.shape[0])]
+            )
+
+        model.set_weights(new_weights)
+
+
+class PrefrontalCortex(BrainPart):
+    """
+    That is the part in the brain that is responsible for making decisions.
+    """
+
     def __init__(self, person):
         model = keras.Sequential()
         model.add(keras.layers.Dense(12, input_shape=(12,)))  # input layer (1)
@@ -18,8 +87,8 @@ class Brain:
         model.compile(optimizer='adam',
                       loss='mse',
                       metrics=['accuracy'])
-        self.model = model
         self.person = person
+        self.model = model
 
     def decision_making(
             self, gender, age, strength, pregnancy, biowatch, readiness, previous_choice, father_choice,
@@ -49,33 +118,11 @@ class Brain:
         else:
             return random.randint(0, 1)
 
-    def gene_inhritance(self):
-        father_weights = self.person.father.brain.model.get_weights()
-        mother_weights = self.person.mother.brain.model.get_weights()
+    def gene_inheritance(self, person):
+        return super().gene_inheritance(person)
 
-        # inheritance of parent's weights
-        new_weights = father_weights
-        for i in range(len(new_weights)):
-            if random.uniform(0, 1) > 0.5:
-                new_weights[i] = mother_weights[i]
-
-        # mutation and personal uniqueness
-        for i in new_weights:
-            if random.uniform(0, 1) > 0.8:
-                i += random.uniform(-0.5, 0.5)
-
-        return new_weights
-
-    def evolvement(self):
-        new_weights: list[np.ndarray] = self.model.get_weights()
-
-        for matrix in new_weights[::2]:
-            matrix += np.array(
-                [[(random.uniform(-0.01, 0.01) if random.random() < 0.2 else 0) for _ in range(matrix.shape[1])]
-                for _ in range(matrix.shape[0])]
-            )
-
-        self.model.set_weights(new_weights)
+    def evolvement(self, model):
+        super().evolvement(self.model)
 
 
 def get_choice_nodes(choice):

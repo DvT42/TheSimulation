@@ -1,6 +1,5 @@
 import numpy as np
 import tqdm
-
 from Person import Person, Gender
 import tensorflow as tf
 from datetime import datetime
@@ -38,6 +37,7 @@ class Simulation:
                 elif p.age() > p.readiness and p.biowatch > 0:
                     p.biowatch -= 1
 
+            # TODO: fix absurd strength levels. older peopl must crumble.
             # handle advencemnt
             if p.year() < 15:
                 p.strength += 0.25
@@ -47,13 +47,10 @@ class Simulation:
                 self.Population[p.id] = None
                 continue
             action = p.action()
-            p.brain.evolvement()
+            p.brain.evolve()
             p.history[p.age()] = action
 
-            # handle interactions between people.
-            # for o in self.Population[i+1::]:  # for not intracting with yourself.
-            #     pass
-
+        # TODO: fix merging algorithm.
         # handle people who want to merge
         for i, p in enumerate(Person.merging):
             for o in Person.merging[i+1:]:
