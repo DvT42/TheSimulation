@@ -8,6 +8,7 @@ from datetime import datetime
 class Simulation:
     MARRIAGE_AGE = 12 * 12
     DIFF_AGE = 15 * 12
+    SHOULD_PROBABLY_BE_DEAD = 120 * 12
 
     def __init__(self):
         self.Adam = Person([Gender.Male, 100])
@@ -48,7 +49,10 @@ class Simulation:
                 continue
             action = p.action()
             p.brain.evolve()
-            p.history[p.age()] = action
+            if p.age() <= Simulation.SHOULD_PROBABLY_BE_DEAD:
+                p.history[p.age()] = action
+            else:
+                p.history = np.append(p.history, action)
 
         # TODO: fix merging algorithm.
         # handle people who want to merge

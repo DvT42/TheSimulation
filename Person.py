@@ -28,7 +28,7 @@ class Person:
             print("Reached Max Person.runningID")
 
         # list to save former actions in
-        self.history = np.zeros(140*12, dtype=int)
+        self.history = np.zeros(120*12, dtype=int)
         self.readiness = 12 * 12 + int(random.normalvariate(0, 12))
 
         self.brain = Brain(self)
@@ -82,14 +82,14 @@ class Person:
         self.pregnancy = 0
         return Person(f, self)
 
-    # TODO: try to find waysfor death to be less emennent.
+    # TODO: try to find ways for death to be less emennent.
     def death(self):
         death_chance = 0.06 * math.exp(-0.02 * self.strength)
         random_number = random.random()
         return random_number < death_chance
 
     def action(self):
-        dec = self.brain.decision_making()
+        dec = self.brain.call_decision_making()
 
         if dec == 0:
             # should improve attitudes/merge
