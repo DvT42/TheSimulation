@@ -8,7 +8,7 @@ from Brain import Brain
 class Person:
     runningID = 0
     MAX_POPULATION = 10000000
-    ages = np.empty(MAX_POPULATION, "uint16")
+    ages = np.zeros(MAX_POPULATION, "uint8")
     ages[0], ages[1] = 20 * 12, 20 * 12
 
     # list for merging people
@@ -39,8 +39,6 @@ class Person:
             self.isManual = False
             self.fatherID = father.id
             self.motherID = mother.id
-
-            Person.ages[self.id] = 0
 
             # strength - represents physical ability and health. {mean strength of parents}/2 + {normal distribution}/2
             self.starting_strength = (
@@ -135,10 +133,6 @@ class Person:
                 txt += f"\n timer: {self.biowatch}"
 
         return txt
-
-    @staticmethod
-    def newMonth():
-        Person.ages += 1
 
     def age(self):
         return Person.ages[self.id]

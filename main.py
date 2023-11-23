@@ -1,7 +1,6 @@
 import numpy as np
 import tqdm
 from Person import Person, Gender
-import tensorflow as tf
 from datetime import datetime
 
 
@@ -21,10 +20,11 @@ class Simulation:
     def month_avancement(self):
         self.Time += 1
         # p => any person.
-        Person.newMonth()  # that means that dead people will also age(). Take that into consideration.
         newborns = []
         for i, p in enumerate(self):
             p: Person
+
+            Person.ages[p.id] += 1
 
             # handle self advancement.
             #  - handle pregnancy
@@ -38,7 +38,7 @@ class Simulation:
                 elif p.age() > p.readiness and p.biowatch > 0:
                     p.biowatch -= 1
 
-            # TODO: fix absurd strength levels. older peopl must crumble.
+            # TODO: fix absurd strength levels. older people must crumble.
             # handle advencemnt
             if p.year() < 15:
                 p.strength += 0.25
@@ -48,13 +48,12 @@ class Simulation:
                 self.Population[p.id] = None
                 continue
             action = p.action()
-            p.brain.evolve()
             if p.age() <= Simulation.SHOULD_PROBABLY_BE_DEAD:
                 p.history[p.age()] = action
             else:
                 p.history = np.append(p.history, action)
 
-        # TODO: fix merging algorithm.
+        # TODO: fix merging algorithm (in progress. right now I need to integrate attitude with choice (1).).
         # handle people who want to merge
         for i, p in enumerate(Person.merging):
             for o in Person.merging[i+1:]:
@@ -64,6 +63,11 @@ class Simulation:
 
         # self advancement
         for newborn in newborns:
+            # TODO: check effect on performance.
+            for other in self:
+                newborn.brain.get_first_impression(other)
+                other.brain.get_first_impression(newborn)
+
             self.Population[newborn.id] = newborn
 
     def __iter__(self):
@@ -95,13 +99,11 @@ while True:
     if command[0] == "s" or command[0] == "S":
         for j in ProgressBar(int(command[1::])):
             TS.month_avancement()
-            tf.keras.backend.clear_session()
         TS.display()
         print(f"{(datetime.now() - start).total_seconds():.02f}s")
     elif command[0] == "y" or command[0] == "Y":
         for j in ProgressBar(int(command[1::]) * 12):
             TS.month_avancement()
-            tf.keras.backend.clear_session()
         TS.display()
         print(f"{(datetime.now() - start).total_seconds():.02f}s")
     elif command[0] == "x" or command[0] == "X":
@@ -111,4 +113,3 @@ while True:
         TS.month_avancement()
         TS.display()
         print(f"{(datetime.now() - start).total_seconds():.02f}s")
-        tf.keras.backend.clear_session()

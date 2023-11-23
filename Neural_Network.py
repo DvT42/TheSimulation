@@ -33,17 +33,17 @@ class NeuralNetwork:
         return output
 
     def get_weights(self):
-        return np.asarray([layer.weights for layer in self.layers])
+        return [layer.weights for layer in self.layers]
 
     def get_biases(self):
-        return np.asarray([layer.biases for layer in self.layers])
+        return [layer.biases for layer in self.layers]
 
     def set_weights(self, new_weights):
-        for index, layer in self.layers:
+        for index, layer in enumerate(self.layers):
             layer.weights = new_weights[index]
 
     def set_biases(self, new_biases):
-        for index, layer in self.layers:
+        for index, layer in enumerate(self.layers):
             layer.biases = new_biases[index]
 
     def __repr__(self):
