@@ -32,6 +32,20 @@ class NeuralNetwork:
 
         return output
 
+    def get_weights(self):
+        return np.asarray([layer.weights for layer in self.layers])
+
+    def get_biases(self):
+        return np.asarray([layer.biases for layer in self.layers])
+
+    def set_weights(self, new_weights):
+        for index, layer in self.layers:
+            layer.weights = new_weights[index]
+
+    def set_biases(self, new_biases):
+        for index, layer in self.layers:
+            layer.biases = new_biases[index]
+
     def __repr__(self):
         return f'{self.layers}'
 
@@ -63,6 +77,8 @@ class NeuronLayer:
             self.output = NeuronLayer.softmax(self.output)
         elif self.activation == "relu":
             self.output = NeuronLayer.relu(self.output)
+        elif self.activation == "sigmoid":
+            self.output = NeuronLayer.sigmoid(self.output)
 
     @staticmethod
     def relu(x):
@@ -75,6 +91,10 @@ class NeuronLayer:
 
         # If I want to convert to batch-oriented neural network, add axis=1 and keepdims=True to np.sum and np.max.
         return np.exp(pre) / np.sum(np.exp(pre))
+
+    @staticmethod
+    def sigmoid(x):
+        return 1 / (1 + np.exp(-x))
 
     def __repr__(self):
         return f'({self.neuron_num})->|{self.activation}|'
