@@ -10,7 +10,6 @@ class Brain:
                            "AMG": Amygdala(self.person),
                            "HPC": Hippocampus(self.person)}
 
-    # TODO: check zip function. should be dict's enumerate.
     def inherit(self, person):
         for key, brainpart in self.brainparts.items():
             if brainpart.model:
@@ -32,13 +31,13 @@ class Brain:
         if self.person.isManual:
             return self.brainparts.get("PFC").decision_making(
                 self.person.gender, self.person.age(), self.person.strength, preg, biowatch, self.person.readiness,
-                self.person.history[self.person.age() - 1], 0, 0
+                self.get_history()[self.person.age() - 1], 0, 0
             )
         else:
             return self.brainparts.get("PFC").decision_making(
                 self.person.gender, self.person.age(), self.person.strength, preg, biowatch, self.person.readiness,
-                self.person.history[self.person.age() - 1], self.person.father.history[self.person.age()],
-                self.person.mother.history[self.person.age()]
+                self.get_history()[self.person.age() - 1], self.person.father.brain.get_history()[self.person.age()],
+                self.person.mother.brain.get_history()[self.person.age()]
             )
 
     def get_first_impression(self, other):
@@ -48,6 +47,15 @@ class Brain:
         self.brainparts.get("HPC").attitiudes[f"{other.id}"] = impression
 
         return impression
+
+    def get_history(self):
+        return self.brainparts.get("HPC").history
+
+    def set_history(self, index: int, value):
+        if self.person.age() <= Hippocampus.SHOULD_PROBABLY_BE_DEAD:
+            self.brainparts.get("HPC").history[index] = value
+        else:
+            self.brainparts.get("HPC").history = np.append(self.brainparts.get("HPC").history, value)
 
 
 class BrainPart:
@@ -72,11 +80,11 @@ class BrainPart:
             for lnum, layer_weights in enumerate(new_weights):
                 for index, value in np.ndenumerate(layer_weights):
                     if random.uniform(0, 1) < BrainPart.INHERITENCE_RATIO:
-                        value = mother_weights[lnum][index]
+                        new_weights[lnum][index] = mother_weights[lnum][index]
             for lnum, layer_biases in enumerate(new_biases):
                 for index, value in np.ndenumerate(layer_biases):
                     if random.uniform(0, 1) < BrainPart.INHERITENCE_RATIO:
-                        value = mother_biases[lnum][index]
+                        new_weights[lnum][index] = mother_biases[lnum][index]
 
             for layer_weights in new_weights:
                 layer_weights += BrainPart.MUTATION_NORMALIZATION_RATIO * np.random.randn(*np.shape(layer_weights))
@@ -104,7 +112,6 @@ class PrefrontalCortex(BrainPart):
     """
     def __init__(self, person):
         super().__init__()
-        # TODO: consider minimizing this model.
         model = NeuralNetwork()
         model.add_layer(12, input_num=12, activation='relu')  # inp layer (1)
         model.add_layer(6, input_num=12, activation='relu')  # hidden layer (2)
@@ -208,10 +215,13 @@ class Hippocampus(BrainPart):
     """
     The part of the brain responsible for memory.
     """
-    # TODO: transfer "person.history" into the Hippocampus.
+    SHOULD_PROBABLY_BE_DEAD = 120 * 12
+
     def __init__(self, person):
         super().__init__()
         self.person = person
+
+        self.history = np.zeros(120 * 12, dtype=int)
 
         self.first_impressions = {}
         self.attitiudes = {}

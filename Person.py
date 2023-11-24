@@ -8,7 +8,7 @@ from Brain import Brain
 class Person:
     runningID = 0
     MAX_POPULATION = 10000000
-    ages = np.zeros(MAX_POPULATION, "uint8")
+    ages = np.zeros(MAX_POPULATION, dtype=int)
     ages[0], ages[1] = 20 * 12, 20 * 12
 
     # list for merging people
@@ -28,7 +28,6 @@ class Person:
             print("Reached Max Person.runningID")
 
         # list to save former actions in
-        self.history = np.zeros(120*12, dtype=int)
         self.readiness = 12 * 12 + int(random.normalvariate(0, 12))
 
         self.brain = Brain(self)
@@ -93,10 +92,10 @@ class Person:
             # should improve attitudes/merge
             if self.age() > self.readiness:
                 Person.merging = np.append(Person.merging, np.array([self], dtype=object))
-            return 1
+            self.brain.set_history(self.age(), 1)
         if dec == 1:
             self.strength += 0.5
-            return 2
+            self.brain.set_history(self.age(), 2)
 
     # Override of the conversion to string
     def __repr__(self):
@@ -118,12 +117,12 @@ class Person:
                   f"parents: [{self.father.id}, {self.mother.id}] \n" \
                   f"gender: {self.gender.name}, age: {self.year()} \n" \
                   f"strength: {self.strength} \n" \
-                  f"last action: {self.history[self.age()]}"
+                  f"last action: {self.brain.get_history()[self.age()]}"
         else:
             txt = f"{self.id}: \n" \
                   f"gender: {self.gender.name}, age: {self.year()} \n" \
                   f"strength: {self.strength}\n" \
-                  f"last action: {self.history[self.age()]}"
+                  f"last action: {self.brain.get_history()[self.age()]}"
 
         # pregnancy data
         if self.gender == Gender.Female:

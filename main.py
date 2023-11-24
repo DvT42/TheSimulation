@@ -8,6 +8,7 @@ class Simulation:
     MARRIAGE_AGE = 12 * 12
     DIFF_AGE = 15 * 12
     SHOULD_PROBABLY_BE_DEAD = 120 * 12
+    IMMUNITY_TIME = 10 * 12
 
     def __init__(self):
         self.Adam = Person([Gender.Male, 100])
@@ -19,12 +20,11 @@ class Simulation:
 
     def month_avancement(self):
         self.Time += 1
-        # p => any person.
         newborns = []
+        Person.ages[:Person.runningID] += 1
+
         for i, p in enumerate(self):
             p: Person
-
-            Person.ages[p.id] += 1
 
             # handle self advancement.
             #  - handle pregnancy
@@ -44,14 +44,10 @@ class Simulation:
                 p.strength += 0.25
 
             # taking actions
-            if p.death() and self.Time > 10 * 12:
+            if p.death() and self.Time > Simulation.IMMUNITY_TIME:
                 self.Population[p.id] = None
                 continue
-            action = p.action()
-            if p.age() <= Simulation.SHOULD_PROBABLY_BE_DEAD:
-                p.history[p.age()] = action
-            else:
-                p.history = np.append(p.history, action)
+            p.action()
 
         # TODO: fix merging algorithm (in progress. right now I need to integrate attitude with choice (1).).
         # handle people who want to merge
@@ -63,7 +59,6 @@ class Simulation:
 
         # self advancement
         for newborn in newborns:
-            # TODO: check effect on performance.
             for other in self:
                 newborn.brain.get_first_impression(other)
                 other.brain.get_first_impression(newborn)
