@@ -11,16 +11,16 @@ class Person:
     ages = np.zeros(MAX_POPULATION, dtype=int)
     ages[0], ages[1] = 20 * 12, 20 * 12
 
-    # list for merging people
-    merging = np.array([], dtype=object)
+    # list for social connectors
+    social_connectors = []
 
     def __init__(self, father, mother=None):
         # ID assignment
         self.id = Person.runningID
         Person.runningID += 1
 
-        self.father = father
-        self.mother = mother
+        self.father: Person = father
+        self.mother: Person = mother
 
         # Attributes that don't depend on the parents
         self.gender = random.choice(list(Gender))
@@ -67,11 +67,13 @@ class Person:
                 self.biowatch -= 8*12
 
     def merge(self, mate):
+        mate: Person
         if self.gender == Gender.Female:
-            if self.pregnancy == 0 and self.age() >= self.readiness and self.biowatch > 0:
+            if self.pregnancy == 0 and self.father_of_child is None and self.age() >= self.readiness and self.biowatch > 0:
                 self.father_of_child = mate
-        elif mate.pregnancy == 0:
-            mate.father_of_child = self
+        else:
+            if mate.pregnancy == 0 and mate.father_of_child is None and mate.age() >= mate.readiness and mate.biowatch > 0:
+                mate.father_of_child = self
 
     def birth(self):
         f = self.father_of_child
@@ -90,8 +92,7 @@ class Person:
 
         if dec == 0:
             # should improve attitudes/merge
-            if self.age() > self.readiness:
-                Person.merging = np.append(Person.merging, np.array([self], dtype=object))
+            Person.social_connectors.append(self)
             self.brain.set_history(self.age(), 1)
         if dec == 1:
             self.strength += 0.5
@@ -117,12 +118,12 @@ class Person:
                   f"parents: [{self.father.id}, {self.mother.id}] \n" \
                   f"gender: {self.gender.name}, age: {self.year()} \n" \
                   f"strength: {self.strength} \n" \
-                  f"last action: {self.brain.get_history()[self.age()]}"
+                  f"last action: {self.brain.get_history(self.age())}"
         else:
             txt = f"{self.id}: \n" \
                   f"gender: {self.gender.name}, age: {self.year()} \n" \
                   f"strength: {self.strength}\n" \
-                  f"last action: {self.brain.get_history()[self.age()]}"
+                  f"last action: {self.brain.get_history(self.age())}"
 
         # pregnancy data
         if self.gender == Gender.Female:

@@ -31,31 +31,53 @@ class Brain:
         if self.person.isManual:
             return self.brainparts.get("PFC").decision_making(
                 self.person.gender, self.person.age(), self.person.strength, preg, biowatch, self.person.readiness,
-                self.get_history()[self.person.age() - 1], 0, 0
+                self.get_history(self.person.age() - 1), 0, 0
             )
         else:
             return self.brainparts.get("PFC").decision_making(
                 self.person.gender, self.person.age(), self.person.strength, preg, biowatch, self.person.readiness,
-                self.get_history()[self.person.age() - 1], self.person.father.brain.get_history()[self.person.age()],
-                self.person.mother.brain.get_history()[self.person.age()]
+                self.get_history(self.person.age() - 1), self.person.father.brain.get_history(self.person.age()),
+                self.person.mother.brain.get_history(self.person.age())
             )
 
     def get_first_impression(self, other):
         impression = self.brainparts.get("AMG").first_impression(other)
 
-        self.brainparts.get("HPC").first_impressions[f"{other.id}"] = impression
-        self.brainparts.get("HPC").attitiudes[f"{other.id}"] = impression
+        self.brainparts.get("HPC").first_impressions[other] = impression
+        self.brainparts.get("HPC").attitiudes[other] = impression
+        self.update_positives()
 
         return impression
 
-    def get_history(self):
-        return self.brainparts.get("HPC").history
+    def get_history(self, index):
+        if index < len(self.brainparts.get("HPC").history):
+            return self.brainparts.get("HPC").history[index]
+        else:
+            return 0
 
     def set_history(self, index: int, value):
-        if self.person.age() <= Hippocampus.SHOULD_PROBABLY_BE_DEAD:
+        if self.person.age() < Hippocampus.SHOULD_PROBABLY_BE_DEAD:
             self.brainparts.get("HPC").history[index] = value
         else:
             self.brainparts.get("HPC").history = np.append(self.brainparts.get("HPC").history, value)
+
+    def get_attitudes(self, other=None):
+        if other:
+            return self.brainparts.get("HPC").attitiudes[other]
+        return self.brainparts.get("HPC").attitiudes
+
+    def get_positives(self):
+        return self.brainparts.get("HPC").positives
+
+    def improve_attitude(self, other, value=0):
+        if other in self.brainparts.get("HPC").attitiudes:
+            if value == 0:
+                self.brainparts.get("HPC").attitiudes[other] += Hippocampus.ATTITUDE_IMPROVEMENT_BONUS
+            else:
+                self.brainparts.get("HPC").attitiudes[other] += value
+
+    def update_positives(self):
+        self.brainparts.get("HPC").update_positives()
 
 
 class BrainPart:
@@ -127,7 +149,7 @@ class PrefrontalCortex(BrainPart):
     ):
         if random.randint(1, 10) > 3:
             # this list is for convinience, to know what does each index of option means.
-            # choices = ["connection", "strength"]
+            # choices = ["social connection", "strength"]
 
             # flatten histories & prepare input
             neural_input = [gender, age, strength, pregnancy, biowatch, readiness]
@@ -200,7 +222,6 @@ class Amygdala(BrainPart):
             other_gender, other_age, other_strength, other_pregnancy, other_biowatch, other_readiness,
             gender_dif, age_dif, strength_dif, readiness_dif
         ])
-        neural_input = np.atleast_2d(neural_input)
 
         return neural_input
 
@@ -216,6 +237,7 @@ class Hippocampus(BrainPart):
     The part of the brain responsible for memory.
     """
     SHOULD_PROBABLY_BE_DEAD = 120 * 12
+    ATTITUDE_IMPROVEMENT_BONUS = 0.05
 
     def __init__(self, person):
         super().__init__()
@@ -225,6 +247,13 @@ class Hippocampus(BrainPart):
 
         self.first_impressions = {}
         self.attitiudes = {}
+        self.positives = []
+
+    def update_positives(self):
+        self.positives = []
+        for person, value in self.attitiudes.items():
+            if value > 0:
+                self.positives.append(person)
 
 
 def get_choice_nodes(choice):
