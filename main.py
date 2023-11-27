@@ -1,4 +1,3 @@
-# import numpy as np
 import tqdm
 from Person import Person, Gender
 from datetime import datetime
@@ -17,19 +16,21 @@ class Simulation:
         self.Eve.brain.get_first_impression(self.Adam)
 
         self.Population: list[Person] = [self.Adam, self.Eve]
+        self.History = [self.Adam, self.Eve]
         self.Time = 0
         self.Pregnant_Women = []
 
+    # @jit(target_backend='cuda')
     def month_avancement(self):
         self.Time += 1
         newborns = []
 
-        Person.ages[:Person.runningID] += 1
+        # Person.ages[:Person.runningID] += 1 // might decide to transfer it to this format later
 
         for idx, person in enumerate(self):
             person: Person
+            Person.ages[person.id] += 1
 
-            # handle self advancement.
             #  - handle pregnancy
             if person.gender == Gender.Female:
                 if person.father_of_child is not None:
@@ -41,31 +42,31 @@ class Simulation:
                 elif person.age() > person.readiness and person.biowatch > 0:
                     person.biowatch -= 1
 
-            # TODO: fix absurd strength levels. older people must crumble.
-            # handle advencemnt
+            person.aging()  # handles old people's aging process.
+
+            # handle growing up
             if person.year() < 15:
                 person.strength += 0.25
 
-            # taking actions
             if person.death() and self.Time > Simulation.IMMUNITY_TIME:
                 self.Population.remove(person)
                 continue
             person.action()
 
-        for person in Person.social_connectors:
-            if person.brain.get_positives():
-                for other in person.brain.get_positives():
+        for social_connector in Person.social_connectors:
+            if social_connector.brain.get_positives():
+                for other in social_connector.brain.get_positives():
                     other: Person
-                    other.brain.improve_attitude(person)
+                    other.brain.improve_attitude(social_connector)
                     other.brain.update_positives()
 
-                    if person.brain.get_attitudes(other) > 0.7 and other.brain.get_attitudes(person) > 0.7:
-                        if person.age() > person.readiness and other.age() > other.readiness:
-                            if person.gender != other.gender and abs(person.age() - other.age()) < Simulation.DIFF_AGE:
-                                person.merge(other)
+                    if social_connector.brain.get_attitudes(other) > 0.7 and other.brain.get_attitudes(social_connector) > 0.7:
+                        if social_connector.age() > social_connector.readiness and other.age() > other.readiness:
+                            if social_connector.gender != other.gender and abs(social_connector.age() - other.age()) < Simulation.DIFF_AGE:
+                                social_connector.merge(other)
             else:
-                attitudes = person.brain.get_attitudes()
-                person.brain.improve_attitude(max(attitudes, key=attitudes.get), 0.5)
+                attitudes = social_connector.brain.get_attitudes()
+                social_connector.brain.improve_attitude(max(attitudes, key=attitudes.get), 0.5)
         Person.social_connectors = []
 
         # self advancement
@@ -75,12 +76,16 @@ class Simulation:
                 other.brain.get_first_impression(newborn)
 
             self.Population.append(newborn)
+            self.History.append(newborn)
 
     def is_eradicated(self):
         return not self.Population
 
+    def get_historical_figure(self, id):
+        return self.History[id], self.History[id].brain.get_history()[:self.History[id].age()]
+
     def __iter__(self):
-        return (person for person in self.Population)
+        return (p for p in self.Population)
 
     def __repr__(self):
         txt = f"Year: {self.Time // 12};"
@@ -109,8 +114,13 @@ TS = Simulation()
 while True:
     command = input("please input command: ")
     start = datetime.now()
-    if command[0] == "s" or command[0] == "S":
-        for j in ProgressBar(int(command[1::])):
+    if command[0] == 'i' or command[0] == 'I':
+        person, history = TS.get_historical_figure(int(command[1:]))
+        print(f'\n{person}'
+              f'\n{history}\n')
+
+    elif command[0] == "s" or command[0] == "S":
+        for j in ProgressBar(int(command[1:])):
             TS.month_avancement()
             if TS.is_eradicated():
                 break
@@ -121,7 +131,7 @@ while True:
             break
 
     elif command[0] == "y" or command[0] == "Y":
-        for j in ProgressBar(int(command[1::]) * 12):
+        for j in ProgressBar(int(command[1:]) * 12):
             TS.month_avancement()
             if TS.is_eradicated():
                 break

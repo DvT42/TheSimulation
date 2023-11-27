@@ -6,8 +6,12 @@ from Brain import Brain
 
 
 class Person:
-    runningID = 0
     MAX_POPULATION = 10000000
+    AGING_STARTING_AGE = 40 * 12
+    DRASTIC_AGING_AGE = 75 * 12
+    DEATH_NORMALIZER = 0.5
+
+    runningID = 0
     ages = np.zeros(MAX_POPULATION, dtype=int)
     ages[0], ages[1] = 20 * 12, 20 * 12
 
@@ -81,9 +85,8 @@ class Person:
         self.pregnancy = 0
         return Person(f, self)
 
-    # TODO: try to find ways for death to be less emennent.
     def death(self):
-        death_chance = 0.06 * math.exp(-0.02 * self.strength)
+        death_chance = Person.DEATH_NORMALIZER * 0.06 * math.exp(-0.02 * self.strength)
         random_number = random.random()
         return random_number < death_chance
 
@@ -97,6 +100,12 @@ class Person:
         if dec == 1:
             self.strength += 0.5
             self.brain.set_history(self.age(), 2)
+
+    def aging(self):
+        if self.age() > Person.AGING_STARTING_AGE:
+            self.strength -= 1
+            if self.age() > Person.DRASTIC_AGING_AGE:
+                self.strength -= 1
 
     # Override of the conversion to string
     def __repr__(self):
@@ -118,12 +127,12 @@ class Person:
                   f"parents: [{self.father.id}, {self.mother.id}] \n" \
                   f"gender: {self.gender.name}, age: {self.year()} \n" \
                   f"strength: {self.strength} \n" \
-                  f"last action: {self.brain.get_history(self.age())}"
+                  f"last action: {self.brain.get_action_from_history(self.age())}"
         else:
             txt = f"{self.id}: \n" \
                   f"gender: {self.gender.name}, age: {self.year()} \n" \
                   f"strength: {self.strength}\n" \
-                  f"last action: {self.brain.get_history(self.age())}"
+                  f"last action: {self.brain.get_action_from_history(self.age())}"
 
         # pregnancy data
         if self.gender == Gender.Female:

@@ -31,13 +31,14 @@ class Brain:
         if self.person.isManual:
             return self.brainparts.get("PFC").decision_making(
                 self.person.gender, self.person.age(), self.person.strength, preg, biowatch, self.person.readiness,
-                self.get_history(self.person.age() - 1), 0, 0
+                self.get_action_from_history(self.person.age() - 1), 0, 0
             )
         else:
             return self.brainparts.get("PFC").decision_making(
                 self.person.gender, self.person.age(), self.person.strength, preg, biowatch, self.person.readiness,
-                self.get_history(self.person.age() - 1), self.person.father.brain.get_history(self.person.age()),
-                self.person.mother.brain.get_history(self.person.age())
+                self.get_action_from_history(self.person.age() - 1),
+                self.person.father.brain.get_action_from_history(self.person.age()),
+                self.person.mother.brain.get_action_from_history(self.person.age())
             )
 
     def get_first_impression(self, other):
@@ -49,11 +50,14 @@ class Brain:
 
         return impression
 
-    def get_history(self, index):
+    def get_action_from_history(self, index):
         if index < len(self.brainparts.get("HPC").history):
             return self.brainparts.get("HPC").history[index]
         else:
             return 0
+
+    def get_history(self):
+        return self.brainparts.get("HPC").history
 
     def set_history(self, index: int, value):
         if self.person.age() < Hippocampus.SHOULD_PROBABLY_BE_DEAD:
