@@ -20,6 +20,7 @@ class Person:
 
     def __init__(self, father, mother=None):
         # ID assignment
+        self.isAlive = True
         self.id = Person.runningID
         Person.runningID += 1
 
@@ -85,7 +86,7 @@ class Person:
         self.pregnancy = 0
         return Person(f, self)
 
-    def death(self):
+    def did_die(self):
         death_chance = Person.DEATH_NORMALIZER * 0.06 * math.exp(-0.02 * self.strength)
         random_number = random.random()
         return random_number < death_chance

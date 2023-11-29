@@ -48,8 +48,9 @@ class Simulation:
             if person.year() < 15:
                 person.strength += 0.25
 
-            if person.death() and self.Time > Simulation.IMMUNITY_TIME:
+            if person.did_die() and self.Time > Simulation.IMMUNITY_TIME:
                 self.Population.remove(person)
+                person.isAlive = False
                 continue
             person.action()
 
@@ -109,44 +110,46 @@ class ProgressBar(tqdm.tqdm):
         super().__init__(range(iterations), ncols=80, ascii="░▒▓█", unit="m", colour="blue")
 
 
-# running code
-TS = Simulation()
-while True:
-    command = input("please input command: ")
-    start = datetime.now()
-    if command[0] == 'i' or command[0] == 'I':
-        person, history = TS.get_historical_figure(int(command[1:]))
-        print(f'\n{person}'
-              f'\n{history}\n')
+if __name__ == "__main__":
 
-    elif command[0] == "s" or command[0] == "S":
-        for j in ProgressBar(int(command[1:])):
-            TS.month_avancement()
+    # running code
+    TS = Simulation()
+    while True:
+        command = input("please input command: ")
+        start = datetime.now()
+        if command[0] == 'i' or command[0] == 'I':
+            person, history = TS.get_historical_figure(int(command[1:]))
+            print(f'\n{person}'
+                  f'\n{history}\n')
+
+        elif command[0] == "s" or command[0] == "S":
+            for j in ProgressBar(int(command[1:])):
+                TS.month_avancement()
+                if TS.is_eradicated():
+                    break
+
+            TS.display()
+            print(f"{(datetime.now() - start).total_seconds():.02f}s")
             if TS.is_eradicated():
                 break
 
-        TS.display()
-        print(f"{(datetime.now() - start).total_seconds():.02f}s")
-        if TS.is_eradicated():
-            break
+        elif command[0] == "y" or command[0] == "Y":
+            for j in ProgressBar(int(command[1:]) * 12):
+                TS.month_avancement()
+                if TS.is_eradicated():
+                    break
 
-    elif command[0] == "y" or command[0] == "Y":
-        for j in ProgressBar(int(command[1:]) * 12):
-            TS.month_avancement()
+            TS.display()
+            print(f"{(datetime.now() - start).total_seconds():.02f}s")
             if TS.is_eradicated():
                 break
 
-        TS.display()
-        print(f"{(datetime.now() - start).total_seconds():.02f}s")
-        if TS.is_eradicated():
+        elif command[0] == "x" or command[0] == "X":
             break
 
-    elif command[0] == "x" or command[0] == "X":
-        break
-
-    else:
-        TS.month_avancement()
-        TS.display()
-        print(f"{(datetime.now() - start).total_seconds():.02f}s")
-        if TS.is_eradicated():
-            break
+        else:
+            TS.month_avancement()
+            TS.display()
+            print(f"{(datetime.now() - start).total_seconds():.02f}s")
+            if TS.is_eradicated():
+                break

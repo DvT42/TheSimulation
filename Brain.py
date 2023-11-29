@@ -3,6 +3,21 @@ import numpy as np
 from Neural_Network import NeuralNetwork
 
 
+class Collective:
+    # brainpart constants:
+    INHERITENCE_RATIO = 0.5
+    MUTATION_RATIO = 0.2
+    MUTATION_NORMALIZATION_RATIO = 0.01
+
+    # PFC constants
+    CHOICE_RANDOMALIZER = 0.3
+    CHOICE_NUM = 2
+
+    # HPC constants
+    SHOULD_PROBABLY_BE_DEAD = 120 * 12
+    ATTITUDE_IMPROVEMENT_BONUS = 0.05
+
+
 class Brain:
     def __init__(self, person):
         self.person = person
@@ -86,9 +101,9 @@ class Brain:
 
 class BrainPart:
 
-    INHERITENCE_RATIO = 0.5
-    MUTATION_RATIO = 0.2
-    MUTATION_NORMALIZATION_RATIO = 0.01
+    INHERITENCE_RATIO = Collective.INHERITENCE_RATIO
+    MUTATION_RATIO = Collective.MUTATION_RATIO
+    MUTATION_NORMALIZATION_RATIO = Collective.MUTATION_NORMALIZATION_RATIO
 
     def __init__(self):
         self.model = None
@@ -136,13 +151,16 @@ class PrefrontalCortex(BrainPart):
     """
     That is the part in the brain that is responsible for making decisions.
     """
+    CHOICE_RANDOMALIZER = Collective.CHOICE_RANDOMALIZER
+    CHOICE_NUM = Collective.CHOICE_NUM
+
     def __init__(self, person):
         super().__init__()
         model = NeuralNetwork()
         model.add_layer(12, input_num=12, activation='relu')  # inp layer (1)
         model.add_layer(6, input_num=12, activation='relu')  # hidden layer (2)
         model.add_layer(4, input_num=6, activation='relu')  # hidden layer (3)
-        model.add_layer(2, input_num=4, activation='softmax')  # output layer (4)
+        model.add_layer(PrefrontalCortex.CHOICE_NUM, input_num=4, activation='softmax')  # output layer (4)
 
         self.person = person
         self.model = model
@@ -151,7 +169,7 @@ class PrefrontalCortex(BrainPart):
             self, gender, age, strength, pregnancy, biowatch, readiness, previous_choice, father_choice,
             mother_choice
     ):
-        if random.randint(1, 10) > 3:
+        if random.random() > PrefrontalCortex.CHOICE_RANDOMALIZER:
             # this list is for convinience, to know what does each index of option means.
             # choices = ["social connection", "strength"]
 
@@ -172,7 +190,7 @@ class PrefrontalCortex(BrainPart):
 
             return np.argmax(output_prob)
         else:
-            return random.randint(0, 1)
+            return random.randint(0, PrefrontalCortex.CHOICE_NUM - 1)
 
 
 class Amygdala(BrainPart):
@@ -233,15 +251,15 @@ class Amygdala(BrainPart):
         neural_input = self.prepare_neural_input(other)
         output_prob: np.ndarray = self.model.feed(neural_input)
 
-        return output_prob
+        return output_prob[0][0]
 
 
 class Hippocampus(BrainPart):
     """
     The part of the brain responsible for memory.
     """
-    SHOULD_PROBABLY_BE_DEAD = 120 * 12
-    ATTITUDE_IMPROVEMENT_BONUS = 0.05
+    SHOULD_PROBABLY_BE_DEAD = Collective.SHOULD_PROBABLY_BE_DEAD
+    ATTITUDE_IMPROVEMENT_BONUS = Collective.ATTITUDE_IMPROVEMENT_BONUS
 
     def __init__(self, person):
         super().__init__()
@@ -253,10 +271,11 @@ class Hippocampus(BrainPart):
         self.attitiudes = {}
         self.positives = []
 
+    # TODO: fix the efficiency here. This loop is a dire problem
     def update_positives(self):
         self.positives = []
         for person, value in self.attitiudes.items():
-            if value > 0:
+            if value > 0 and person.isAlive:
                 self.positives.append(person)
 
 
