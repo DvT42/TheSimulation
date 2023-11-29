@@ -60,7 +60,7 @@ class Brain:
         impression = self.brainparts.get("AMG").first_impression(other)
 
         self.brainparts.get("HPC").first_impressions[other] = impression
-        self.brainparts.get("HPC").attitiudes[other] = impression
+        self.brainparts.get("HPC").attitudes[other] = impression
         self.update_positives()
 
         return impression
@@ -82,18 +82,18 @@ class Brain:
 
     def get_attitudes(self, other=None):
         if other:
-            return self.brainparts.get("HPC").attitiudes[other]
-        return self.brainparts.get("HPC").attitiudes
+            return self.brainparts.get("HPC").attitudes[other]
+        return self.brainparts.get("HPC").attitudes
 
     def get_positives(self):
         return self.brainparts.get("HPC").positives
 
     def improve_attitude(self, other, value=0):
-        if other in self.brainparts.get("HPC").attitiudes:
+        if other in self.brainparts.get("HPC").attitudes:
             if value == 0:
-                self.brainparts.get("HPC").attitiudes[other] += Hippocampus.ATTITUDE_IMPROVEMENT_BONUS
+                self.brainparts.get("HPC").attitudes[other] += Hippocampus.ATTITUDE_IMPROVEMENT_BONUS
             else:
-                self.brainparts.get("HPC").attitiudes[other] += value
+                self.brainparts.get("HPC").attitudes[other] += value
 
     def update_positives(self):
         self.brainparts.get("HPC").update_positives()
@@ -267,16 +267,21 @@ class Hippocampus(BrainPart):
 
         self.history = np.zeros(120 * 12, dtype=int)
 
+        self.dead_impressions = {}
         self.first_impressions = {}
-        self.attitiudes = {}
+        self.attitudes = {}
         self.positives = []
 
-    # TODO: fix the efficiency here. This loop is a dire problem
     def update_positives(self):
         self.positives = []
-        for person, value in self.attitiudes.items():
-            if value > 0 and person.isAlive:
-                self.positives.append(person)
+        attitudes = self.attitudes.copy()
+        for person, value in attitudes.items():
+            if person.isAlive:
+                if value > 0:
+                    self.positives.append(person)
+            else:
+                self.dead_impressions[person] = value
+                self.attitudes.pop(person)
 
 
 def get_choice_nodes(choice):

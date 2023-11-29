@@ -144,7 +144,7 @@ class Person:
 
         return txt
 
-    def age(self):
+    def age(self) -> int:
         return Person.ages[self.id]
 
     def year(self):
