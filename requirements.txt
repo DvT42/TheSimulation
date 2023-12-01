@@ -1,2 +1,8 @@
 numpy~=1.25.1
 tqdm~=4.65.0
+pandas~=2.1.1
+matplotlib~=3.8.0
+seaborn~=0.13.0
+geopandas~=0.14.1
+earthpy~=0.9.4
+shapely~=2.0.2
