@@ -9,7 +9,7 @@ class Person:
     MAX_POPULATION = 10000000
     AGING_STARTING_AGE = 40 * 12
     DRASTIC_AGING_AGE = 75 * 12
-    DEATH_NORMALIZER = 0.5
+    DEATH_NORMALIZER = 0.3
 
     runningID = 0
     ages = np.zeros(MAX_POPULATION, dtype=int)
