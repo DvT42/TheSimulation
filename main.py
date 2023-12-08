@@ -1,4 +1,5 @@
 import tqdm
+from Brain import Collective
 from Person import Person, Gender
 from datetime import datetime
 
@@ -10,12 +11,15 @@ class Simulation:
     IMMUNITY_TIME = 10 * 12
 
     def __init__(self):
-        self.Adam = Person([Gender.Male, 100])
-        self.Eve = Person([Gender.Female, 100])
+        self.collective = Collective(2)
+
+        self.Adam = Person(father=[Gender.Male, 100], collective=self.collective)
+        self.Eve = Person(father=[Gender.Female, 100], collective=self.collective)
+        self.Population: list[Person] = [self.Adam, self.Eve]
+
         self.Adam.brain.get_first_impression(self.Eve)
         self.Eve.brain.get_first_impression(self.Adam)
 
-        self.Population: list[Person] = [self.Adam, self.Eve]
         self.History = [self.Adam, self.Eve]
         self.Time = 0
         self.Pregnant_Women = []
@@ -73,6 +77,8 @@ class Simulation:
 
         # self advancement
         for newborn in newborns:
+            self.collective.add_person_to_world_attitudes()
+
             for other in self:
                 newborn.brain.get_first_impression(other)
                 other.brain.get_first_impression(newborn)

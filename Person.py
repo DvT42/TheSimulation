@@ -18,7 +18,7 @@ class Person:
     # list for social connectors
     social_connectors = []
 
-    def __init__(self, father, mother=None):
+    def __init__(self, collective, father, mother=None):
         # ID assignment
         self.isAlive = True
         self.id = Person.runningID
@@ -26,6 +26,7 @@ class Person:
 
         self.father: Person = father
         self.mother: Person = mother
+        self.collective = collective
 
         # Attributes that don't depend on the parents
         self.gender = random.choice(list(Gender))
@@ -35,7 +36,7 @@ class Person:
         # list to save former actions in
         self.readiness = 12 * 12 + int(random.normalvariate(0, 12))
 
-        self.brain = Brain(self)
+        self.brain = Brain(self, collective)
 
         # Attributes that depend on the parents:
         # - standard creation
@@ -84,7 +85,7 @@ class Person:
         f = self.father_of_child
         self.father_of_child = None
         self.pregnancy = 0
-        return Person(f, self)
+        return Person(collective=self.collective, father=f, mother=self)
 
     def did_die(self):
         death_chance = Person.DEATH_NORMALIZER * 0.06 * math.exp(-0.02 * self.strength)

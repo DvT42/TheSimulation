@@ -17,10 +17,22 @@ class Collective:
     SHOULD_PROBABLY_BE_DEAD = 120 * 12
     ATTITUDE_IMPROVEMENT_BONUS = 0.05
 
+    def __init__(self, population_size):
+        self.population_size = population_size
+        self.world_attitudes = np.zeros((population_size, population_size), dtype=float)
+
+    def add_person_to_world_attitudes(self):
+        self.world_attitudes = np.append(
+            np.append(self.world_attitudes, np.zeros(self.population_size)),
+            np.zeros(self.population_size + 1), axis=1)
+        self.population_size += 1
+
 
 class Brain:
-    def __init__(self, person):
+    def __init__(self, person, collective):
         self.person = person
+        self.collective = collective
+        self.id = person.id
         self.brainparts = {"PFC": PrefrontalCortex(self.person),
                            "AMG": Amygdala(self.person),
                            "HPC": Hippocampus(self.person)}
@@ -60,7 +72,7 @@ class Brain:
         impression = self.brainparts.get("AMG").first_impression(other)
 
         self.brainparts.get("HPC").first_impressions[other] = impression
-        self.brainparts.get("HPC").attitudes[other] = impression
+        self.collective.world_attitudes[self.id, other.id] = impression
         self.update_positives()
 
         return impression
@@ -82,18 +94,18 @@ class Brain:
 
     def get_attitudes(self, other=None):
         if other:
-            return self.brainparts.get("HPC").attitudes[other]
-        return self.brainparts.get("HPC").attitudes
+            return self.collective.world_attitudes[self.id, other.id]
+        return self.collective.world_attitudes[self.id]
 
     def get_positives(self):
         return self.brainparts.get("HPC").positives
 
+    # TODO: fix improve attitude to run on the matrix and not a for loop.
     def improve_attitude(self, other, value=0):
-        if other in self.brainparts.get("HPC").attitudes:
-            if value == 0:
-                self.brainparts.get("HPC").attitudes[other] += Hippocampus.ATTITUDE_IMPROVEMENT_BONUS
-            else:
-                self.brainparts.get("HPC").attitudes[other] += value
+        if value == 0:
+            self.brainparts.get("HPC").attitudes[other] += Hippocampus.ATTITUDE_IMPROVEMENT_BONUS
+        else:
+            self.brainparts.get("HPC").attitudes[other] += value
 
     def update_positives(self):
         self.brainparts.get("HPC").update_positives()
@@ -269,7 +281,6 @@ class Hippocampus(BrainPart):
 
         self.dead_impressions = {}
         self.first_impressions = {}
-        self.attitudes = {}
         self.positives = []
 
     def update_positives(self):
