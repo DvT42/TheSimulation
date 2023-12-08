@@ -21,7 +21,8 @@ class Simulation:
         self.Pregnant_Women = []
 
     # @jit(target_backend='cuda')
-    def month_avancement(self):
+    # noinspection PyShadowingNames
+    def month_advancement(self):
         self.Time += 1
         newborns = []
 
@@ -124,7 +125,7 @@ if __name__ == "__main__":
 
         elif command[0] == "s" or command[0] == "S":
             for j in ProgressBar(int(command[1:])):
-                TS.month_avancement()
+                TS.month_advancement()
                 if TS.is_eradicated():
                     break
 
@@ -135,7 +136,7 @@ if __name__ == "__main__":
 
         elif command[0] == "y" or command[0] == "Y":
             for j in ProgressBar(int(command[1:]) * 12):
-                TS.month_avancement()
+                TS.month_advancement()
                 if TS.is_eradicated():
                     break
 
@@ -148,7 +149,7 @@ if __name__ == "__main__":
             break
 
         else:
-            TS.month_avancement()
+            TS.month_advancement()
             TS.display()
             print(f"{(datetime.now() - start).total_seconds():.02f}s")
             if TS.is_eradicated():

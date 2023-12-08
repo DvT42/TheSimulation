@@ -144,6 +144,7 @@ class Person:
 
         return txt
 
+    # noinspection PyTypeChecker
     def age(self) -> int:
         return Person.ages[self.id]
 

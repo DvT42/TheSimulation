@@ -1,7 +1,7 @@
 """
 This file is supposed to include all the mechanical processes needed for the neural networks.
 
-IMPORTANT: Currently the neural network works with vectors, and not batches. I might want to reconsier this in the
+IMPORTANT: Currently the neural network works with vectors, and not batches. I might want to reconsider this in the
 future for efficiency purposes.
 """
 
@@ -21,7 +21,7 @@ class NeuralNetwork:
         """
         This function runs the neural network.
 
-        Input: a touple or a list of all the inp needed to be passed to the inp layer
+        Input: a tuple or a list of all the inp needed to be passed to the inp layer
         Output: an array of the resulting numbers coming out of the output layer.
         """
         output = self.layers[0].forward(inputs=input)

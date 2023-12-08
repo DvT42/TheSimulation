@@ -5,12 +5,12 @@ from Neural_Network import NeuralNetwork
 
 class Collective:
     # brainpart constants:
-    INHERITENCE_RATIO = 0.5
+    INHERITANCE_RATIO = 0.5
     MUTATION_RATIO = 0.2
     MUTATION_NORMALIZATION_RATIO = 0.01
 
     # PFC constants
-    CHOICE_RANDOMALIZER = 0.3
+    CHOICE_RANDOMIZER = 0.3
     CHOICE_NUM = 2
 
     # HPC constants
@@ -101,7 +101,7 @@ class Brain:
 
 class BrainPart:
 
-    INHERITENCE_RATIO = Collective.INHERITENCE_RATIO
+    INHERITENCE_RATIO = Collective.INHERITANCE_RATIO
     MUTATION_RATIO = Collective.MUTATION_RATIO
     MUTATION_NORMALIZATION_RATIO = Collective.MUTATION_NORMALIZATION_RATIO
 
@@ -151,7 +151,7 @@ class PrefrontalCortex(BrainPart):
     """
     That is the part in the brain that is responsible for making decisions.
     """
-    CHOICE_RANDOMALIZER = Collective.CHOICE_RANDOMALIZER
+    CHOICE_RANDOMALIZER = Collective.CHOICE_RANDOMIZER
     CHOICE_NUM = Collective.CHOICE_NUM
 
     def __init__(self, person):
