@@ -6,17 +6,17 @@ from datetime import datetime
 
 class Simulation:
     MARRIAGE_AGE = 12 * 12
-    DIFF_AGE = 15 * 12
     SHOULD_PROBABLY_BE_DEAD = 120 * 12
     IMMUNITY_TIME = 10 * 12
 
     def __init__(self):
-        self.collective = Collective(2)
+        self.collective = Collective()
 
         self.Adam = Person(father=[Gender.Male, 100], collective=self.collective)
         self.Eve = Person(father=[Gender.Female, 100], collective=self.collective)
         self.Population: list[Person] = [self.Adam, self.Eve]
-
+        self.collective.add_first_person(self.Adam)
+        self.collective.add_person(self.Eve)
         self.Adam.brain.get_first_impression(self.Eve)
         self.Eve.brain.get_first_impression(self.Adam)
 
@@ -44,8 +44,8 @@ class Simulation:
                         newborns.append(newborn)
                     else:
                         person.pregnancy += 1
-                elif person.age() > person.readiness and person.biowatch > 0:
-                    person.biowatch -= 1
+                elif person.age() > person.readiness and person.youngness > 0:
+                    person.youngness -= 1
 
             person.aging()  # handles old people's aging process.
 
@@ -53,31 +53,33 @@ class Simulation:
             if person.year() < 15:
                 person.strength += 0.25
 
-            if person.did_die() and self.Time > Simulation.IMMUNITY_TIME:
+            if person.natural_death_chance() and self.Time > Simulation.IMMUNITY_TIME:
                 self.Population.remove(person)
                 person.isAlive = False
+                if person.partner:
+                    person.partner.partner = None
                 continue
             person.action()
 
         for social_connector in Person.social_connectors:
-            if social_connector.brain.get_positives():
-                for other in social_connector.brain.get_positives():
-                    other: Person
-                    other.brain.improve_attitude(social_connector)
-                    other.brain.update_positives()
+            social_connector: Person
+            if social_connector.brain.is_friendly():
+                social_connector.brain.improve_attitudes_toward_me()
 
-                    if social_connector.brain.get_attitudes(other) > 0.7 and other.brain.get_attitudes(social_connector) > 0.7:
-                        if social_connector.age() > social_connector.readiness and other.age() > other.readiness:
-                            if social_connector.gender != other.gender and abs(social_connector.age() - other.age()) < Simulation.DIFF_AGE:
-                                social_connector.merge(other)
+                if social_connector.partner:
+                    if social_connector.partner in Person.social_connectors:
+                        social_connector.prepare_next_generation(social_connector.partner)
+                else:
+                    social_connector.partner = social_connector.partner_selection()
+                    if social_connector.partner:
+                        social_connector.partner.partner = social_connector
+
             else:
-                attitudes = social_connector.brain.get_attitudes()
-                social_connector.brain.improve_attitude(max(attitudes, key=attitudes.get), 0.5)
+                social_connector.brain.improve_my_attitudes()
         Person.social_connectors = []
 
-        # self advancement
         for newborn in newborns:
-            self.collective.add_person_to_world_attitudes()
+            self.collective.add_person(newborn)
 
             for other in self:
                 newborn.brain.get_first_impression(other)
@@ -92,6 +94,9 @@ class Simulation:
     def get_historical_figure(self, id):
         return self.History[id], self.History[id].brain.get_history()[:self.History[id].age()]
 
+    def get_attitudes(self, id):
+        return self.History[id].collective.world_attitudes[id]
+
     def __iter__(self):
         return (p for p in self.Population)
 
@@ -105,6 +110,8 @@ class Simulation:
         txt = f"Year: {self.Time // 12}\n\n"
         for p in self:
             txt += f"{p.display()}\n\n"
+
+        txt += f'Current world population: {len(self.Population)}'
 
         if self.is_eradicated():
             txt = "SPECIES GONE"
@@ -125,9 +132,12 @@ if __name__ == "__main__":
         command = input("please input command: ")
         start = datetime.now()
         if command[0] == 'i' or command[0] == 'I':
-            person, history = TS.get_historical_figure(int(command[1:]))
-            print(f'\n{person}'
-                  f'\n{history}\n')
+            if command[1] == 'a' or command[1] == 'A':
+                print(TS.get_attitudes(int(command[2:])))
+            else:
+                person, history = TS.get_historical_figure(int(command[1:]))
+                print(f'\n{person}'
+                      f'\n{history}')
 
         elif command[0] == "s" or command[0] == "S":
             for j in ProgressBar(int(command[1:])):

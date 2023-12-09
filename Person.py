@@ -9,6 +9,7 @@ class Person:
     MAX_POPULATION = 10000000
     AGING_STARTING_AGE = 40 * 12
     DRASTIC_AGING_AGE = 75 * 12
+    DIFF_AGE = 15 * 12
     DEATH_NORMALIZER = 0.3
 
     runningID = 0
@@ -38,6 +39,8 @@ class Person:
 
         self.brain = Brain(self, collective)
 
+        self.partner = None
+
         # Attributes that depend on the parents:
         # - standard creation
         if type(father) is Person:
@@ -53,6 +56,9 @@ class Person:
             # inherit parents' brain
             self.brain.inherit(self)
 
+            # get born in the mother's place
+            # self.location = mother.location
+
         # - Manual creation
         else:
             self.isManual = True
@@ -64,22 +70,31 @@ class Person:
             self.strength = father[1]
             self.starting_strength = self.strength
 
+            # [2]
+            # self.location = father[2]
+
+        # self.brain.update_location_history()  # insert the birthplace into location history.
+
         # procreation availability.
         if self.gender == Gender.Female:
             self.pregnancy = 0
             self.father_of_child = None
-            self.biowatch = 30*12 + int(random.normalvariate(0, 24))
+            self.youngness = 30 * 12 + int(random.normalvariate(0, 24))
             if self.isManual:
-                self.biowatch -= 8*12
+                self.youngness -= 8 * 12
 
-    def merge(self, mate):
-        mate: Person
+    def prepare_next_generation(self, other):
+        other: Person
         if self.gender == Gender.Female:
-            if self.pregnancy == 0 and self.father_of_child is None and self.age() >= self.readiness and self.biowatch > 0:
-                self.father_of_child = mate
+            if self.pregnancy == 0 and self.father_of_child is None and self.age() >= self.readiness and self.youngness > 0:
+                self.father_of_child = other
+                self.partner = other
+                other.partner = self
         else:
-            if mate.pregnancy == 0 and mate.father_of_child is None and mate.age() >= mate.readiness and mate.biowatch > 0:
-                mate.father_of_child = self
+            if other.pregnancy == 0 and other.father_of_child is None and other.age() >= other.readiness and other.youngness > 0:
+                other.father_of_child = self
+                self.partner = other
+                other.partner = self
 
     def birth(self):
         f = self.father_of_child
@@ -87,27 +102,50 @@ class Person:
         self.pregnancy = 0
         return Person(collective=self.collective, father=f, mother=self)
 
-    def did_die(self):
+    def natural_death_chance(self):
         death_chance = Person.DEATH_NORMALIZER * 0.06 * math.exp(-0.02 * self.strength)
         random_number = random.random()
         return random_number < death_chance
 
+    # noinspection PyTypeChecker
     def action(self):
-        dec = self.brain.call_decision_making()
+        decision = self.brain.call_decision_making()
 
-        if dec == 0:
+        if decision == 0:
             # should improve attitudes/merge
             Person.social_connectors.append(self)
             self.brain.set_history(self.age(), 1)
-        if dec == 1:
+        if decision == 1:
             self.strength += 0.5
             self.brain.set_history(self.age(), 2)
+        # if decision == 2:
+        #     # (function that chcks the best place within range)
+        #
+        #     self.location[random.randint(0, 1)] += int(Person.RANGE * random.uniform(-1, 1))
+        #     self.brain.update_location_history()
+        #     self.brain.set_history(self.age(), 3)
 
     def aging(self):
         if self.age() > Person.AGING_STARTING_AGE:
             self.strength -= 1
             if self.age() > Person.DRASTIC_AGING_AGE:
                 self.strength -= 1
+
+    def is_possible_partner(self, other):
+        if self.gender != other.gender and not other.partner and abs(self.age() - other.age()) < Person.DIFF_AGE:
+            if self.age() > self.readiness and other.age() > other.readiness:
+                if self.brain.get_attitudes(other) > 0.7 and other.brain.get_attitudes(self) > 0.7:
+                    return True
+        return False
+
+    def partner_selection(self):
+        arr: np.ndarray = np.copy(self.collective.world_attitudes[self.id])
+        while arr.any():
+            other = self.collective.historical_population[np.argmax(arr)]
+            if self.is_possible_partner(other):
+                return other
+            arr[np.argmax(arr)] = 0
+        return None
 
     # Override of the conversion to string
     def __repr__(self):
@@ -126,27 +164,25 @@ class Person:
         # basic information
         if not self.isManual:
             txt = f"{self.id}: \n" \
-                  f"parents: [{self.father.id}, {self.mother.id}] \n" \
-                  f"gender: {self.gender.name}, age: {self.year()} \n" \
-                  f"strength: {self.strength} \n" \
-                  f"last action: {self.brain.get_action_from_history(self.age())}"
+                  f"parents: [{self.father.id}, {self.mother.id}] \n"
         else:
-            txt = f"{self.id}: \n" \
-                  f"gender: {self.gender.name}, age: {self.year()} \n" \
-                  f"strength: {self.strength}\n" \
-                  f"last action: {self.brain.get_action_from_history(self.age())}"
+            txt = f"{self.id}: \n"
+
+        txt += f"gender: {self.gender.name}, age: {self.year()} \n" \
+              f"strength: {self.strength}\n" \
+              f"last action: {self.brain.get_action_from_history(self.age())}"
 
         # pregnancy data
         if self.gender == Gender.Female:
             if self.pregnancy != 0:
                 txt += f"\n pregnancy: {self.pregnancy}, mate: {self.father_of_child.id}"
             else:
-                txt += f"\n timer: {self.biowatch}"
+                txt += f"\n timer: {self.youngness}"
 
         return txt
 
     # noinspection PyTypeChecker
-    def age(self) -> int:
+    def age(self):
         return Person.ages[self.id]
 
     def year(self):

@@ -1,5 +1,5 @@
-import random
 import numpy as np
+from numpy import random
 from Neural_Network import NeuralNetwork
 
 
@@ -16,15 +16,23 @@ class Collective:
     # HPC constants
     SHOULD_PROBABLY_BE_DEAD = 120 * 12
     ATTITUDE_IMPROVEMENT_BONUS = 0.05
+    ATTITUDE_SELF_IMPROVEMENT_BONUS = 0.1
 
-    def __init__(self, population_size):
-        self.population_size = population_size
-        self.world_attitudes = np.zeros((population_size, population_size), dtype=float)
+    def __init__(self):
+        self.population_size = 0
+        self.world_attitudes = np.array([[]], dtype=float)
+        self.historical_population = []
 
-    def add_person_to_world_attitudes(self):
-        self.world_attitudes = np.append(
-            np.append(self.world_attitudes, np.zeros(self.population_size)),
-            np.zeros(self.population_size + 1), axis=1)
+    def add_first_person(self, person):
+        self.historical_population.append(person)
+        self.world_attitudes = np.array([[0]], dtype=float)
+        self.population_size = 1
+
+    def add_person(self, person):
+        self.historical_population.append(person)
+        new_world_attitudes = np.zeros((self.population_size + 1, self.population_size + 1))
+        new_world_attitudes[:self.population_size, :self.population_size] = self.world_attitudes
+        self.world_attitudes = new_world_attitudes
         self.population_size += 1
 
 
@@ -51,18 +59,18 @@ class Brain:
     def call_decision_making(self):
         if self.person.gender == 0:
             preg = self.person.pregnancy
-            biowatch = self.person.biowatch
+            youngness = self.person.youngness
         else:
             preg = 0
-            biowatch = 0
+            youngness = 0
         if self.person.isManual:
             return self.brainparts.get("PFC").decision_making(
-                self.person.gender, self.person.age(), self.person.strength, preg, biowatch, self.person.readiness,
+                self.person.gender, self.person.age(), self.person.strength, preg, youngness, self.person.readiness,
                 self.get_action_from_history(self.person.age() - 1), 0, 0
             )
         else:
             return self.brainparts.get("PFC").decision_making(
-                self.person.gender, self.person.age(), self.person.strength, preg, biowatch, self.person.readiness,
+                self.person.gender, self.person.age(), self.person.strength, preg, youngness, self.person.readiness,
                 self.get_action_from_history(self.person.age() - 1),
                 self.person.father.brain.get_action_from_history(self.person.age()),
                 self.person.mother.brain.get_action_from_history(self.person.age())
@@ -73,7 +81,6 @@ class Brain:
 
         self.brainparts.get("HPC").first_impressions[other] = impression
         self.collective.world_attitudes[self.id, other.id] = impression
-        self.update_positives()
 
         return impression
 
@@ -97,18 +104,22 @@ class Brain:
             return self.collective.world_attitudes[self.id, other.id]
         return self.collective.world_attitudes[self.id]
 
-    def get_positives(self):
-        return self.brainparts.get("HPC").positives
+    def improve_my_attitudes(self):
+        self.collective.world_attitudes[self.id] += Collective.ATTITUDE_SELF_IMPROVEMENT_BONUS
 
-    # TODO: fix improve attitude to run on the matrix and not a for loop.
-    def improve_attitude(self, other, value=0):
-        if value == 0:
-            self.brainparts.get("HPC").attitudes[other] += Hippocampus.ATTITUDE_IMPROVEMENT_BONUS
-        else:
-            self.brainparts.get("HPC").attitudes[other] += value
+    def improve_attitudes_toward_me(self):
+        arr = self.collective.world_attitudes[:, self.person.id]
+        arr = np.where(arr > 0, arr + Hippocampus.ATTITUDE_IMPROVEMENT_BONUS, arr)
+        self.collective.world_attitudes[:, self.person.id] = arr
 
-    def update_positives(self):
-        self.brainparts.get("HPC").update_positives()
+    # def update_location_history(self):
+    #     self.brainparts.get("HPC").location_history.append(self.person.location)
+    #
+    # def get_location_history(self):
+    #     return self.brainparts.get("HPC").location_history
+
+    def is_friendly(self):
+        return np.max(self.collective.world_attitudes[self.id]) > 0
 
 
 class BrainPart:
@@ -168,9 +179,12 @@ class PrefrontalCortex(BrainPart):
 
     def __init__(self, person):
         super().__init__()
+
+        input_num = 6 + PrefrontalCortex.CHOICE_NUM * 3
+
         model = NeuralNetwork()
-        model.add_layer(12, input_num=12, activation='relu')  # inp layer (1)
-        model.add_layer(6, input_num=12, activation='relu')  # hidden layer (2)
+        model.add_layer(input_num, input_num=input_num, activation='relu')  # input layer (1)
+        model.add_layer(6, input_num=input_num, activation='relu')  # hidden layer (2)
         model.add_layer(4, input_num=6, activation='relu')  # hidden layer (3)
         model.add_layer(PrefrontalCortex.CHOICE_NUM, input_num=4, activation='softmax')  # output layer (4)
 
@@ -183,7 +197,7 @@ class PrefrontalCortex(BrainPart):
     ):
         if random.random() > PrefrontalCortex.CHOICE_RANDOMALIZER:
             # this list is for convinience, to know what does each index of option means.
-            # choices = ["social connection", "strength"]
+            # choices = ["social connection", "strength", "location"]
 
             # flatten histories & prepare input
             neural_input = [gender, age, strength, pregnancy, biowatch, readiness]
@@ -202,7 +216,14 @@ class PrefrontalCortex(BrainPart):
 
             return np.argmax(output_prob)
         else:
-            return random.randint(0, PrefrontalCortex.CHOICE_NUM - 1)
+            r = random.random()
+            # Calculate the slice index
+            choice_index = int(np.floor(r * PrefrontalCortex.CHOICE_NUM))
+
+            # Adjust the slice index if the random number falls exactly on a slice boundary
+            if r == choice_index / PrefrontalCortex.CHOICE_NUM:
+                choice_index -= 1
+            return choice_index
 
 
 class Amygdala(BrainPart):
@@ -226,7 +247,7 @@ class Amygdala(BrainPart):
         my_strength = self.person.strength
         if my_gender == 0:
             my_pregnancy = self.person.pregnancy
-            my_biowatch = self.person.biowatch
+            my_biowatch = self.person.youngness
         else:
             my_pregnancy = 0
             my_biowatch = 0
@@ -238,7 +259,7 @@ class Amygdala(BrainPart):
         other_strength = other.strength
         if other_gender == 0:
             other_pregnancy = other.pregnancy
-            other_biowatch = other.biowatch
+            other_biowatch = other.youngness
         else:
             other_pregnancy = 0
             other_biowatch = 0
@@ -278,27 +299,16 @@ class Hippocampus(BrainPart):
         self.person = person
 
         self.history = np.zeros(120 * 12, dtype=int)
+        # self.location_history = []
 
         self.dead_impressions = {}
         self.first_impressions = {}
-        self.positives = []
-
-    def update_positives(self):
-        self.positives = []
-        attitudes = self.attitudes.copy()
-        for person, value in attitudes.items():
-            if person.isAlive:
-                if value > 0:
-                    self.positives.append(person)
-            else:
-                self.dead_impressions[person] = value
-                self.attitudes.pop(person)
 
 
 def get_choice_nodes(choice):
     """Returns a list of zeroes with 1 at the index of the choice - 1, or no 1 at all if 0 is supplied"""
 
-    nodes = [0 for _ in range(2)]
+    nodes = [0 for _ in range(PrefrontalCortex.CHOICE_NUM)]
     if choice:
         nodes[choice - 1] = 1
     return nodes
