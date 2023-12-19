@@ -15,7 +15,7 @@ class Simulation:
         self.Adam = Person(father=[Gender.Male, 100], collective=self.collective)
         self.Eve = Person(father=[Gender.Female, 100], collective=self.collective)
         self.Population: list[Person] = [self.Adam, self.Eve]
-        self.collective.add_first_person(self.Adam)
+        self.collective.add_person(self.Adam)
         self.collective.add_person(self.Eve)
         self.Adam.brain.get_first_impression(self.Eve)
         self.Eve.brain.get_first_impression(self.Adam)

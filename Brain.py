@@ -4,6 +4,9 @@ from Neural_Network import NeuralNetwork
 
 
 class Collective:
+    # Collective Constants:
+    BASIC_POPULATION = 1000
+
     # brainpart constants:
     INHERITANCE_RATIO = 0.5
     MUTATION_RATIO = 0.2
@@ -20,19 +23,15 @@ class Collective:
 
     def __init__(self):
         self.population_size = 0
-        self.world_attitudes = np.array([[]], dtype=float)
+        self.world_attitudes = np.zeros((Collective.BASIC_POPULATION, Collective.BASIC_POPULATION), dtype=float)
         self.historical_population = []
-
-    def add_first_person(self, person):
-        self.historical_population.append(person)
-        self.world_attitudes = np.array([[0]], dtype=float)
-        self.population_size = 1
 
     def add_person(self, person):
         self.historical_population.append(person)
-        new_world_attitudes = np.zeros((self.population_size + 1, self.population_size + 1))
-        new_world_attitudes[:self.population_size, :self.population_size] = self.world_attitudes
-        self.world_attitudes = new_world_attitudes
+        if self.population_size >= Collective.BASIC_POPULATION:
+            new_world_attitudes = np.zeros((self.population_size + 1, self.population_size + 1))
+            new_world_attitudes[:self.population_size, :self.population_size] = self.world_attitudes
+            self.world_attitudes = new_world_attitudes
         self.population_size += 1
 
 
