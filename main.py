@@ -25,41 +25,40 @@ class Simulation:
         self.Pregnant_Women = []
 
     # @jit(target_backend='cuda')
-    # noinspection PyShadowingNames
     def month_advancement(self):
         self.Time += 1
         newborns = []
 
         # Person.ages[:Person.runningID] += 1 // might decide to transfer it to this format later
 
-        for idx, person in enumerate(self):
-            person: Person
-            Person.ages[person.id] += 1
+        for idx, p in enumerate(self):
+            p: Person
+            Person.ages[p.id] += 1
 
             #  - handle pregnancy
-            if person.gender == Gender.Female:
-                if person.father_of_child is not None:
-                    if person.pregnancy == 9:
-                        newborn = person.birth()
+            if p.gender == Gender.Female:
+                if p.father_of_child is not None:
+                    if p.pregnancy == 9:
+                        newborn = p.birth()
                         newborns.append(newborn)
                     else:
-                        person.pregnancy += 1
-                elif person.age() > person.readiness and person.youngness > 0:
-                    person.youngness -= 1
+                        p.pregnancy += 1
+                elif p.age() > p.readiness and p.youngness > 0:
+                    p.youngness -= 1
 
-            person.aging()  # handles old people's aging process.
+            p.aging()  # handles old people's aging process.
 
             # handle growing up
-            if person.year() < 15:
-                person.strength += 0.25
+            if p.year() < 15:
+                p.strength += 0.25
 
-            if person.natural_death_chance() and self.Time > Simulation.IMMUNITY_TIME:
-                self.Population.remove(person)
-                person.isAlive = False
-                if person.partner:
-                    person.partner.partner = None
+            if p.natural_death_chance() and self.Time > Simulation.IMMUNITY_TIME:
+                self.Population.remove(p)
+                p.isAlive = False
+                if p.partner:
+                    p.partner.partner = None
                 continue
-            person.action()
+            p.action()
 
         for social_connector in Person.social_connectors:
             social_connector: Person

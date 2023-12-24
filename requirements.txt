@@ -6,3 +6,4 @@ seaborn~=0.13.0
 geopandas~=0.14.1
 earthpy~=0.9.4
 shapely~=2.0.2
+imageio~=2.33.0
