@@ -7,3 +7,5 @@ geopandas~=0.14.1
 earthpy~=0.9.4
 shapely~=2.0.2
 imageio~=2.33.0
+scipy~=1.11.4
+cartopy~=0.22
