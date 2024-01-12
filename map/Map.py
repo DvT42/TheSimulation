@@ -22,7 +22,7 @@ class Map:
                   8: ([249, 178, 51, 255], "Savanna"),
                   9: ([249, 74, 0, 255], "Desert"),
                   10: ([214, 37, 255, 255], "mediterranean")}
-    BIOME_MAP_PATH = BASE_PATH + r"\map\only_biome_map.png"
+    BIOME_MAP_PATH = BASE_PATH + r"\only_biome_map.png"
 
     def __init__(self):
         self.points = []
