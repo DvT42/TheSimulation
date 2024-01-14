@@ -10,11 +10,12 @@ class Collective:
     # brainpart constants:
     INHERITANCE_RATIO = 0.5
     MUTATION_RATIO = 0.2
-    MUTATION_NORMALIZATION_RATIO = 0.01
+    MUTATION_NORMALIZATION_RATIO = 0.3
 
     # PFC constants
-    CHOICE_RANDOMIZER = 0.3
+    CHOICE_RANDOMIZER = 0.0
     CHOICE_NUM = 2
+    AGE_BIAS = 0
 
     # HPC constants
     SHOULD_PROBABLY_BE_DEAD = 120 * 12
@@ -44,12 +45,12 @@ class Brain:
                            "AMG": Amygdala(self.person),
                            "HPC": Hippocampus(self.person)}
 
-    def inherit(self, person):
-        for key, brainpart in self.brainparts.items():
-            if brainpart.model:
-                new_weights, new_biases = brainpart.gene_inheritance(person, key)
-                brainpart.model.set_weights(new_weights)
-                brainpart.model.set_biases(new_biases)
+    # def inherit(self, person):
+    #     for key, brainpart in self.brainparts.items():
+    #         if brainpart.model:
+    #             new_weights, new_biases = brainpart.gene_inheritance(person, key)
+    #             brainpart.model.set_weights(new_weights)
+    #             brainpart.model.set_biases(new_biases)
 
     def evolve(self):  # Evolvement currently on hold
         for brainpart in self.brainparts.values():
@@ -131,7 +132,7 @@ class BrainPart:
         self.model = None
 
     def gene_inheritance(self, person, part: str):
-        if self.model:
+        if not person.isManual:
             father_weights = person.father.brain.brainparts.get(part).model.get_weights()
             mother_weights = person.mother.brain.brainparts.get(part).model.get_weights()
             father_biases = person.father.brain.brainparts.get(part).model.get_biases()
@@ -147,7 +148,7 @@ class BrainPart:
             for lnum, layer_biases in enumerate(new_biases):
                 for index, value in np.ndenumerate(layer_biases):
                     if random.uniform(0, 1) < BrainPart.INHERITENCE_RATIO:
-                        new_weights[lnum][index] = mother_biases[lnum][index]
+                        new_biases[lnum][index] = mother_biases[lnum][index]
 
             for layer_weights in new_weights:
                 layer_weights += BrainPart.MUTATION_NORMALIZATION_RATIO * np.random.randn(*np.shape(layer_weights))
@@ -155,15 +156,17 @@ class BrainPart:
                 layer_biases += BrainPart.MUTATION_NORMALIZATION_RATIO * np.random.randn(*np.shape(layer_biases))
 
             return new_weights, new_biases
+        else:
+            return self.model.get_weights(), self.model.get_biases()
 
     def evolvement(self):
         if self.model:
-            new_weights: list[np.ndarray] = self.model.get_weights()
+            new_weights = np.asarray(self.model.get_weights())
 
             for matrix in new_weights[::2]:
                 matrix += np.array(
                     [[(random.uniform(-0.01, 0.01) if random.random() < 0.2 else 0) for _ in range(matrix.shape[1])]
-                    for _ in range(matrix.shape[0])]
+                     for _ in range(matrix.shape[0])]
                 )
 
             self.model.set_weights(new_weights)
@@ -173,8 +176,9 @@ class PrefrontalCortex(BrainPart):
     """
     That is the part in the brain that is responsible for making decisions.
     """
-    CHOICE_RANDOMALIZER = Collective.CHOICE_RANDOMIZER
+    CHOICE_RANDOMIZER = Collective.CHOICE_RANDOMIZER
     CHOICE_NUM = Collective.CHOICE_NUM
+    AGE_BIAS = Collective.AGE_BIAS
 
     def __init__(self, person):
         super().__init__()
@@ -183,19 +187,27 @@ class PrefrontalCortex(BrainPart):
 
         model = NeuralNetwork()
         model.add_layer(input_num, input_num=input_num, activation='relu')  # input layer (1)
-        model.add_layer(6, input_num=input_num, activation='relu')  # hidden layer (2)
-        model.add_layer(4, input_num=6, activation='relu')  # hidden layer (3)
-        model.add_layer(PrefrontalCortex.CHOICE_NUM, input_num=4, activation='softmax')  # output layer (4)
+        model.add_layer(12, input_num=input_num, activation='relu')  # hidden layer (2)
+        model.add_layer(6, input_num=12, activation='relu')  # hidden layer (3)
+        model.add_layer(PrefrontalCortex.CHOICE_NUM, input_num=6, activation='softmax')  # output layer (4)
 
         self.person = person
         self.model = model
+
+        new_weights, new_biases = super().gene_inheritance(person, "PFC")
+        self.model.set_weights(new_weights)
+        self.model.set_biases(new_biases)
+
+        age_bias = model.layers[0].biases[0, 1]
+        if age_bias < PrefrontalCortex.AGE_BIAS:
+            model.layers[0].biases[0, 1] = PrefrontalCortex.AGE_BIAS
 
     def decision_making(
             self, gender, age, strength, pregnancy, biowatch, readiness, previous_choice, father_choice,
             mother_choice
     ):
-        if random.random() > PrefrontalCortex.CHOICE_RANDOMALIZER:
-            # this list is for convinience, to know what does each index of option means.
+        if random.random() > PrefrontalCortex.CHOICE_RANDOMIZER:
+            # this list is for convenience, to know what does each index of option means.
             # choices = ["social connection", "strength", "location"]
 
             # flatten histories & prepare input
@@ -238,6 +250,10 @@ class Amygdala(BrainPart):
         model.add_layer(4, input_num=16, activation='relu')  # hidden layer (2)
         model.add_layer(1, input_num=4, activation='sigmoid')  # output layer (3)
         self.model = model
+
+        new_weights, new_biases = self.gene_inheritance(person, "AMG")
+        self.model.set_weights(new_weights)
+        self.model.set_biases(new_biases)
 
     def prepare_neural_input(self, other):
         # prepare the person's attributes.

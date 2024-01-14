@@ -22,6 +22,7 @@ class Person:
     def __init__(self, collective, father, mother=None):
         # ID assignment
         self.isAlive = True
+        self.isManual = type(father) is list
         self.id = Person.runningID
         Person.runningID += 1
 
@@ -44,7 +45,6 @@ class Person:
         # Attributes that depend on the parents:
         # - standard creation
         if type(father) is Person:
-            self.isManual = False
             self.fatherID = father.id
             self.motherID = mother.id
 
@@ -53,16 +53,11 @@ class Person:
                     (father.starting_strength + mother.starting_strength) // 4 + int(random.normalvariate(50, 10)))
             self.strength = self.starting_strength // 10
 
-            # inherit parents' brain
-            self.brain.inherit(self)
-
             # get born in the mother's place
             # self.location = mother.location
 
         # - Manual creation
         else:
-            self.isManual = True
-
             # [0]
             self.gender = father[0]
 
@@ -119,7 +114,7 @@ class Person:
             self.strength += 0.5
             self.brain.set_history(self.age(), 2)
         # if decision == 2:
-        #     # (function that chcks the best place within range)
+        #     # (function that checks the best place within range)
         #
         #     self.location[random.randint(0, 1)] += int(Person.RANGE * random.uniform(-1, 1))
         #     self.brain.update_location_history()
