@@ -12,16 +12,16 @@ import earthpy as et
 class Map:
     BASE_PATH = os.path.dirname(os.path.abspath("__file__"))
     BIOME_LEGEND = {0: ([0, 110, 184, 255], "Sea"),
-                  1: ([255, 255, 255, 255], "Ice"),
-                  2: ([191, 160, 234, 255], "Tundra"),
-                  3: ([0, 84, 0, 255], "Taiga"),
-                  4: ([154, 37, 7, 255], "Montane"),
-                  5: ([69, 177, 69, 255], "Forest"),
-                  6: ([0, 255, 0, 255], "Tropical Rainforest"),
-                  7: ([255, 255, 0, 255], "Steppe"),
-                  8: ([249, 178, 51, 255], "Savanna"),
-                  9: ([249, 74, 0, 255], "Desert"),
-                  10: ([214, 37, 255, 255], "mediterranean")}
+                    1: ([255, 255, 255, 255], "Ice"),
+                    2: ([191, 160, 234, 255], "Tundra"),
+                    3: ([0, 84, 0, 255], "Taiga"),
+                    4: ([154, 37, 7, 255], "Montane"),
+                    5: ([69, 177, 69, 255], "Forest"),
+                    6: ([0, 255, 0, 255], "Tropical Rainforest"),
+                    7: ([255, 255, 0, 255], "Steppe"),
+                    8: ([249, 178, 51, 255], "Savanna"),
+                    9: ([249, 74, 0, 255], "Desert"),
+                    10: ([214, 37, 255, 255], "mediterranean")}
     BIOME_MAP_PATH = BASE_PATH + r"\only_biome_map.png"
 
     def __init__(self):
@@ -74,10 +74,10 @@ class Map:
                   zorder=0)
 
         self.bbox.plot(ax=ax,
-                           alpha=.1,
-                           color='grey')
+                       alpha=.1,
+                       color='grey')
         self.graticule.plot(ax=ax,
-                                color='lightgrey')
+                            color='lightgrey')
         # worldBound.plot(ax=ax,
         #                       alpha=0.5,
         #                       cmap='Greys')
