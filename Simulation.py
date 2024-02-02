@@ -9,6 +9,7 @@ class Simulation:
 
     def __init__(self):
         self.collective = Collective()
+        Person.runningID = 0
 
         self.Adam = Person(father=[Gender.Male, 100], collective=self.collective)
         self.Eve = Person(father=[Gender.Female, 100], collective=self.collective)

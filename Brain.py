@@ -94,10 +94,10 @@ class Brain:
     def get_attitudes(self, other=None):
         if other:
             return self.collective.world_attitudes[self.id, other.id]
-        return self.collective.world_attitudes[self.id]
+        return self.collective.world_attitudes[self.id, :self.collective.population_size]
 
     def improve_my_attitudes(self):
-        self.collective.world_attitudes[self.id] += Collective.ATTITUDE_SELF_IMPROVEMENT_BONUS
+        self.collective.world_attitudes[self.id, :self.collective.population_size] += Collective.ATTITUDE_SELF_IMPROVEMENT_BONUS
 
     def improve_attitudes_toward_me(self):
         arr = self.collective.world_attitudes[:, self.person.id]

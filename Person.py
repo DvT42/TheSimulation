@@ -128,19 +128,20 @@ class Person:
 
     def is_possible_partner(self, other):
         if self.gender != other.gender and not other.partner and abs(self.age() - other.age()) < Person.DIFF_AGE:
-            if self.age() > self.readiness and other.age() > other.readiness:
+            if other.age() > other.readiness:
                 if self.brain.get_attitudes(other) > 0.7 and other.brain.get_attitudes(self) > 0.7:
                     return True
         return False
 
     def partner_selection(self):
-        arr: np.ndarray = np.copy(self.collective.world_attitudes[self.id])
-        while arr.any():
-            other = self.collective.historical_population[np.argmax(arr)]
-            if self.is_possible_partner(other):
-                return other
-            arr[np.argmax(arr)] = 0
-        return None
+        if self.age() > self.readiness:
+            arr: np.ndarray = np.copy(self.collective.world_attitudes[self.id, :self.collective.population_size])
+            while arr.any():
+                other = self.collective.historical_population[np.argmax(arr)]
+                if self.is_possible_partner(other):
+                    return other
+                arr[np.argmax(arr)] = 0
+            return None
 
     # Override of the conversion to string
     def __repr__(self):
