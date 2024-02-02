@@ -13,9 +13,8 @@ class Collective:
     MUTATION_NORMALIZATION_RATIO = 0.3
 
     # PFC constants
-    CHOICE_RANDOMIZER = 0.0
+    CHOICE_RANDOMIZER = 0.1
     CHOICE_NUM = 2
-    AGE_BIAS = 0
 
     # HPC constants
     SHOULD_PROBABLY_BE_DEAD = 120 * 12
@@ -44,13 +43,6 @@ class Brain:
         self.brainparts = {"PFC": PrefrontalCortex(self.person),
                            "AMG": Amygdala(self.person),
                            "HPC": Hippocampus(self.person)}
-
-    # def inherit(self, person):
-    #     for key, brainpart in self.brainparts.items():
-    #         if brainpart.model:
-    #             new_weights, new_biases = brainpart.gene_inheritance(person, key)
-    #             brainpart.model.set_weights(new_weights)
-    #             brainpart.model.set_biases(new_biases)
 
     def evolve(self):  # Evolvement currently on hold
         for brainpart in self.brainparts.values():
@@ -166,7 +158,7 @@ class BrainPart:
             for matrix in new_weights[::2]:
                 matrix += np.array(
                     [[(random.uniform(-0.01, 0.01) if random.random() < 0.2 else 0) for _ in range(matrix.shape[1])]
-                     for _ in range(matrix.shape[0])]
+                    for _ in range(matrix.shape[0])]
                 )
 
             self.model.set_weights(new_weights)
@@ -178,7 +170,6 @@ class PrefrontalCortex(BrainPart):
     """
     CHOICE_RANDOMIZER = Collective.CHOICE_RANDOMIZER
     CHOICE_NUM = Collective.CHOICE_NUM
-    AGE_BIAS = Collective.AGE_BIAS
 
     def __init__(self, person):
         super().__init__()
@@ -197,10 +188,6 @@ class PrefrontalCortex(BrainPart):
         new_weights, new_biases = super().gene_inheritance(person, "PFC")
         self.model.set_weights(new_weights)
         self.model.set_biases(new_biases)
-
-        age_bias = model.layers[0].biases[0, 1]
-        if age_bias < PrefrontalCortex.AGE_BIAS:
-            model.layers[0].biases[0, 1] = PrefrontalCortex.AGE_BIAS
 
     def decision_making(
             self, gender, age, strength, pregnancy, biowatch, readiness, previous_choice, father_choice,
