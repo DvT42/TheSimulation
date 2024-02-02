@@ -143,6 +143,12 @@ class Person:
                 arr[np.argmax(arr)] = 0
             return None
 
+    @staticmethod
+    def Person_reset():
+        Person.runningID = 0
+        Person.ages = np.zeros(Person.MAX_POPULATION, dtype=int)
+        Person.ages[0], Person.ages[1] = 20 * 12, 20 * 12
+
     # Override of the conversion to string
     def __repr__(self):
         # basic information
