@@ -6,20 +6,28 @@ class Simulation:
     MARRIAGE_AGE = 12 * 12
     SHOULD_PROBABLY_BE_DEAD = 120 * 12
     IMMUNITY_TIME = 10 * 12
+    INITIAL_COUPLES = 5
 
     def __init__(self):
         self.collective = Collective()
         Person.Person_reset()
+        self.Population: list[Person] = []
+        self.History: list[Person] = []
 
-        self.Adam = Person(father=[Gender.Male, 100], collective=self.collective)
-        self.Eve = Person(father=[Gender.Female, 100], collective=self.collective)
-        self.Population: list[Person] = [self.Adam, self.Eve]
-        self.collective.add_person(self.Adam)
-        self.collective.add_person(self.Eve)
-        self.Adam.brain.get_first_impression(self.Eve)
-        self.Eve.brain.get_first_impression(self.Adam)
+        for i in range(Simulation.INITIAL_COUPLES):
+            self.Population.extend([Person(father=[Gender.Male, 100], collective=self.collective),
+                                    Person(father=[Gender.Female, 100], collective=self.collective)])
+        for idx, p in enumerate(self.Population):
+            self.collective.add_person(p)
+            self.collective.add_person(p)
+            self.History.append(p)
+            Person.ages[idx] = 20*12
 
-        self.History = [self.Adam, self.Eve]
+        for i in self.Population:
+            for j in self.Population:
+                if j is not i:
+                    i.brain.get_first_impression(j)
+
         self.Time = 0
         self.Pregnant_Women = []
 
