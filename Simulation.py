@@ -1,3 +1,5 @@
+import numpy as np
+
 from Brain import Collective
 from Person import Person, Gender
 
@@ -6,22 +8,36 @@ class Simulation:
     MARRIAGE_AGE = 12 * 12
     SHOULD_PROBABLY_BE_DEAD = 120 * 12
     IMMUNITY_TIME = 10 * 12
-    INITIAL_COUPLES = 5
+    INITIAL_COUPLES = 2
 
-    def __init__(self):
+    def __init__(self, imported=None):
         self.collective = Collective()
-        Person.Person_reset()
+        Person.Person_reset(Simulation.INITIAL_COUPLES)
+
         self.Population: list[Person] = []
         self.History: list[Person] = []
 
-        for i in range(Simulation.INITIAL_COUPLES):
-            self.Population.extend([Person(father=[Gender.Male, 100], collective=self.collective),
-                                    Person(father=[Gender.Female, 100], collective=self.collective)])
-        for idx, p in enumerate(self.Population):
+        if imported:
+            for brain_couple in imported:
+                m = Person(father=[Gender.Male, 100], collective=self.collective)
+                m.brain = brain_couple[0]
+                brain_couple[0].transfer_brain(m)
+
+                f = Person(father=[Gender.Female, 100], collective=self.collective)
+                f.brain = brain_couple[1]
+                brain_couple[1].transfer_brain(f)
+
+                self.Population.extend([m, f])
+
+        else:
+            for i in range(Simulation.INITIAL_COUPLES):
+                self.Population.extend([Person(father=[Gender.Male, 100], collective=self.collective),
+                                        Person(father=[Gender.Female, 100], collective=self.collective)])
+
+        for p in self.Population:
             self.collective.add_person(p)
             self.collective.add_person(p)
             self.History.append(p)
-            Person.ages[idx] = 20*12
 
         for i in self.Population:
             for j in self.Population:
@@ -102,6 +118,25 @@ class Simulation:
 
     def get_attitudes(self, id):
         return self.History[id].collective.world_attitudes[id]
+
+    def evaluate(self):
+        return ([person.child_num for person in self.History], Person.ages[:len(self.History)],
+                                                              [p.gender for p in self.History])
+
+    def find_best_minds(self):
+        children, ages, genders = self.evaluate()
+        best_minds = []
+        his = np.swapaxes(np.array([np.arange(len(self.History)), genders, children, ages]), 0, 1)
+        sorted_idx = np.lexsort((his[:, 3], his[:, 2], his[:, 1]))
+        sorted_his = np.array([his[i] for i in sorted_idx])
+
+        gender_idx = np.argmax(sorted_his[:, 1])
+        male_lst, female_lst = sorted_his[gender_idx:], sorted_his[:gender_idx]
+
+        for i in range(self.INITIAL_COUPLES):
+            best_minds.append((self.History[male_lst[-i][0]].brain, self.History[female_lst[-i][0]].brain))
+
+        return best_minds
 
     def __iter__(self):
         return (p for p in self.Population)

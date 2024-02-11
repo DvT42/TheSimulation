@@ -40,9 +40,15 @@ class Brain:
         self.person = person
         self.collective = collective
         self.id = person.id
-        self.brainparts = {"PFC": PrefrontalCortex(self.person),
-                           "AMG": Amygdala(self.person),
-                           "HPC": Hippocampus(self.person)}
+        self.brainparts = {"PFC": PrefrontalCortex(),
+                           "AMG": Amygdala(),
+                           "HPC": Hippocampus()}
+
+        for part, bp in self.brainparts.items():
+            if bp.model:
+                new_weights, new_biases = bp.gene_inheritance(self.person, part)
+                bp.model.set_weights(new_weights)
+                bp.model.set_biases(new_biases)
 
     def evolve(self):  # Evolvement currently on hold
         for brainpart in self.brainparts.values():
@@ -58,18 +64,18 @@ class Brain:
         if self.person.isManual:
             return self.brainparts.get("PFC").decision_making(
                 self.person.gender, self.person.age(), self.person.strength, preg, youngness, self.person.readiness,
-                self.get_action_from_history(self.person.age() - 1), 0, 0
+                self.person.child_num, self.get_action_from_history(self.person.age() - 1), 0, 0
             )
         else:
             return self.brainparts.get("PFC").decision_making(
                 self.person.gender, self.person.age(), self.person.strength, preg, youngness, self.person.readiness,
-                self.get_action_from_history(self.person.age() - 1),
+                self.person.child_num, self.get_action_from_history(self.person.age() - 1),
                 self.person.father.brain.get_action_from_history(self.person.age()),
                 self.person.mother.brain.get_action_from_history(self.person.age())
             )
 
     def get_first_impression(self, other):
-        impression = self.brainparts.get("AMG").first_impression(other)
+        impression = self.brainparts.get("AMG").first_impression(self.person, other)
 
         self.brainparts.get("HPC").first_impressions[other] = impression
         self.collective.world_attitudes[self.id, other.id] = impression
@@ -112,6 +118,10 @@ class Brain:
 
     def is_friendly(self):
         return np.max(self.collective.world_attitudes[self.id]) > 0
+
+    def transfer_brain(self, new_person):
+        self.person = new_person
+        self.id = new_person.id
 
 
 class BrainPart:
@@ -171,10 +181,10 @@ class PrefrontalCortex(BrainPart):
     CHOICE_RANDOMIZER = Collective.CHOICE_RANDOMIZER
     CHOICE_NUM = Collective.CHOICE_NUM
 
-    def __init__(self, person):
+    def __init__(self):
         super().__init__()
 
-        input_num = 6 + PrefrontalCortex.CHOICE_NUM * 3
+        input_num = 7 + PrefrontalCortex.CHOICE_NUM * 3
 
         model = NeuralNetwork()
         model.add_layer(input_num, input_num=input_num, activation='relu')  # input layer (1)
@@ -182,15 +192,10 @@ class PrefrontalCortex(BrainPart):
         model.add_layer(6, input_num=12, activation='relu')  # hidden layer (3)
         model.add_layer(PrefrontalCortex.CHOICE_NUM, input_num=6, activation='softmax')  # output layer (4)
 
-        self.person = person
         self.model = model
 
-        new_weights, new_biases = super().gene_inheritance(person, "PFC")
-        self.model.set_weights(new_weights)
-        self.model.set_biases(new_biases)
-
     def decision_making(
-            self, gender, age, strength, pregnancy, biowatch, readiness, previous_choice, father_choice,
+            self, gender, age, strength, pregnancy, biowatch, readiness, child_num, previous_choice, father_choice,
             mother_choice
     ):
         if random.random() > PrefrontalCortex.CHOICE_RANDOMIZER:
@@ -198,7 +203,7 @@ class PrefrontalCortex(BrainPart):
             # choices = ["social connection", "strength", "location"]
 
             # flatten histories & prepare input
-            neural_input = [gender, age, strength, pregnancy, biowatch, readiness]
+            neural_input = [gender, age, strength, pregnancy, biowatch, readiness, child_num]
 
             neural_input.extend(get_choice_nodes(previous_choice))
             neural_input.extend(get_choice_nodes(father_choice))
@@ -228,9 +233,8 @@ class Amygdala(BrainPart):
     """
     The part of the brain responsible for first impression.
     """
-    def __init__(self, person):
+    def __init__(self):
         super().__init__()
-        self.person = person
 
         model = NeuralNetwork()
         model.add_layer(16, input_num=16, activation='relu')  # inp layer (1)
@@ -238,22 +242,19 @@ class Amygdala(BrainPart):
         model.add_layer(1, input_num=4, activation='sigmoid')  # output layer (3)
         self.model = model
 
-        new_weights, new_biases = self.gene_inheritance(person, "AMG")
-        self.model.set_weights(new_weights)
-        self.model.set_biases(new_biases)
-
-    def prepare_neural_input(self, other):
+    @staticmethod
+    def prepare_neural_input(person, other):
         # prepare the person's attributes.
-        my_gender = int(self.person.gender)
-        my_age = int(self.person.age())
-        my_strength = self.person.strength
+        my_gender = int(person.gender)
+        my_age = int(person.age())
+        my_strength = person.strength
         if my_gender == 0:
-            my_pregnancy = self.person.pregnancy
-            my_biowatch = self.person.youngness
+            my_pregnancy = person.pregnancy
+            my_biowatch = person.youngness
         else:
             my_pregnancy = 0
             my_biowatch = 0
-        my_readiness = self.person.readiness
+        my_readiness = person.readiness
 
         # prepare the other person's attributes.
         other_gender = int(other.gender)
@@ -282,8 +283,8 @@ class Amygdala(BrainPart):
 
         return neural_input
 
-    def first_impression(self, other):
-        neural_input = self.prepare_neural_input(other)
+    def first_impression(self, person, other):
+        neural_input = self.prepare_neural_input(person, other)
         output_prob: np.ndarray = self.model.feed(neural_input)
 
         return output_prob[0][0]
@@ -296,9 +297,8 @@ class Hippocampus(BrainPart):
     SHOULD_PROBABLY_BE_DEAD = Collective.SHOULD_PROBABLY_BE_DEAD
     ATTITUDE_IMPROVEMENT_BONUS = Collective.ATTITUDE_IMPROVEMENT_BONUS
 
-    def __init__(self, person):
+    def __init__(self):
         super().__init__()
-        self.person = person
 
         self.history = np.zeros(120 * 12, dtype=int)
         # self.location_history = []

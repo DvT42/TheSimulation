@@ -102,7 +102,7 @@ class Map:
     def analyze_biome_map(map_path):
         num_map = imageio.v3.imread(map_path)
         legend = Map.BIOME_LEGEND
-        bins = np.array([biome[0] for key, biome in legend.items()], dtype=int)
+        bins = np.array(legend.values(), dtype=int)
         processed_map = num_map
         biome_map = np.zeros(shape=(800, 1600), dtype=int)
         for i, line in enumerate(num_map):

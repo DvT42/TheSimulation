@@ -34,16 +34,18 @@ class ControlBoard:
 
     @staticmethod
     def exact_skip(sim: Simulation, num: int, failsafe: bool = True, recursion_flag=False):
-        for i in ProgressBar(num):
+        dest_time = sim.Time + num
+        for _ in ProgressBar(num):
             sim.month_advancement()
             if sim.is_eradicated():
-                if failsafe:
-                    time = sim.Time
-                    sim = Simulation()
-                    sim = ControlBoard.exact_skip(sim, num=time, recursion_flag=True)
-                else:
-                    sim.display()
-                    return None
+                break
+        if sim.Time < dest_time:
+            if failsafe:
+                sim = Simulation(imported=sim.find_best_minds())
+                sim = ControlBoard.exact_skip(sim, num=dest_time, recursion_flag=True)
+            else:
+                sim.display()
+                return None
         if not recursion_flag:
             sim.display()
         return sim

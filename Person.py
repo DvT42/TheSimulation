@@ -41,6 +41,7 @@ class Person:
         self.brain = Brain(self, collective)
 
         self.partner = None
+        self.child_num = 0
 
         # Attributes that depend on the parents:
         # - standard creation
@@ -92,9 +93,13 @@ class Person:
                 other.partner = self
 
     def birth(self):
-        f = self.father_of_child
+        f: Person = self.father_of_child
         self.father_of_child = None
+
         self.pregnancy = 0
+        self.child_num += 1
+        f.child_num += 1
+
         return Person(collective=self.collective, father=f, mother=self)
 
     def natural_death_chance(self):
@@ -144,10 +149,10 @@ class Person:
             return None
 
     @staticmethod
-    def Person_reset():
+    def Person_reset(initial_couples):
         Person.runningID = 0
         Person.ages = np.zeros(Person.MAX_POPULATION, dtype=int)
-        Person.ages[0], Person.ages[1] = 20 * 12, 20 * 12
+        Person.ages[:initial_couples * 2] = 20 * 12
 
     # Override of the conversion to string
     def __repr__(self):
