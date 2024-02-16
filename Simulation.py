@@ -1,7 +1,5 @@
-import numpy as np
-
-from Brain import Collective
-from Person import Person, Gender
+from Brain import *
+from Person import *
 
 
 class Simulation:
@@ -136,6 +134,20 @@ class Simulation:
             best_minds.append((self.History[male_lst[-i][0]].brain, self.History[female_lst[-i][0]].brain))
 
         return best_minds
+
+    @staticmethod
+    def assemble_brains(neural_list):
+        brain_couples = []
+        for models_couple in neural_list:
+            brain_couples.append((Brain(models=models_couple[0]), Brain(models=models_couple[1])))
+        return brain_couples
+
+    @staticmethod
+    def disassemble_brains(brain_couples):
+        neural_list = []
+        for brain_couple in brain_couples:
+            neural_list.append((brain_couple[0].get_models(), brain_couple[1].get_models()))
+        return neural_list
 
     def __iter__(self):
         return (p for p in self.Population)

@@ -36,19 +36,27 @@ class Collective:
 
 
 class Brain:
-    def __init__(self, person, collective):
+    def __init__(self, person=None, collective=None, models=None):
         self.person = person
         self.collective = collective
-        self.id = person.id
-        self.brainparts = {"PFC": PrefrontalCortex(),
-                           "AMG": Amygdala(),
-                           "HPC": Hippocampus()}
 
-        for part, bp in self.brainparts.items():
-            if bp.model:
-                new_weights, new_biases = bp.gene_inheritance(self.person, part)
-                bp.model.set_weights(new_weights)
-                bp.model.set_biases(new_biases)
+        if person and collective:
+            self.id = person.id
+            self.brainparts = {"PFC": PrefrontalCortex(),
+                               "AMG": Amygdala(),
+                               "HPC": Hippocampus()}
+
+            for part, bp in self.brainparts.items():
+                if bp.model:
+                    new_weights, new_biases = bp.gene_inheritance(self.person, part)
+                    bp.model.set_weights(new_weights)
+                    bp.model.set_biases(new_biases)
+
+        elif models:
+            self.id = None
+            self.brainparts = {"PFC": PrefrontalCortex(models[0]),
+                               "AMG": Amygdala(models[1]),
+                               "HPC": Hippocampus()}
 
     def evolve(self):  # Evolvement currently on hold
         for brainpart in self.brainparts.values():
@@ -125,6 +133,9 @@ class Brain:
         self.id = new_person.id
         self.brainparts["HPC"] = Hippocampus()
 
+    def get_models(self):
+        return self.brainparts.get("PFC").model, self.brainparts.get("AMG").model
+
 
 class BrainPart:
 
@@ -170,7 +181,7 @@ class BrainPart:
             for matrix in new_weights[::2]:
                 matrix += np.array(
                     [[(random.uniform(-0.01, 0.01) if random.random() < 0.2 else 0) for _ in range(matrix.shape[1])]
-                    for _ in range(matrix.shape[0])]
+                     for _ in range(matrix.shape[0])]
                 )
 
             self.model.set_weights(new_weights)
@@ -183,18 +194,21 @@ class PrefrontalCortex(BrainPart):
     CHOICE_RANDOMIZER = Collective.CHOICE_RANDOMIZER
     CHOICE_NUM = Collective.CHOICE_NUM
 
-    def __init__(self):
+    def __init__(self, model=None):
         super().__init__()
+        if model:
+            self.model = model
 
-        input_num = 7 + PrefrontalCortex.CHOICE_NUM * 3
+        else:
+            input_num = 7 + PrefrontalCortex.CHOICE_NUM * 3
 
-        model = NeuralNetwork()
-        model.add_layer(input_num, input_num=input_num, activation='relu')  # input layer (1)
-        model.add_layer(12, input_num=input_num, activation='relu')  # hidden layer (2)
-        model.add_layer(6, input_num=12, activation='relu')  # hidden layer (3)
-        model.add_layer(PrefrontalCortex.CHOICE_NUM, input_num=6, activation='softmax')  # output layer (4)
+            model = NeuralNetwork()
+            model.add_layer(input_num, input_num=input_num, activation='relu')  # input layer (1)
+            model.add_layer(12, input_num=input_num, activation='relu')  # hidden layer (2)
+            model.add_layer(6, input_num=12, activation='relu')  # hidden layer (3)
+            model.add_layer(PrefrontalCortex.CHOICE_NUM, input_num=6, activation='softmax')  # output layer (4)
 
-        self.model = model
+            self.model = model
 
     def decision_making(
             self, gender, age, strength, pregnancy, biowatch, readiness, child_num, previous_choice, father_choice,
@@ -235,14 +249,18 @@ class Amygdala(BrainPart):
     """
     The part of the brain responsible for first impression.
     """
-    def __init__(self):
+    def __init__(self, model=None):
         super().__init__()
 
-        model = NeuralNetwork()
-        model.add_layer(16, input_num=16, activation='relu')  # inp layer (1)
-        model.add_layer(4, input_num=16, activation='relu')  # hidden layer (2)
-        model.add_layer(1, input_num=4, activation='sigmoid')  # output layer (3)
-        self.model = model
+        if model:
+            self.model = model
+
+        else:
+            model = NeuralNetwork()
+            model.add_layer(16, input_num=16, activation='relu')  # inp layer (1)
+            model.add_layer(4, input_num=16, activation='relu')  # hidden layer (2)
+            model.add_layer(1, input_num=4, activation='sigmoid')  # output layer (3)
+            self.model = model
 
     @staticmethod
     def prepare_neural_input(person, other):

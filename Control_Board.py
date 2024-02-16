@@ -1,11 +1,29 @@
+import pickle
+
 import tqdm
 from Simulation import Simulation
 
 
 class ControlBoard:
+    SAVED_BRAINS_PATH = 'data/saved brains.pkl'
+
     @staticmethod
     def process_command(sim: Simulation, com: str):
-        if com[0].lower() == 'i':
+        if com.lower() == 'load':
+            del sim
+            with open(ControlBoard.SAVED_BRAINS_PATH, 'rb') as f:
+                models = pickle.load(file=f)
+                brains = Simulation.assemble_brains(models)
+                sim = Simulation(imported=brains)
+                f.close()
+
+        elif com.lower() == 'save':
+            with open(ControlBoard.SAVED_BRAINS_PATH, 'wb') as f:
+                minds_to_pickle = sim.disassemble_brains(sim.find_best_minds())
+                pickle.dump(minds_to_pickle, f)
+                f.close()
+
+        elif com[0].lower() == 'i':
             if com[1].lower() == 'a':
                 print(ControlBoard.info_search(sim, int(com[2:]), is_att=True))
             else:
