@@ -132,10 +132,11 @@ class Person:
                 self.strength -= 1
 
     def is_possible_partner(self, other):
-        if self.gender != other.gender and not other.partner and abs(self.age() - other.age()) < Person.DIFF_AGE:
+        if other.isAlive:
             if other.age() > other.readiness:
-                if self.brain.get_attitudes(other) > 0.7 and other.brain.get_attitudes(self) > 0.7:
-                    return True
+                if self.gender != other.gender and not other.partner and abs(self.age() - other.age()) < Person.DIFF_AGE:
+                    if self.brain.get_attitudes(other) > 0.7 and other.brain.get_attitudes(self) > 0.7:
+                        return True
         return False
 
     def partner_selection(self):

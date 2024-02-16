@@ -121,7 +121,9 @@ class Brain:
 
     def transfer_brain(self, new_person):
         self.person = new_person
+        self.collective = new_person.collective
         self.id = new_person.id
+        self.brainparts["HPC"] = Hippocampus()
 
 
 class BrainPart:

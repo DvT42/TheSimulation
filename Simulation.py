@@ -36,7 +36,6 @@ class Simulation:
 
         for p in self.Population:
             self.collective.add_person(p)
-            self.collective.add_person(p)
             self.History.append(p)
 
         for i in self.Population:

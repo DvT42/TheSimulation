@@ -41,7 +41,9 @@ class ControlBoard:
                 break
         if sim.Time < dest_time:
             if failsafe:
-                sim = Simulation(imported=sim.find_best_minds())
+                new_sim = Simulation(imported=sim.find_best_minds())
+                del sim
+                sim = new_sim
                 sim = ControlBoard.exact_skip(sim, num=dest_time, recursion_flag=True)
             else:
                 sim.display()
