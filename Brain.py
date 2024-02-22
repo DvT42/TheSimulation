@@ -19,7 +19,7 @@ class Collective:
     # HPC constants
     SHOULD_PROBABLY_BE_DEAD = 120 * 12
     ATTITUDE_IMPROVEMENT_BONUS = 0.05
-    ATTITUDE_SELF_IMPROVEMENT_BONUS = 0.1
+    SELF_ATTITUDE_IMPROVEMENT_BONUS = 0.1
 
     def __init__(self):
         self.population_size = 0
@@ -110,13 +110,13 @@ class Brain:
             return self.collective.world_attitudes[self.id, other.id]
         return self.collective.world_attitudes[self.id, :self.collective.population_size]
 
-    def improve_my_attitudes(self):
-        self.collective.world_attitudes[self.id, :self.collective.population_size] += Collective.ATTITUDE_SELF_IMPROVEMENT_BONUS
+    def improve_my_attitudes(self, multiplyer=1):
+        self.collective.world_attitudes[self.id, :self.collective.population_size] += Collective.SELF_ATTITUDE_IMPROVEMENT_BONUS * multiplyer
 
     def improve_attitudes_toward_me(self):
-        arr = self.collective.world_attitudes[:, self.person.id]
+        arr = np.copy(self.collective.world_attitudes[:self.collective.population_size, self.person.id])
         arr = np.where(arr > 0, arr + Hippocampus.ATTITUDE_IMPROVEMENT_BONUS, arr)
-        self.collective.world_attitudes[:, self.person.id] = arr
+        self.collective.world_attitudes[:self.collective.population_size, self.person.id] = arr
 
     # def update_location_history(self):
     #     self.brainparts.get("HPC").location_history.append(self.person.location)

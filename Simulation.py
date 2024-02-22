@@ -6,7 +6,7 @@ class Simulation:
     MARRIAGE_AGE = 12 * 12
     SHOULD_PROBABLY_BE_DEAD = 120 * 12
     IMMUNITY_TIME = 10 * 12
-    INITIAL_COUPLES = 2
+    INITIAL_COUPLES = 4
 
     def __init__(self, imported=None):
         self.collective = Collective()
@@ -16,7 +16,9 @@ class Simulation:
         self.History: list[Person] = []
 
         if imported:
-            for brain_couple in imported:
+            actual_brains = Simulation.assemble_brains(imported[:Simulation.INITIAL_COUPLES])
+            for brain_couple in actual_brains:
+
                 m = Person(father=[Gender.Male, 100], collective=self.collective)
                 m.brain = brain_couple[0]
                 brain_couple[0].transfer_brain(m)
@@ -84,6 +86,7 @@ class Simulation:
             social_connector: Person
             if social_connector.brain.is_friendly():
                 social_connector.brain.improve_attitudes_toward_me()
+                social_connector.brain.improve_my_attitudes(0.5)
 
                 if social_connector.partner:
                     if social_connector.partner in Person.social_connectors:
@@ -117,23 +120,38 @@ class Simulation:
         return self.History[id].collective.world_attitudes[id]
 
     def evaluate(self):
-        return ([person.child_num for person in self.History], Person.ages[:len(self.History)],
-                                                              [p.gender for p in self.History])
+        return ([person.brain.get_models() for person in self.History], [p.gender for p in self.History],
+                [person.child_num for person in self.History], Person.ages[:len(self.History)])
 
-    def find_best_minds(self):
-        children, ages, genders = self.evaluate()
+    @staticmethod
+    def find_best_minds(evaluated_list):
+        neural_list, genders, children, ages = evaluated_list
         best_minds = []
-        his = np.swapaxes(np.array([np.arange(len(self.History)), genders, children, ages]), 0, 1)
+        his = np.swapaxes(np.array([np.arange(len(neural_list)), genders, children, ages]), 0, 1)
         sorted_idx = np.lexsort((his[:, 3], his[:, 2], his[:, 1]))
         sorted_his = np.array([his[i] for i in sorted_idx])
 
         gender_idx = np.argmax(sorted_his[:, 1])
         male_lst, female_lst = sorted_his[gender_idx:], sorted_his[:gender_idx]
 
-        for i in range(self.INITIAL_COUPLES):
-            best_minds.append((self.History[male_lst[-i][0]].brain, self.History[female_lst[-i][0]].brain))
+        for i in range(Simulation.INITIAL_COUPLES):
+            best_minds.append((neural_list[male_lst[-i - 1][0]], neural_list[female_lst[-i - 1][0]]))
 
-        return best_minds
+        return (best_minds,
+                male_lst[-Simulation.INITIAL_COUPLES:],
+                female_lst[-Simulation.INITIAL_COUPLES:])
+
+    @staticmethod
+    def prepare_best_for_reprocess(best_minds, male_lst, female_lst):
+        reprocessed_best_minds = []
+        temp = []
+        for i in best_minds:
+            reprocessed_best_minds.append(i[0])
+            temp.append(i[1])
+        reprocessed_best_minds.extend(temp)
+
+        unified_lst = np.append(male_lst, female_lst, axis=0)
+        return reprocessed_best_minds, unified_lst
 
     @staticmethod
     def assemble_brains(neural_list):

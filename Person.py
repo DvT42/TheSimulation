@@ -159,7 +159,7 @@ class Person:
     def __repr__(self):
         # basic information
         txt = f"{self.id}: " \
-              f"gender: {self.gender.name}, age: {self.year()}, " \
+              f"gender: {self.gender.name}, age: {self.year()}, children: {self.child_num} " \
               f"str: {self.strength}"
 
         # pregnancy data
