@@ -6,7 +6,7 @@ class Simulation:
     MARRIAGE_AGE = 12 * 12
     SHOULD_PROBABLY_BE_DEAD = 120 * 12
     IMMUNITY_TIME = 10 * 12
-    INITIAL_COUPLES = 4
+    INITIAL_COUPLES = 6
 
     def __init__(self, imported=None):
         self.collective = Collective()
