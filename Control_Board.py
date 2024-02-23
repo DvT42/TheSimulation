@@ -13,8 +13,7 @@ class ControlBoard:
             del sim
             with open(ControlBoard.SAVED_BRAINS_PATH, 'rb') as f:
                 models = pickle.load(file=f)
-                brains = Simulation.assemble_brains(models)
-                sim = Simulation(imported=brains)
+                sim = Simulation(imported=models)
                 f.close()
 
         elif com.lower() == 'save':
