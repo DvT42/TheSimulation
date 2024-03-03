@@ -14,7 +14,6 @@ class Simulation:
         Person.Person_reset(Simulation.INITIAL_COUPLES)
 
         self.Population: list[Person] = []
-        self.History: list[Person] = []
 
         if type(imported) is np.ndarray and imported.any():
             actual_brains = Simulation.assemble_brains(imported[:Simulation.INITIAL_COUPLES])
@@ -37,7 +36,6 @@ class Simulation:
 
         for p in self.Population:
             self.collective.add_person(p)
-            self.History.append(p)
 
         for i in self.Population:
             for j in self.Population:
@@ -109,20 +107,19 @@ class Simulation:
                 other.brain.get_first_impression(newborn)
 
             self.Population.append(newborn)
-            self.History.append(newborn)
 
     def is_eradicated(self):
         return not self.Population
 
     def get_historical_figure(self, id):
-        return self.History[id], self.History[id].brain.get_history()[:self.History[id].age()]
+        return self.collective.historical_population[id], self.collective.historical_population[id].brain.get_history()[:self.collective.historical_population[id].age()]
 
     def get_attitudes(self, id):
-        return self.History[id].collective.world_attitudes[id]
+        return self.collective.historical_population[id].collective.world_attitudes[id]
 
     def evaluate(self):
-        return ([person.brain.get_models() for person in self.History], [p.gender for p in self.History],
-                [person.child_num for person in self.History], Person.ages[:len(self.History)])
+        return ([person.brain.get_models() for person in self.collective.historical_population], [p.gender for p in self.collective.historical_population],
+                [person.child_num for person in self.collective.historical_population], Person.ages[:len(self.collective.historical_population)])
 
     @staticmethod
     def find_best_minds(evaluated_list):
