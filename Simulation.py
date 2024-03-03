@@ -112,14 +112,17 @@ class Simulation:
         return not self.Population
 
     def get_historical_figure(self, id):
-        return self.collective.historical_population[id], self.collective.historical_population[id].brain.get_history()[:self.collective.historical_population[id].age()]
+        hf = self.collective.historical_population[id]
+        return hf, hf.brain.get_history()[:hf.age()]
 
     def get_attitudes(self, id):
         return self.collective.historical_population[id].collective.world_attitudes[id]
 
     def evaluate(self):
-        return ([person.brain.get_models() for person in self.collective.historical_population], [p.gender for p in self.collective.historical_population],
-                [person.child_num for person in self.collective.historical_population], Person.ages[:len(self.collective.historical_population)])
+        return ([person.brain.get_models() for person in self.collective.historical_population],
+                [p.gender for p in self.collective.historical_population],
+                [person.child_num for person in self.collective.historical_population],
+                Person.ages[:len(self.collective.historical_population)])
 
     @staticmethod
     def find_best_minds(evaluated_list):
