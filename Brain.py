@@ -52,7 +52,7 @@ class Brain:
                     bp.model.set_weights(new_weights)
                     bp.model.set_biases(new_biases)
 
-        elif models:
+        elif type(models) is np.ndarray and models.any():
             self.id = None
             self.brainparts = {"PFC": PrefrontalCortex(models[0]),
                                "AMG": Amygdala(models[1]),
@@ -70,16 +70,20 @@ class Brain:
             preg = 0
             youngness = 0
         if self.person.isManual:
-            return self.brainparts.get("PFC").decision_making(
-                self.person.gender, self.person.age(), self.person.strength, preg, youngness, self.person.readiness,
-                self.person.child_num, self.get_action_from_history(self.person.age() - 1), 0, 0
-            )
+            father_choice = 0
+            mother_choice = 0
         else:
-            return self.brainparts.get("PFC").decision_making(
+            father_choice = self.person.father.brain.get_action_from_history(self.person.age())
+            mother_choice = self.person.mother.brain.get_action_from_history(self.person.age())
+        if self.person.partner:
+            partner_choice = self.person.partner.brain.get_action_from_history(self.person.age())
+        else:
+            partner_choice = 0
+
+        return self.brainparts.get("PFC").decision_making(
                 self.person.gender, self.person.age(), self.person.strength, preg, youngness, self.person.readiness,
                 self.person.child_num, self.get_action_from_history(self.person.age() - 1),
-                self.person.father.brain.get_action_from_history(self.person.age()),
-                self.person.mother.brain.get_action_from_history(self.person.age())
+                father_choice, mother_choice, partner_choice
             )
 
     def get_first_impression(self, other):
@@ -110,19 +114,19 @@ class Brain:
             return self.collective.world_attitudes[self.id, other.id]
         return self.collective.world_attitudes[self.id, :self.collective.population_size]
 
-    def improve_my_attitudes(self, multiplyer=1):
-        self.collective.world_attitudes[self.id, :self.collective.population_size] += Collective.SELF_ATTITUDE_IMPROVEMENT_BONUS * multiplyer
+    def improve_my_attitudes(self, multiplier=1):
+        self.collective.world_attitudes[self.id, :self.collective.population_size] += Collective.SELF_ATTITUDE_IMPROVEMENT_BONUS * multiplier
 
     def improve_attitudes_toward_me(self):
         arr = np.copy(self.collective.world_attitudes[:self.collective.population_size, self.person.id])
         arr = np.where(arr > 0, arr + Hippocampus.ATTITUDE_IMPROVEMENT_BONUS, arr)
         self.collective.world_attitudes[:self.collective.population_size, self.person.id] = arr
 
-    # def update_location_history(self):
-    #     self.brainparts.get("HPC").location_history.append(self.person.location)
-    #
-    # def get_location_history(self):
-    #     return self.brainparts.get("HPC").location_history
+    def update_location_history(self):
+        self.brainparts.get("HPC").location_history.append((self.person.location, self.person.age()))
+
+    def get_location_history(self):
+        return self.brainparts.get("HPC").location_history
 
     def is_friendly(self):
         return np.max(self.collective.world_attitudes[self.id]) > 0
@@ -200,7 +204,7 @@ class PrefrontalCortex(BrainPart):
             self.model = model
 
         else:
-            input_num = 7 + PrefrontalCortex.CHOICE_NUM * 3
+            input_num = 7 + PrefrontalCortex.CHOICE_NUM * 4
 
             model = NeuralNetwork()
             model.add_layer(input_num, input_num=input_num, activation='relu')  # input layer (1)
@@ -212,7 +216,7 @@ class PrefrontalCortex(BrainPart):
 
     def decision_making(
             self, gender, age, strength, pregnancy, biowatch, readiness, child_num, previous_choice, father_choice,
-            mother_choice
+            mother_choice, partner_choice
     ):
         if random.random() > PrefrontalCortex.CHOICE_RANDOMIZER:
             # this list is for convenience, to know what does each index of option means.
@@ -224,6 +228,7 @@ class PrefrontalCortex(BrainPart):
             neural_input.extend(get_choice_nodes(previous_choice))
             neural_input.extend(get_choice_nodes(father_choice))
             neural_input.extend(get_choice_nodes(mother_choice))
+            neural_input.extend(get_choice_nodes(partner_choice))
 
             # handle input
             neural_input = np.asarray([neural_input])
@@ -321,7 +326,7 @@ class Hippocampus(BrainPart):
         super().__init__()
 
         self.history = np.zeros(120 * 12, dtype=int)
-        # self.location_history = []
+        self.location_history = []
 
         self.dead_impressions = {}
         self.first_impressions = {}

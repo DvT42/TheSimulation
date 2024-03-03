@@ -1,5 +1,6 @@
 from Brain import *
 from Person import *
+import numpy as np
 
 
 class Simulation:
@@ -15,15 +16,15 @@ class Simulation:
         self.Population: list[Person] = []
         self.History: list[Person] = []
 
-        if imported:
+        if type(imported) is np.ndarray and imported.any():
             actual_brains = Simulation.assemble_brains(imported[:Simulation.INITIAL_COUPLES])
             for brain_couple in actual_brains:
 
-                m = Person(father=[Gender.Male, 100], collective=self.collective)
+                m = Person(father=[Gender.Male, 100, [0, 0]], collective=self.collective)
                 m.brain = brain_couple[0]
                 brain_couple[0].transfer_brain(m)
 
-                f = Person(father=[Gender.Female, 100], collective=self.collective)
+                f = Person(father=[Gender.Female, 100, [0, 0]], collective=self.collective)
                 f.brain = brain_couple[1]
                 brain_couple[1].transfer_brain(f)
 
@@ -31,8 +32,8 @@ class Simulation:
 
         else:
             for i in range(Simulation.INITIAL_COUPLES):
-                self.Population.extend([Person(father=[Gender.Male, 100], collective=self.collective),
-                                        Person(father=[Gender.Female, 100], collective=self.collective)])
+                self.Population.extend([Person(father=[Gender.Male, 100, [0, 0]], collective=self.collective),
+                                        Person(father=[Gender.Female, 100, [0, 0]], collective=self.collective)])
 
         for p in self.Population:
             self.collective.add_person(p)

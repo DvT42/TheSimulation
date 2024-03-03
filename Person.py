@@ -55,7 +55,7 @@ class Person:
             self.strength = self.starting_strength // 10
 
             # get born in the mother's place
-            # self.location = mother.location
+            self.location = mother.location
 
         # - Manual creation
         else:
@@ -67,9 +67,9 @@ class Person:
             self.starting_strength = self.strength
 
             # [2]
-            # self.location = father[2]
+            self.location = father[2]
 
-        # self.brain.update_location_history()  # insert the birthplace into location history.
+        self.brain.update_location_history()  # insert the birthplace into location history.
 
         # procreation availability.
         if self.gender == Gender.Female:
@@ -176,9 +176,9 @@ class Person:
         else:
             txt = f"{self.id}: \n"
 
-        txt += f"gender: {self.gender.name}, age: {self.year()} \n" \
-              f"strength: {self.strength}\n" \
-              f"last action: {self.brain.get_action_from_history(self.age())}"
+        txt += f"gender: {self.gender.name}, age: {self.year()} \n, location: {self.location}" \
+               f"strength: {self.strength}\n" \
+               f"last action: {self.brain.get_action_from_history(self.age())}"
 
         # pregnancy data
         if self.gender == Gender.Female:
