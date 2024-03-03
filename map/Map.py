@@ -107,11 +107,11 @@ class Map:
         biome_map = np.zeros(shape=(800, 1600), dtype=int)
         for i, line in enumerate(num_map):
             # noinspection PyTypeChecker
-            processed_map[i], biome_map[i] = Map.multidimentional_approximation(line, bins)
+            processed_map[i], biome_map[i] = Map.multidimensional_approximation(line, bins)
         return processed_map, biome_map
 
     @staticmethod
-    def multidimentional_approximation(arr, bins):
+    def multidimensional_approximation(arr, bins):
         distances = np.sqrt(((arr - bins[:, np.newaxis, :]) ** 2).sum(axis=2))
         indexes = np.argmin(distances, axis=0)
         return [bins[i] for i in indexes], indexes

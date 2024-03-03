@@ -176,7 +176,7 @@ class Person:
         else:
             txt = f"{self.id}: \n"
 
-        txt += f"gender: {self.gender.name}, age: {self.year()} \n, location: {self.location}" \
+        txt += f"gender: {self.gender.name}, age: {self.year()}\n" \
                f"strength: {self.strength}\n" \
                f"last action: {self.brain.get_action_from_history(self.age())}"
 

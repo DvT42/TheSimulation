@@ -1,5 +1,6 @@
 from Brain import *
 from Person import *
+from Region import *
 import numpy as np
 
 
@@ -13,7 +14,7 @@ class Simulation:
         self.collective = Collective()
         Person.Person_reset(Simulation.INITIAL_COUPLES)
 
-        self.Population: list[Person] = []
+        self.regions = [Region(location=[0, 0], biome=1)]
 
         if type(imported) is np.ndarray and imported.any():
             actual_brains = Simulation.assemble_brains(imported[:Simulation.INITIAL_COUPLES])
@@ -27,18 +28,18 @@ class Simulation:
                 f.brain = brain_couple[1]
                 brain_couple[1].transfer_brain(f)
 
-                self.Population.extend([m, f])
+                self.regions[0].Population.extend([m, f])
 
         else:
             for i in range(Simulation.INITIAL_COUPLES):
-                self.Population.extend([Person(father=[Gender.Male, 100, [0, 0]], collective=self.collective),
+                self.regions[0].Population.extend([Person(father=[Gender.Male, 100, [0, 0]], collective=self.collective),
                                         Person(father=[Gender.Female, 100, [0, 0]], collective=self.collective)])
 
-        for p in self.Population:
+        for p in self.regions[0].Population:
             self.collective.add_person(p)
 
-        for i in self.Population:
-            for j in self.Population:
+        for i in self.regions[0].Population:
+            for j in self.regions[0].Population:
                 if j is not i:
                     i.brain.get_first_impression(j)
 
@@ -48,39 +49,53 @@ class Simulation:
     # @jit(target_backend='cuda')
     def month_advancement(self):
         self.Time += 1
-        newborns = []
 
         # Person.ages[:Person.runningID] += 1 // might decide to transfer it to this format later
+        for reg in self.regions:
+            newborns = []
 
-        for idx, p in enumerate(self):
-            p: Person
-            Person.ages[p.id] += 1
+            for idx, p in enumerate(reg):
+                p: Person
+                Person.ages[p.id] += 1
 
-            #  - handle pregnancy
-            if p.gender == Gender.Female:
-                if p.father_of_child is not None:
-                    if p.pregnancy == 9:
-                        newborn = p.birth()
-                        newborns.append(newborn)
-                    else:
-                        p.pregnancy += 1
-                elif p.age() > p.readiness and p.youngness > 0:
-                    p.youngness -= 1
+                #  - handle pregnancy
+                if p.gender == Gender.Female:
+                    if p.father_of_child is not None:
+                        if p.pregnancy == 9:
+                            newborn = p.birth()
+                            newborns.append(newborn)
+                        else:
+                            p.pregnancy += 1
+                    elif p.age() > p.readiness and p.youngness > 0:
+                        p.youngness -= 1
 
-            p.aging()  # handles old people's aging process.
+                p.aging()  # handles old people's aging process.
 
-            # handle growing up
-            if p.year() < 15:
-                p.strength += 0.25
+                # handle growing up
+                if p.year() < 15:
+                    p.strength += 0.25
 
-            if p.natural_death_chance() and self.Time > Simulation.IMMUNITY_TIME:
-                self.Population.remove(p)
-                p.isAlive = False
-                if p.partner:
-                    p.partner.partner = None
-                continue
-            p.action()
+                if p.natural_death_chance() and self.Time > Simulation.IMMUNITY_TIME:
+                    reg.Population.remove(p)
+                    p.isAlive = False
+                    if p.partner:
+                        p.partner.partner = None
+                    continue
+                p.action()
 
+            for newborn in newborns:
+                self.collective.add_person(newborn)
+
+                for other in reg:
+                    newborn.brain.get_first_impression(other)
+                    other.brain.get_first_impression(newborn)
+
+                reg.Population.append(newborn)
+
+            if not reg.Population:
+                self.regions.remove(reg)
+
+        # TODO: fix this loop's mechanism.
         for social_connector in Person.social_connectors:
             social_connector: Person
             if social_connector.brain.is_friendly():
@@ -99,17 +114,8 @@ class Simulation:
                 social_connector.brain.improve_my_attitudes()
         Person.social_connectors = []
 
-        for newborn in newborns:
-            self.collective.add_person(newborn)
-
-            for other in self:
-                newborn.brain.get_first_impression(other)
-                other.brain.get_first_impression(newborn)
-
-            self.Population.append(newborn)
-
     def is_eradicated(self):
-        return not self.Population
+        return not self.regions
 
     def get_historical_figure(self, id):
         hf = self.collective.historical_population[id]
@@ -168,21 +174,16 @@ class Simulation:
             neural_list.append((brain_couple[0].get_models(), brain_couple[1].get_models()))
         return neural_list
 
-    def __iter__(self):
-        return (p for p in self.Population)
-
     def __repr__(self):
-        txt = f"Year: {self.Time // 12};"
-        for p in self:
-            txt += f" {p}"
+        txt = f"Year: {self.Time // 12}"
         return txt
 
     def display(self):
         txt = f"Year: {self.Time // 12}\n\n"
-        for p in self:
-            txt += f"{p.display()}\n\n"
 
-        txt += f'Current world population: {len(self.Population)}'
+        for reg in self.regions:
+            txt += reg.display()
+            txt += '\n----------\n'
 
         if self.is_eradicated():
             txt = "SPECIES GONE"
