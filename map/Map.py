@@ -1,12 +1,13 @@
 import os
-import imageio
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.ticker import ScalarFormatter
-import seaborn as sns
-import geopandas as gpd
-from shapely.geometry import Point
+
 import earthpy as et
+import geopandas as gpd
+import imageio
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+from matplotlib.ticker import ScalarFormatter
+from shapely.geometry import Point
 
 
 class Map:
@@ -49,19 +50,19 @@ class Map:
         bbox_path = os.path.join("data", "spatial-vector-lidar", "global",
                                  "ne_110m_graticules_all", "ne_110m_wgs84_bounding_box.shp")
         self.bbox = gpd.read_file(bbox_path)
-    
+
     def place_points(self, locations: np.ndarray):
         # Turn points into list of x,y shapely points, and translate them from km to m.
-        locations = [Point(xy) for xy in (locations * 1000)] 
+        locations = [Point(xy) for xy in (locations * 1000)]
 
         # Create geodataframe using the points
         locations = gpd.GeoDataFrame(locations,
-                                          columns=['geometry'],
-                                          crs="ESRI:54030")
-        
+                                     columns=['geometry'],
+                                     crs="ESRI:54030")
+
         # Reproject point locations to the WGS84 projection
         locations_WGS84 = locations.to_crs(self.worldBound.crs)
-        
+
         self.points = locations_WGS84
 
     def plot_map(self):
@@ -119,9 +120,9 @@ class Map:
 
 if __name__ == "__main__":
     # Create numpy array of x,y point locations
-    add_points = np.array([[-5000,   0],
-                           [0,   5000],
-                           [1500,   -4500]])
+    add_points = np.array([[-5000, 0],
+                           [0, 5000],
+                           [1500, -4500]])
     mymap = Map()
     mymap.place_points(add_points)
     mymap.plot_map()

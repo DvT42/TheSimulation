@@ -2,7 +2,6 @@ from Simulation import Simulation
 from Control_Board import ControlBoard
 from datetime import datetime
 
-
 if __name__ == "__main__":
 
     # running code

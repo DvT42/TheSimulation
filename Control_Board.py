@@ -55,7 +55,8 @@ class ControlBoard:
                 f'\n{history}')
 
     @staticmethod
-    def exact_skip(sim: Simulation, num: int, best_minds_lst=None, quality_lst=np.empty((0, 3), dtype=int), failsafe: bool = True, recursion_flag=False):
+    def exact_skip(sim: Simulation, num: int, best_minds_lst=None, quality_lst=np.empty((0, 3), dtype=int),
+                   failsafe: bool = True, recursion_flag=False):
         if best_minds_lst is None:
             best_minds_lst = []
 
@@ -68,7 +69,8 @@ class ControlBoard:
         if sim.Time < dest_time:
             if failsafe:
                 best_minds, male_lst, female_lst = sim.find_best_minds(sim.evaluate())
-                processed_best_minds, unified_lst = Simulation.prepare_best_for_reprocess(best_minds, male_lst[:, 1:], female_lst[:, 1:])
+                processed_best_minds, unified_lst = Simulation.prepare_best_for_reprocess(best_minds, male_lst[:, 1:],
+                                                                                          female_lst[:, 1:])
                 best_minds_lst.extend(processed_best_minds)
                 quality_lst = np.append(quality_lst, unified_lst, axis=0)
 
@@ -80,14 +82,15 @@ class ControlBoard:
                 quality_lst = unified_lst
 
                 new_sim = Simulation(imported=
-                                     np.reshape(
-                                         np.append(
-                                             best_minds_lst[len(best_minds_lst) // 2:], best_minds_lst[:len(best_minds_lst) // 2], axis=1,
-                                             ), (len(best_minds_lst) // 2, 2, 2)))
+                np.reshape(
+                    np.append(
+                        best_minds_lst[len(best_minds_lst) // 2:], best_minds_lst[:len(best_minds_lst) // 2], axis=1,
+                    ), (len(best_minds_lst) // 2, 2, 2)))
 
                 del sim
                 sim = new_sim
-                sim = ControlBoard.exact_skip(sim, num=dest_time, best_minds_lst=best_minds_lst, quality_lst=quality_lst, recursion_flag=True)
+                sim = ControlBoard.exact_skip(sim, num=dest_time, best_minds_lst=best_minds_lst,
+                                              quality_lst=quality_lst, recursion_flag=True)
             else:
                 sim.display()
                 return None

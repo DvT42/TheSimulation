@@ -1,6 +1,6 @@
 class Region:
     def __init__(self, location, biome, population=None):
-        self.location= location
+        self.location = location
         self.biome = biome
         if population:
             self.Population = population

@@ -81,10 +81,10 @@ class Brain:
             partner_choice = 0
 
         return self.brainparts.get("PFC").decision_making(
-                self.person.gender, self.person.age(), self.person.strength, preg, youngness, self.person.readiness,
-                self.person.child_num, self.get_action_from_history(self.person.age() - 1),
-                father_choice, mother_choice, partner_choice
-            )
+            self.person.gender, self.person.age(), self.person.strength, preg, youngness, self.person.readiness,
+            self.person.child_num, self.get_action_from_history(self.person.age() - 1),
+            father_choice, mother_choice, partner_choice
+        )
 
     def get_first_impression(self, other):
         impression = self.brainparts.get("AMG").first_impression(self.person, other)
@@ -115,7 +115,8 @@ class Brain:
         return self.collective.world_attitudes[self.id, :self.collective.population_size]
 
     def improve_my_attitudes(self, multiplier=1):
-        self.collective.world_attitudes[self.id, :self.collective.population_size] += Collective.SELF_ATTITUDE_IMPROVEMENT_BONUS * multiplier
+        self.collective.world_attitudes[self.id, :self.collective.population_size] += (
+                Collective.SELF_ATTITUDE_IMPROVEMENT_BONUS * multiplier)
 
     def improve_attitudes_toward_me(self):
         arr = np.copy(self.collective.world_attitudes[:self.collective.population_size, self.person.id])
@@ -142,7 +143,6 @@ class Brain:
 
 
 class BrainPart:
-
     INHERITENCE_RATIO = Collective.INHERITANCE_RATIO
     MUTATION_RATIO = Collective.MUTATION_RATIO
     MUTATION_NORMALIZATION_RATIO = Collective.MUTATION_NORMALIZATION_RATIO
@@ -254,6 +254,7 @@ class Amygdala(BrainPart):
     """
     The part of the brain responsible for first impression.
     """
+
     def __init__(self, model=None):
         super().__init__()
 
