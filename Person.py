@@ -16,9 +16,6 @@ class Person:
     ages = np.zeros(MAX_POPULATION, dtype=int)
     ages[0], ages[1] = 20 * 12, 20 * 12
 
-    # list for social connectors
-    social_connectors = []
-
     def __init__(self, collective, father, mother=None):
         # ID assignment
         self.isAlive = True
@@ -113,7 +110,6 @@ class Person:
 
         if decision == 0:
             # should improve attitudes/merge
-            Person.social_connectors.append(self)
             self.brain.set_history(self.age(), 1)
         if decision == 1:
             self.strength += 0.5
@@ -124,6 +120,7 @@ class Person:
         #     self.location[random.randint(0, 1)] += int(Person.RANGE * random.uniform(-1, 1))
         #     self.brain.update_location_history()
         #     self.brain.set_history(self.age(), 3)
+        return decision
 
     def aging(self):
         if self.age() > Person.AGING_STARTING_AGE:

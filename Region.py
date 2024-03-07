@@ -6,6 +6,15 @@ class Region:
             self.Population = population
         else:
             self.Population = []
+        self.pop_id = [p.id for p in self.Population]
+
+    def add_person(self, person):
+        self.Population.append(person)
+        self.pop_id.append(person.id)
+
+    def remove_person(self, person):
+        self.Population.remove(person)
+        self.pop_id.remove(person.id)
 
     def __iter__(self):
         return (p for p in self.Population)

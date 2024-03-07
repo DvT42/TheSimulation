@@ -1,11 +1,12 @@
 import numpy as np
 from numpy import random
+
 from Neural_Network import NeuralNetwork
 
 
 class Collective:
     # Collective Constants:
-    BASIC_POPULATION = 1000
+    BASIC_POPULATION = 10000
 
     # brainpart constants:
     INHERITANCE_RATIO = 0.5
@@ -24,14 +25,19 @@ class Collective:
     def __init__(self):
         self.population_size = 0
         self.world_attitudes = np.zeros((Collective.BASIC_POPULATION, Collective.BASIC_POPULATION), dtype=float)
+        self.aranged_indexes = np.arange(Collective.BASIC_POPULATION)
         self.historical_population = []
 
     def add_person(self, person):
         self.historical_population.append(person)
+
         if self.population_size >= Collective.BASIC_POPULATION:
             new_world_attitudes = np.zeros((self.population_size + 1, self.population_size + 1))
             new_world_attitudes[:self.population_size, :self.population_size] = self.world_attitudes
             self.world_attitudes = new_world_attitudes
+
+            self.aranged_indexes = np.append(self.aranged_indexes, self.population_size)
+
         self.population_size += 1
 
 
@@ -118,9 +124,12 @@ class Brain:
         self.collective.world_attitudes[self.id, :self.collective.population_size] += (
                 Collective.SELF_ATTITUDE_IMPROVEMENT_BONUS * multiplier)
 
-    def improve_attitudes_toward_me(self):
+    def improve_attitudes_toward_me(self, region):
         arr = np.copy(self.collective.world_attitudes[:self.collective.population_size, self.person.id])
-        arr = np.where(arr > 0, arr + Hippocampus.ATTITUDE_IMPROVEMENT_BONUS, arr)
+        arr = np.where((arr > 0) &
+            np.isin(self.collective.aranged_indexes[:self.collective.population_size], region.pop_id),
+            arr + Hippocampus.ATTITUDE_IMPROVEMENT_BONUS, arr)
+
         self.collective.world_attitudes[:self.collective.population_size, self.person.id] = arr
 
     def update_location_history(self):

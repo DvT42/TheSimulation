@@ -1,5 +1,3 @@
-import numpy as np
-
 from Brain import *
 from Person import *
 from Region import *
@@ -28,13 +26,13 @@ class Simulation:
                 f.brain = brain_couple[1]
                 brain_couple[1].transfer_brain(f)
 
-                self.regions[0].Population.extend([m, f])
+                self.regions[0].add_person(m)
+                self.regions[0].add_person(f)
 
         else:
             for i in range(Simulation.INITIAL_COUPLES):
-                self.regions[0].Population.extend(
-                    [Person(father=[Gender.Male, 100, [0, 0]], collective=self.collective),
-                     Person(father=[Gender.Female, 100, [0, 0]], collective=self.collective)])
+                self.regions[0].add_person(Person(father=[Gender.Male, 100, [0, 0]], collective=self.collective))
+                self.regions[0].add_person(Person(father=[Gender.Female, 100, [0, 0]], collective=self.collective))
 
         for p in self.regions[0].Population:
             self.collective.add_person(p)
@@ -54,6 +52,7 @@ class Simulation:
         # Person.ages[:Person.runningID] += 1 // might decide to transfer it to this format later
         for reg in self.regions:
             newborns = []
+            social_connectors = []
 
             for idx, p in enumerate(reg):
                 p: Person
@@ -77,12 +76,15 @@ class Simulation:
                     p.strength += 0.25
 
                 if p.natural_death_chance() and self.Time > Simulation.IMMUNITY_TIME:
-                    reg.Population.remove(p)
+                    reg.remove_person(p)
                     p.isAlive = False
                     if p.partner:
                         p.partner.partner = None
                     continue
-                p.action()
+
+                action = p.action()
+                if action == 0:
+                    social_connectors.append(p)
 
             for newborn in newborns:
                 self.collective.add_person(newborn)
@@ -91,29 +93,27 @@ class Simulation:
                     newborn.brain.get_first_impression(other)
                     other.brain.get_first_impression(newborn)
 
-                reg.Population.append(newborn)
+                reg.add_person(newborn)
 
             if not reg.Population:
                 self.regions.remove(reg)
 
-        # TODO: fix this loop's mechanism.
-        for social_connector in Person.social_connectors:
-            social_connector: Person
-            if social_connector.brain.is_friendly():
-                social_connector.brain.improve_attitudes_toward_me()
-                social_connector.brain.improve_my_attitudes(0.5)
+            for social_connector in social_connectors:
+                social_connector: Person
+                if social_connector.brain.is_friendly():
+                    social_connector.brain.improve_attitudes_toward_me(region=reg)
+                    social_connector.brain.improve_my_attitudes(multiplier=0.5)
 
-                if social_connector.partner:
-                    if social_connector.partner in Person.social_connectors:
-                        social_connector.prepare_next_generation(social_connector.partner)
-                else:
-                    social_connector.partner = social_connector.partner_selection()
                     if social_connector.partner:
-                        social_connector.partner.partner = social_connector
+                        if social_connector.partner in social_connectors:
+                            social_connector.prepare_next_generation(social_connector.partner)
+                    else:
+                        social_connector.partner = social_connector.partner_selection()
+                        if social_connector.partner:
+                            social_connector.partner.partner = social_connector
 
-            else:
-                social_connector.brain.improve_my_attitudes()
-        Person.social_connectors = []
+                else:
+                    social_connector.brain.improve_my_attitudes()
 
     def is_eradicated(self):
         return not self.regions
