@@ -19,6 +19,9 @@ class Region:
     def __iter__(self):
         return (p for p in self.Population)
 
+    def __repr__(self):
+        return f'{self.location}, {self.biome}'
+
     def display(self):
         txt = f'location: {self.location}:\n----------\n'
 

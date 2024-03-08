@@ -6,7 +6,7 @@ from Neural_Network import NeuralNetwork
 
 class Collective:
     # Collective Constants:
-    BASIC_POPULATION = 10000
+    BASIC_POPULATION = 1000
 
     # brainpart constants:
     INHERITANCE_RATIO = 0.5
