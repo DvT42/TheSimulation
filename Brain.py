@@ -42,7 +42,7 @@ class Collective:
 
 
 class Brain:
-    def __init__(self, person=None, collective=None, models=None):
+    def __init__(self, person=None, f=None, m=None, collective=None, models=None):
         self.person = person
         self.collective = collective
 
@@ -54,7 +54,7 @@ class Brain:
 
             for part, bp in self.brainparts.items():
                 if bp.model:
-                    new_weights, new_biases = bp.gene_inheritance(self.person, part)
+                    new_weights, new_biases = bp.gene_inheritance(self.person.isManual, f, m, part)
                     bp.model.set_weights(new_weights)
                     bp.model.set_biases(new_biases)
 
@@ -79,16 +79,16 @@ class Brain:
             father_choice = 0
             mother_choice = 0
         else:
-            father_choice = self.person.father.brain.get_action_from_history(self.person.age())
-            mother_choice = self.person.mother.brain.get_action_from_history(self.person.age())
+            father_choice = Brain.get_action_from_history(self.person.age(), self.person.father_history)
+            mother_choice = Brain.get_action_from_history(self.person.age(), self.person.mother_history)
         if self.person.partner:
-            partner_choice = self.person.partner.brain.get_action_from_history(self.person.age())
+            partner_choice = Brain.get_action_from_history(self.person.age(), self.person.partner.brain.get_history())
         else:
             partner_choice = 0
 
         return self.brainparts.get("PFC").decision_making(
             self.person.gender, self.person.age(), self.person.strength, preg, youngness, self.person.readiness,
-            self.person.child_num, self.get_action_from_history(self.person.age() - 1),
+            self.person.child_num, Brain.get_action_from_history(self.person.age() - 1, self.get_history()),
             father_choice, mother_choice, partner_choice
         )
 
@@ -100,9 +100,10 @@ class Brain:
 
         return impression
 
-    def get_action_from_history(self, index):
-        if index < len(self.brainparts.get("HPC").history):
-            return self.brainparts.get("HPC").history[index]
+    @staticmethod
+    def get_action_from_history(index, history):
+        if index < len(history):
+            return history[index]
         else:
             return 0
 
@@ -159,12 +160,12 @@ class BrainPart:
     def __init__(self):
         self.model = None
 
-    def gene_inheritance(self, person, part: str):
-        if not person.isManual:
-            father_weights = person.father.brain.brainparts.get(part).model.get_weights()
-            mother_weights = person.mother.brain.brainparts.get(part).model.get_weights()
-            father_biases = person.father.brain.brainparts.get(part).model.get_biases()
-            mother_biases = person.mother.brain.brainparts.get(part).model.get_biases()
+    def gene_inheritance(self, isManual, father, mother, part: str):
+        if not isManual:
+            father_weights = father.brain.brainparts.get(part).model.get_weights()
+            mother_weights = mother.brain.brainparts.get(part).model.get_weights()
+            father_biases = father.brain.brainparts.get(part).model.get_biases()
+            mother_biases = mother.brain.brainparts.get(part).model.get_biases()
 
             # inheritance of parent's weights & biases
             new_weights = father_weights

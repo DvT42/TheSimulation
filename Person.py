@@ -23,8 +23,6 @@ class Person:
         self.id = Person.runningID
         Person.runningID += 1
 
-        self.father: Person = father
-        self.mother: Person = mother
         self.collective = collective
 
         # Attributes that don't depend on the parents
@@ -35,7 +33,7 @@ class Person:
         # list to save former actions in
         self.readiness = 12 * 12 + int(random.normalvariate(0, 12))
 
-        self.brain = Brain(self, collective)
+        self.brain = Brain(self, father, mother, collective)
 
         self.partner = None
         self.child_num = 0
@@ -46,9 +44,13 @@ class Person:
             self.fatherID = father.id
             self.motherID = mother.id
 
+            self.father_history = father.brain.get_history()
+            self.mother_history = mother.brain.get_history()
+
             # strength - represents physical ability and health. {mean strength of parents}/2 + {normal distribution}/2
             self.starting_strength = (
                     (father.starting_strength + mother.starting_strength) // 4 + int(random.normalvariate(50, 10)))
+
             self.strength = self.starting_strength // 10
 
             # get born in the mother's place
@@ -170,13 +172,13 @@ class Person:
         # basic information
         if not self.isManual:
             txt = f"{self.id}: \n" \
-                  f"parents: [{self.father.id}, {self.mother.id}] \n"
+                  f"parents: [{self.fatherID}, {self.motherID}] \n"
         else:
             txt = f"{self.id}: \n"
 
         txt += f"gender: {self.gender.name}, age: {self.year()}\n" \
                f"strength: {self.strength}\n" \
-               f"last action: {self.brain.get_action_from_history(self.age())}"
+               f"last action: {Brain.get_action_from_history(self.age(), self.brain.get_history())}"
 
         # pregnancy data
         if self.gender == Gender.Female:
