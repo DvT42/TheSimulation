@@ -23,7 +23,7 @@ class Map:
                     8: ([249, 178, 51, 255], "Savanna"),
                     9: ([249, 74, 0, 255], "Desert"),
                     10: ([214, 37, 255, 255], "mediterranean")}
-    BIOME_MAP_PATH = BASE_PATH + r"\only_biome_map.png"
+    BIOME_MAP_PATH = BASE_PATH + r"\map\only_biome_map.png"
 
     def __init__(self):
         self.points = []
@@ -50,6 +50,9 @@ class Map:
         bbox_path = os.path.join("data", "spatial-vector-lidar", "global",
                                  "ne_110m_graticules_all", "ne_110m_wgs84_bounding_box.shp")
         self.bbox = gpd.read_file(bbox_path)
+
+    def get_biome(self, coordinates):
+        return self.biome_map[coordinates]
 
     def place_points(self, locations: np.ndarray):
         # Turn points into list of x,y shapely points, and translate them from km to m.

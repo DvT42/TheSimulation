@@ -1,11 +1,13 @@
 from Simulation import Simulation
 from Control_Board import ControlBoard
 from datetime import datetime
+from map.Map import Map
 
 if __name__ == "__main__":
 
     # running code
-    TS = Simulation()
+    sim_map = Map()
+    TS = Simulation(sim_map=sim_map)
     while True:
         command = input("please input command: ")
 

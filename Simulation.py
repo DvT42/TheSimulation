@@ -9,11 +9,12 @@ class Simulation:
     IMMUNITY_TIME = 10 * 12
     INITIAL_COUPLES = 6
 
-    def __init__(self, imported=None):
+    def __init__(self, sim_map, imported=None):
         self.collective = Collective()
         Person.Person_reset(Simulation.INITIAL_COUPLES)
 
-        self.regions = [Region(location=[0, 0], biome=1)]
+        self.map = sim_map
+        self.regions = [Region(location=(0, 0), biome=self.map.get_biome((0, 0)))]
 
         if type(imported) is np.ndarray and imported.any():
             actual_brains = Simulation.assemble_brains(imported[:Simulation.INITIAL_COUPLES])

@@ -10,11 +10,11 @@ class ControlBoard:
     @staticmethod
     def process_command(sim: Simulation, com: str):
         if com.lower() == 'load':
-            del sim
             with open(ControlBoard.SAVED_BRAINS_PATH, 'rb') as f:
                 models = pickle.load(file=f)
-                sim = Simulation(imported=models)
+                new_sim = Simulation(sim_map=sim.map, imported=models)
                 f.close()
+            sim = new_sim
 
         elif com.lower() == 'save':
             with open(ControlBoard.SAVED_BRAINS_PATH, 'wb') as f:
@@ -82,7 +82,7 @@ class ControlBoard:
                     best_minds_lst = processed_best_minds
                     quality_lst = unified_lst
 
-                    new_sim = Simulation(imported=
+                    new_sim = Simulation(sim_map=sim.map, imported=
                     np.reshape(
                         np.append(
                             best_minds_lst[len(best_minds_lst) // 2:],

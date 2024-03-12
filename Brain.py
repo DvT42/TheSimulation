@@ -343,10 +343,10 @@ class Hippocampus(BrainPart):
         self.first_impressions = {}
 
 
-def get_choice_nodes(choice):
+def get_choice_nodes(choice, options=PrefrontalCortex.CHOICE_NUM):
     """Returns a list of zeroes with 1 at the index of the choice - 1, or no 1 at all if 0 is supplied"""
 
-    nodes = [0 for _ in range(PrefrontalCortex.CHOICE_NUM)]
+    nodes = [0 for _ in range(options)]
     if choice:
         nodes[choice - 1] = 1
     return nodes
