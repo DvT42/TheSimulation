@@ -68,7 +68,7 @@ class Brain:
         for brainpart in self.brainparts.values():
             brainpart.evolvement()
 
-    def call_decision_making(self):
+    def call_decision_making(self, region):
         if self.person.gender == 0:
             preg = self.person.pregnancy
             youngness = self.person.youngness
@@ -86,10 +86,14 @@ class Brain:
         else:
             partner_choice = 0
 
+        loc = region.location
+        regional_biomes = region.surr_biomes
+        regional_pop = region.surr_pop
+
         return self.brainparts.get("PFC").decision_making(
             self.person.gender, self.person.age(), self.person.strength, preg, youngness, self.person.readiness,
             self.person.child_num, Brain.get_action_from_history(self.person.age() - 1, self.get_history()),
-            father_choice, mother_choice, partner_choice
+            father_choice, mother_choice, partner_choice, loc, regional_biomes, regional_pop
         )
 
     def get_first_impression(self, other):
@@ -226,22 +230,22 @@ class PrefrontalCortex(BrainPart):
 
     def decision_making(
             self, gender, age, strength, pregnancy, biowatch, readiness, child_num, previous_choice, father_choice,
-            mother_choice, partner_choice
+            mother_choice, partner_choice, location, regional_biomes, regional_pop
     ):
         if random.random() > PrefrontalCortex.CHOICE_RANDOMIZER:
             # this list is for convenience, to know what does each index of option means.
             # choices = ["social connection", "strength", "location"]
 
             # flatten histories & prepare input
-            neural_input = [gender, age, strength, pregnancy, biowatch, readiness, child_num]
+            neural_input = np.array([gender, age, strength, pregnancy, biowatch, readiness, child_num])
 
-            neural_input.extend(get_choice_nodes(previous_choice))
-            neural_input.extend(get_choice_nodes(father_choice))
-            neural_input.extend(get_choice_nodes(mother_choice))
-            neural_input.extend(get_choice_nodes(partner_choice))
-
-            # handle input
-            neural_input = np.asarray([neural_input])
+            neural_input = np.append(neural_input, values=[get_choice_nodes(previous_choice),
+                                                           get_choice_nodes(father_choice),
+                                                           get_choice_nodes(mother_choice),
+                                                           get_choice_nodes(partner_choice),
+                                                           location.flatten(),
+                                                           regional_biomes.flatten(),
+                                                           regional_pop.flatten()])
 
             # need to preprocess the data to squash it between 0 and 1. ?
 
@@ -346,7 +350,7 @@ class Hippocampus(BrainPart):
 def get_choice_nodes(choice, options=PrefrontalCortex.CHOICE_NUM):
     """Returns a list of zeroes with 1 at the index of the choice - 1, or no 1 at all if 0 is supplied"""
 
-    nodes = [0 for _ in range(options)]
+    nodes = np.zeros(options)
     if choice:
         nodes[choice - 1] = 1
     return nodes

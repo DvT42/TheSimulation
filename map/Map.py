@@ -23,7 +23,7 @@ class Map:
                     8: ([249, 178, 51, 255], "Savanna"),
                     9: ([249, 74, 0, 255], "Desert"),
                     10: ([214, 37, 255, 255], "mediterranean")}
-    BIOME_MAP_PATH = BASE_PATH + r"\map\only_biome_map.png"
+    BIOME_MAP_PATH = BASE_PATH + r"\only_biome_map.png"
 
     def __init__(self):
         self.points = []
@@ -52,7 +52,31 @@ class Map:
         self.bbox = gpd.read_file(bbox_path)
 
     def get_biome(self, coordinates):
-        return self.biome_map[coordinates]
+        return self.biome_map[np.swapaxes(coordinates, 0, 1)]
+
+    def get_surrounding_biomes(self, coordinates):
+        coordinates = np.swapaxes(coordinates, 0, 1)
+
+        startx = coordinates[0] - 1
+        endx = coordinates[0] + 1
+        starty = coordinates[1] - 1
+        endy = coordinates[1] + 1
+
+        area = np.zeros((3, 3))
+
+        if startx == -1:
+            if starty == -1:
+                area[1:, 1:] = self.biome_map[:2, :2]
+                area[1:3, 0] = self.biome_map[:2, -1]
+            elif endy == 800:
+                area[:2, 1:] = self.biome_map[-2:, :1]
+        elif starty > endy:
+            pass
+        else:
+            area = self.biome_map[startx: endx,
+                                  starty: endy]
+
+        return area
 
     def place_points(self, locations: np.ndarray):
         # Turn points into list of x,y shapely points, and translate them from km to m.
