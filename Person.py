@@ -107,8 +107,8 @@ class Person:
         return random_number < death_chance
 
     # noinspection PyTypeChecker
-    def action(self):
-        decision = self.brain.call_decision_making()
+    def action(self, region):
+        decision = self.brain.call_decision_making(region=region)
 
         if decision == 0:
             # should improve attitudes/merge

@@ -8,13 +8,17 @@ class Simulation:
     SHOULD_PROBABLY_BE_DEAD = 120 * 12
     IMMUNITY_TIME = 10 * 12
     INITIAL_COUPLES = 6
+    STARTING_LOCATION = (0, 0)
 
     def __init__(self, sim_map, imported=None):
         self.collective = Collective()
         Person.Person_reset(Simulation.INITIAL_COUPLES)
 
         self.map = sim_map
-        self.regions = [Region(location=(0, 0), biome=self.map.get_biome((0, 0)))]
+        self.regions = [Region(location=Simulation.STARTING_LOCATION,
+                               surroundings=(self.map.get_surrounding_biomes(Simulation.STARTING_LOCATION),
+                                             np.zeros(8, dtype=int)),
+                               biome=self.map.get_biome(Simulation.STARTING_LOCATION))]
 
         if type(imported) is np.ndarray and imported.any():
             actual_brains = Simulation.assemble_brains(imported[:Simulation.INITIAL_COUPLES])
@@ -83,7 +87,7 @@ class Simulation:
                         p.partner.partner = None
                     continue
 
-                action = p.action()
+                action = p.action(region=reg)
                 if action == 0:
                     social_connectors.append(p)
 

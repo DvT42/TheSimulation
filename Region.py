@@ -1,7 +1,12 @@
+import numpy as np
+
+
 class Region:
-    def __init__(self, location, biome, population=None):
-        self.location = location
+    def __init__(self, location, surroundings, biome, population=None):
+        self.location = np.array(location)
         self.biome = biome
+        self.surr_biomes, self.surr_pop = surroundings
+
         if population:
             self.Population = population
         else:
@@ -20,7 +25,7 @@ class Region:
         return (p for p in self.Population)
 
     def __repr__(self):
-        return f'{self.location}, {self.biome}'
+        return f'({self.location}, {self.biome})'
 
     def display(self):
         txt = f'location: {self.location}:\n----------\n'

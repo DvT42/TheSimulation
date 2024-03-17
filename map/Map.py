@@ -23,7 +23,7 @@ class Map:
                     8: ([249, 178, 51, 255], "Savanna"),
                     9: ([249, 74, 0, 255], "Desert"),
                     10: ([214, 37, 255, 255], "mediterranean")}
-    BIOME_MAP_PATH = BASE_PATH + r"\map\only_biome_map.png"
+    BIOME_MAP_PATH = BASE_PATH + r"\map" + r"\only_biome_map.png"
 
     def __init__(self):
         self.points = []
@@ -52,7 +52,47 @@ class Map:
         self.bbox = gpd.read_file(bbox_path)
 
     def get_biome(self, coordinates):
-        return self.biome_map[coordinates]
+        return self.biome_map[np.flip(coordinates, 0)]
+
+    def get_surrounding_biomes(self, coordinates):
+        coordinates = np.flip(coordinates, 0)
+
+        starty = coordinates[0] - 1
+        endy = coordinates[0] + 1
+        startx = coordinates[1] - 1
+        endx = coordinates[1] + 1
+
+        area = np.zeros((3, 3), dtype=int)
+
+        if startx == -1:
+            if starty == -1:
+                area[1:, 1:] = self.biome_map[:2, :2]
+                area[1:, 0] = self.biome_map[:2, -1]
+            elif endy == 800:
+                area[:2, 1:] = self.biome_map[-2:, :2]
+                area[:2, 0] = self.biome_map[-2:, -1]
+            else:
+                area[:, 1:] = self.biome_map[starty:endy + 1, :2]
+                area[:, 0] = self.biome_map[starty:endy + 1, -1]
+        elif endx == 1600:
+            if starty == -1:
+                area[1:, :2] = self.biome_map[:2, -2:]
+                area[1:, -1] = self.biome_map[:2, 0]
+            elif endy == 800:
+                area[:2, :2] = self.biome_map[-2:, -2:]
+                area[:2, -1] = self.biome_map[-2:, 0]
+            else:
+                area[:, :2] = self.biome_map[starty:endy + 1, -2:]
+                area[:, -1] = self.biome_map[starty:endy + 1, 0]
+        elif starty == -1:
+            area[1:] = self.biome_map[:2, startx:endx + 1]
+        elif endy == 800:
+            area[:2] = self.biome_map[-2:, startx:endx + 1]
+        else:
+            area = self.biome_map[starty: endy + 1,
+                                  startx: endx + 1]
+
+        return area
 
     def place_points(self, locations: np.ndarray):
         # Turn points into list of x,y shapely points, and translate them from km to m.
@@ -123,6 +163,8 @@ class Map:
 
 
 if __name__ == "__main__":
+    Map.BIOME_MAP_PATH = Map.BASE_PATH + r"\only_biome_map.png"
+
     # Create numpy array of x,y point locations
     add_points = np.array([[-5000, 0],
                            [0, 5000],
