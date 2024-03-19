@@ -15,7 +15,7 @@ class Collective:
 
     # PFC constants
     CHOICE_RANDOMIZER = 0.1
-    CHOICE_NUM = 2
+    CHOICE_NUM = 10
 
     # HPC constants
     SHOULD_PROBABLY_BE_DEAD = 120 * 12
@@ -83,17 +83,19 @@ class Brain:
             mother_choice = Brain.get_action_from_history(self.person.age(), self.person.mother_history)
         if self.person.partner:
             partner_choice = Brain.get_action_from_history(self.person.age(), self.person.partner.brain.get_history())
+            partner_loc = self.person.partner.location
         else:
             partner_choice = 0
+            partner_loc = np.array([0, 0])
 
         loc = region.location
         regional_biomes = region.surr_biomes
-        regional_pop = region.surr_pop
+        regional_pop = region.surr_pop()
 
         return self.brainparts.get("PFC").decision_making(
             self.person.gender, self.person.age(), self.person.strength, preg, youngness, self.person.readiness,
             self.person.child_num, Brain.get_action_from_history(self.person.age() - 1, self.get_history()),
-            father_choice, mother_choice, partner_choice, loc, regional_biomes, regional_pop
+            father_choice, mother_choice, partner_choice, loc, partner_loc, regional_biomes, regional_pop
         )
 
     def get_first_impression(self, other):
@@ -138,7 +140,7 @@ class Brain:
         self.collective.world_attitudes[:self.collective.population_size, self.person.id] = arr
 
     def update_location_history(self):
-        self.brainparts.get("HPC").location_history.append((self.person.location, self.person.age()))
+        self.brainparts.get("HPC").location_history.append((str(self.person.location), self.person.age()))
 
     def get_location_history(self):
         return self.brainparts.get("HPC").location_history
@@ -218,7 +220,7 @@ class PrefrontalCortex(BrainPart):
             self.model = model
 
         else:
-            input_num = 26 + PrefrontalCortex.CHOICE_NUM * 4
+            input_num = 29 + PrefrontalCortex.CHOICE_NUM * 4
 
             model = NeuralNetwork()
             model.add_layer(input_num, input_num=input_num, activation='relu')  # input layer (1)
@@ -230,21 +232,22 @@ class PrefrontalCortex(BrainPart):
 
     def decision_making(
             self, gender, age, strength, pregnancy, biowatch, readiness, child_num, previous_choice, father_choice,
-            mother_choice, partner_choice, location, regional_biomes, regional_pop
+            mother_choice, partner_choice, location, partner_location, regional_biomes, regional_pop
     ):
         if random.random() > PrefrontalCortex.CHOICE_RANDOMIZER:
             # this list is for convenience, to know what does each index of option means.
-            # choices = ["social connection", "strength", "location"]
+            # choices = ["social connection", "strength", "location"[8]]
 
-            neural_input = np.array([gender, age, strength, pregnancy, biowatch, readiness, child_num])
+            neural_input = np.array([gender, age, strength, pregnancy, biowatch, readiness, child_num,
+                                     *get_choice_nodes(previous_choice),
+                                     *get_choice_nodes(father_choice),
+                                     *get_choice_nodes(mother_choice),
+                                     *get_choice_nodes(partner_choice),
+                                     *location,
+                                     *partner_location,
+                                     *regional_biomes.flatten(),
+                                     *regional_pop])
 
-            neural_input = np.append(neural_input, [*get_choice_nodes(previous_choice),
-                                                    *get_choice_nodes(father_choice),
-                                                    *get_choice_nodes(mother_choice),
-                                                    *get_choice_nodes(partner_choice),
-                                                    *location,
-                                                    *regional_biomes.flatten(),
-                                                    *regional_pop])
             # need to preprocess the data to squash it between 0 and 1. ?
 
             # output
@@ -254,11 +257,23 @@ class PrefrontalCortex(BrainPart):
         else:
             r = random.random()
             # Calculate the slice index
-            choice_index = int(np.floor(r * PrefrontalCortex.CHOICE_NUM))
+            choice_index = int(np.floor(r * (PrefrontalCortex.CHOICE_NUM - 8)))
 
             # Adjust the slice index if the random number falls exactly on a slice boundary
-            if r == choice_index / PrefrontalCortex.CHOICE_NUM:
+            if r == choice_index / (PrefrontalCortex.CHOICE_NUM - 8):
                 choice_index -= 1
+
+            if choice_index == (PrefrontalCortex.CHOICE_NUM - 8):
+                r = random.random()
+                # Calculate the slice index
+                choice_index = int(np.floor(r * 8))
+
+                # Adjust the slice index if the random number falls exactly on a slice boundary
+                if r == choice_index / 8:
+                    choice_index -= 1
+
+                choice_index += PrefrontalCortex.CHOICE_NUM - 8
+
             return choice_index
 
 

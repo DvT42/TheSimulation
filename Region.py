@@ -2,10 +2,12 @@ import numpy as np
 
 
 class Region:
-    def __init__(self, location, surroundings, biome, population=None):
+    def __init__(self, location, surrounding_biomes, biome, neighbors=np.empty((3, 3), dtype=object), population=None):
         self.location = np.array(location)
         self.biome = biome
-        self.surr_biomes, self.surr_pop = surroundings
+        self.surr_biomes = surrounding_biomes
+        self.neighbors = neighbors
+        self.neighbors[1, 1] = self
 
         if population:
             self.Population = population
@@ -20,6 +22,16 @@ class Region:
     def remove_person(self, person):
         self.Population.remove(person)
         self.pop_id.remove(person.id)
+
+    def falsify_action_flags(self):
+        for p in self.Population:
+            p.action_flag = False
+
+    def surr_pop(self):
+        lst = np.zeros(9).reshape((3, 3))
+        for i, j in zip(*np.where(self.neighbors)):
+            lst[i, j] = len(self.neighbors[i, j].Population)
+        return lst.flatten()
 
     def __iter__(self):
         return (p for p in self.Population)

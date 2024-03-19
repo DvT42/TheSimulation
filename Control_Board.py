@@ -30,6 +30,8 @@ class ControlBoard:
         elif com[0].lower() == 'i':
             if com[1].lower() == 'a':
                 print(ControlBoard.info_search(sim, int(com[2:]), is_att=True))
+            elif com[1].lower() == 'l':
+                print(ControlBoard.info_search(sim, int(com[2:]), is_loc=True))
             else:
                 print(ControlBoard.info_search(sim, int(com[1:])))
 
@@ -47,9 +49,11 @@ class ControlBoard:
         return sim
 
     @staticmethod
-    def info_search(sim: Simulation, id: int, is_att=False):
+    def info_search(sim: Simulation, id: int, is_att=False, is_loc=False):
         if is_att:
             return sim.get_attitudes(id)
+        elif is_loc:
+            return sim.get_historical_figure(id)[0].brain.get_location_history()
         person, history = sim.get_historical_figure(id)
         return (f'\n{person}'
                 f'\n{history}')

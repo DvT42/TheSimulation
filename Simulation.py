@@ -7,43 +7,53 @@ class Simulation:
     MARRIAGE_AGE = 12 * 12
     SHOULD_PROBABLY_BE_DEAD = 120 * 12
     IMMUNITY_TIME = 10 * 12
-    INITIAL_COUPLES = 6
-    STARTING_LOCATION = (0, 0)
+    SELECTED_COUPLES = 6
+    INITIAL_COUPLES = 50
+    STARTING_LOCATION = (850, 400)
 
     def __init__(self, sim_map, imported=None):
         self.collective = Collective()
         Person.Person_reset(Simulation.INITIAL_COUPLES)
 
         self.map = sim_map
-        self.regions = [Region(location=Simulation.STARTING_LOCATION,
-                               surroundings=(self.map.get_surrounding_biomes(Simulation.STARTING_LOCATION),
-                                             np.zeros(8, dtype=int)),
-                               biome=self.map.get_biome(Simulation.STARTING_LOCATION))]
+        self.regions = np.empty((800, 1600), dtype=Region)
+        initial_region_index = tuple(np.flip(Simulation.STARTING_LOCATION, 0))
+        self.regions[initial_region_index] = (
+            Region(location=Simulation.STARTING_LOCATION,
+                   surrounding_biomes=self.map.get_surroundings(self.map.biome_map, Simulation.STARTING_LOCATION),
+                   biome=self.map.get_biome(Simulation.STARTING_LOCATION)))
 
         if type(imported) is np.ndarray and imported.any():
-            actual_brains = Simulation.assemble_brains(imported[:Simulation.INITIAL_COUPLES])
+            actual_brains = Simulation.assemble_brains(imported[:Simulation.SELECTED_COUPLES])
             for brain_couple in actual_brains:
-                m = Person(father=[Gender.Male, 100, [0, 0]], collective=self.collective)
+                m = Person(father=[Gender.Male, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective)
                 m.brain = brain_couple[0]
                 brain_couple[0].transfer_brain(m)
 
-                f = Person(father=[Gender.Female, 100, [0, 0]], collective=self.collective)
+                f = Person(father=[Gender.Female, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective)
                 f.brain = brain_couple[1]
                 brain_couple[1].transfer_brain(f)
 
-                self.regions[0].add_person(m)
-                self.regions[0].add_person(f)
+                self.regions[initial_region_index].add_person(m)
+                self.regions[initial_region_index].add_person(f)
+            for c in range(Simulation.INITIAL_COUPLES - Simulation.SELECTED_COUPLES):
+                self.regions[initial_region_index].add_person(Person(
+                    father=[Gender.Male, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
+                self.regions[initial_region_index].add_person(Person(
+                    father=[Gender.Female, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
 
         else:
             for i in range(Simulation.INITIAL_COUPLES):
-                self.regions[0].add_person(Person(father=[Gender.Male, 100, [0, 0]], collective=self.collective))
-                self.regions[0].add_person(Person(father=[Gender.Female, 100, [0, 0]], collective=self.collective))
+                self.regions[initial_region_index].add_person(Person(
+                    father=[Gender.Male, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
+                self.regions[initial_region_index].add_person(Person(
+                    father=[Gender.Female, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
 
-        for p in self.regions[0].Population:
+        for p in self.regions[initial_region_index].Population:
             self.collective.add_person(p)
 
-        for i in self.regions[0].Population:
-            for j in self.regions[0].Population:
+        for i in self.regions[initial_region_index].Population:
+            for j in self.regions[initial_region_index].Population:
                 if j is not i:
                     i.brain.get_first_impression(j)
 
@@ -54,42 +64,67 @@ class Simulation:
     def month_advancement(self):
         self.Time += 1
 
+        for i, j in zip(*np.where(self.regions)):
+            self.regions[i, j].falsify_action_flags()
+
         # Person.ages[:Person.runningID] += 1 // might decide to transfer it to this format later
-        for reg in self.regions:
+        for i, j in zip(*np.where(self.regions)):
+            # noinspection PyTypeChecker
+            reg: Region = self.regions[i, j]
             newborns = []
             social_connectors = []
+            dead = []
+            relocating_people = []
 
             for idx, p in enumerate(reg):
                 p: Person
-                Person.ages[p.id] += 1
 
-                #  - handle pregnancy
-                if p.gender == Gender.Female:
-                    if p.father_of_child is not None:
-                        if p.pregnancy == 9:
-                            newborn = p.birth()
-                            newborns.append(newborn)
+                if not p.action_flag:
+                    Person.ages[p.id] += 1
+
+                    #  - handle pregnancy
+                    if p.gender == Gender.Female:
+                        if p.father_of_child is not None:
+                            if p.pregnancy == 9:
+                                newborn = p.birth()
+                                newborns.append(newborn)
+                            else:
+                                p.pregnancy += 1
+                        elif p.age() > p.readiness and p.youngness > 0:
+                            p.youngness -= 1
+
+                    p.aging()  # handles old people's aging process.
+
+                    # handle growing up
+                    if p.year() < 15:
+                        p.strength += 0.25
+
+                    if p.natural_death_chance() and self.Time > Simulation.IMMUNITY_TIME:
+                        dead.append(p)
+                        continue
+
+                    action = p.action(region=reg)
+                    if action == 0:
+                        social_connectors.append(p)
+                    if action in np.arange(2, 10):
+                        if p.location[1] >= 800 or p.location[1] < 0:
+                            dead.append(p)
+                            continue
+                        new_reg = self.regions[tuple(np.flip(p.location))]
+                        relocating_people.append(p)
+                        if new_reg:
+                            new_reg.add_person(p)
                         else:
-                            p.pregnancy += 1
-                    elif p.age() > p.readiness and p.youngness > 0:
-                        p.youngness -= 1
+                            neighbors = self.map.get_surroundings(self.regions, p.location, dtype=Region)
+                            new_reg = Region(location=p.location,
+                                             surrounding_biomes=self.map.get_surroundings(self.map.biome_map, p.location),
+                                             biome=self.map.get_biome(p.location),
+                                             neighbors=neighbors)
+                            new_reg.add_person(p)
+                            self.regions[tuple(np.flip(p.location))] = new_reg
+                            self.update_neighbors(neighbors)
 
-                p.aging()  # handles old people's aging process.
-
-                # handle growing up
-                if p.year() < 15:
-                    p.strength += 0.25
-
-                if p.natural_death_chance() and self.Time > Simulation.IMMUNITY_TIME:
-                    reg.remove_person(p)
-                    p.isAlive = False
-                    if p.partner:
-                        p.partner.partner = None
-                    continue
-
-                action = p.action(region=reg)
-                if action == 0:
-                    social_connectors.append(p)
+                    p.action_flag = True
 
             for newborn in newborns:
                 self.collective.add_person(newborn)
@@ -99,9 +134,6 @@ class Simulation:
                     other.brain.get_first_impression(newborn)
 
                 reg.add_person(newborn)
-
-            if not reg.Population:
-                self.regions.remove(reg)
 
             for social_connector in social_connectors:
                 social_connector: Person
@@ -116,16 +148,39 @@ class Simulation:
                         social_connector.partner = social_connector.partner_selection()
                         if social_connector.partner:
                             social_connector.partner.partner = social_connector
-
                 else:
                     social_connector.brain.improve_my_attitudes()
 
+            for d in dead:
+                Simulation.kill_person(d, reg)
+            for rlp in relocating_people:
+                reg.remove_person(rlp)
+
+            if not reg.Population:
+                self.regions[i, j] = None
+                neighbors = self.map.get_surroundings(self.regions, (j, i), dtype=Region)
+                self.update_neighbors(neighbors)
+
     def is_eradicated(self):
-        return not self.regions
+        return not np.any(self.regions)
+
+    @staticmethod
+    def update_neighbors(area):
+        center = area[tuple(np.array(area.shape) // 2)]
+        for i, j in zip(*np.where(area)):
+            relative_position = np.array(area.shape) // 2 - [i, j]
+            area[i, j].neighbors[tuple([1, 1] + relative_position)] = center
+
+    @staticmethod
+    def kill_person(p, reg):
+        reg.remove_person(p)
+        p.isAlive = False
+        if p.partner:
+            p.partner.partner = None
 
     def get_historical_figure(self, id):
         hf = self.collective.historical_population[id]
-        return hf, hf.brain.get_history()[:hf.age()]
+        return hf, hf.brain.get_history()[:hf.age() + 1]
 
     def get_attitudes(self, id):
         return self.collective.historical_population[id].collective.world_attitudes[id]
@@ -147,12 +202,12 @@ class Simulation:
         gender_idx = np.argmax(sorted_his[:, 1])
         male_lst, female_lst = sorted_his[gender_idx:], sorted_his[:gender_idx]
 
-        for i in range(Simulation.INITIAL_COUPLES):
+        for i in range(Simulation.SELECTED_COUPLES):
             best_minds.append((neural_list[male_lst[-i - 1][0]], neural_list[female_lst[-i - 1][0]]))
 
         return (best_minds,
-                male_lst[-Simulation.INITIAL_COUPLES:],
-                female_lst[-Simulation.INITIAL_COUPLES:])
+                male_lst[-Simulation.SELECTED_COUPLES:],
+                female_lst[-Simulation.SELECTED_COUPLES:])
 
     @staticmethod
     def prepare_best_for_reprocess(best_minds, male_lst, female_lst):
@@ -187,9 +242,9 @@ class Simulation:
     def display(self):
         txt = f"Year: {self.Time // 12}\n\n"
 
-        for reg in self.regions:
-            txt += reg.display()
-            txt += '\n----------\n'
+        for i, j in zip(*np.where(self.regions)):
+            txt += self.regions[i, j].display()
+            txt += '\n----------\n\n\n'
 
         if self.is_eradicated():
             txt = "SPECIES GONE"

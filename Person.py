@@ -14,12 +14,12 @@ class Person:
 
     runningID = 0
     ages = np.zeros(MAX_POPULATION, dtype=int)
-    ages[0], ages[1] = 20 * 12, 20 * 12
 
     def __init__(self, collective, father, mother=None):
         # ID assignment
         self.isAlive = True
         self.isManual = type(father) is list
+        self.action_flag = False
         self.id = Person.runningID
         Person.runningID += 1
 
@@ -116,12 +116,28 @@ class Person:
         if decision == 1:
             self.strength += 0.5
             self.brain.set_history(self.age(), 2)
-        # if decision == 2:
-        #     # (function that checks the best place within range)
-        #
-        #     self.location[random.randint(0, 1)] += int(Person.RANGE * random.uniform(-1, 1))
-        #     self.brain.update_location_history()
-        #     self.brain.set_history(self.age(), 3)
+        if decision in np.arange(2, 10):
+            if decision == 2:
+                self.location += (-1, 1)
+            elif decision == 3:
+                self.location += (0, 1)
+            elif decision == 4:
+                self.location += (1, 1)
+            elif decision == 5:
+                self.location += (-1, 0)
+            elif decision == 6:
+                self.location += (1, 0)
+            elif decision == 7:
+                self.location += (-1, -1)
+            elif decision == 8:
+                self.location += (0, -1)
+            elif decision == 9:
+                self.location += (1, -1)
+
+            self.location[0] %= 1600
+
+            self.brain.update_location_history()
+            self.brain.set_history(self.age(), 3)
         return decision
 
     def aging(self):

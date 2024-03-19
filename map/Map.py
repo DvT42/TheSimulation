@@ -52,44 +52,48 @@ class Map:
         self.bbox = gpd.read_file(bbox_path)
 
     def get_biome(self, coordinates):
-        return self.biome_map[np.flip(coordinates, 0)]
+        return self.biome_map[tuple(np.flip(coordinates, 0))]
 
-    def get_surrounding_biomes(self, coordinates):
-        coordinates = np.flip(coordinates, 0)
+    @staticmethod
+    def get_surroundings(matrix, coordinates, dtype=int):
+        coordinates = tuple(np.flip(coordinates, 0))
 
         starty = coordinates[0] - 1
         endy = coordinates[0] + 1
         startx = coordinates[1] - 1
         endx = coordinates[1] + 1
 
-        area = np.zeros((3, 3), dtype=int)
+        if dtype == int:
+            area = np.zeros((3, 3), dtype=int)
+        else:
+            area = np.empty((3, 3), dtype=dtype)
 
         if startx == -1:
             if starty == -1:
-                area[1:, 1:] = self.biome_map[:2, :2]
-                area[1:, 0] = self.biome_map[:2, -1]
+                area[1:, 1:] = matrix[:2, :2]
+                area[1:, 0] = matrix[:2, -1]
             elif endy == 800:
-                area[:2, 1:] = self.biome_map[-2:, :2]
-                area[:2, 0] = self.biome_map[-2:, -1]
+                area[:2, 1:] = matrix[-2:, :2]
+                area[:2, 0] = matrix[-2:, -1]
             else:
-                area[:, 1:] = self.biome_map[starty:endy + 1, :2]
-                area[:, 0] = self.biome_map[starty:endy + 1, -1]
+                area[:, 1:] = matrix[starty:endy + 1, :2]
+                area[:, 0] = matrix[starty:endy + 1, -1]
         elif endx == 1600:
             if starty == -1:
-                area[1:, :2] = self.biome_map[:2, -2:]
-                area[1:, -1] = self.biome_map[:2, 0]
+                area[1:, :2] = matrix[:2, -2:]
+                area[1:, -1] = matrix[:2, 0]
             elif endy == 800:
-                area[:2, :2] = self.biome_map[-2:, -2:]
-                area[:2, -1] = self.biome_map[-2:, 0]
+                area[:2, :2] = matrix[-2:, -2:]
+                area[:2, -1] = matrix[-2:, 0]
             else:
-                area[:, :2] = self.biome_map[starty:endy + 1, -2:]
-                area[:, -1] = self.biome_map[starty:endy + 1, 0]
+                area[:, :2] = matrix[starty:endy + 1, -2:]
+                area[:, -1] = matrix[starty:endy + 1, 0]
         elif starty == -1:
-            area[1:] = self.biome_map[:2, startx:endx + 1]
+            area[1:] = matrix[:2, startx:endx + 1]
         elif endy == 800:
-            area[:2] = self.biome_map[-2:, startx:endx + 1]
+            area[:2] = matrix[-2:, startx:endx + 1]
         else:
-            area = self.biome_map[starty: endy + 1,
+            area = matrix[starty: endy + 1,
                                   startx: endx + 1]
 
         return area
