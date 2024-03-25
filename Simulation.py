@@ -7,7 +7,7 @@ class Simulation:
     MARRIAGE_AGE = 12 * 12
     SHOULD_PROBABLY_BE_DEAD = 120 * 12
     IMMUNITY_TIME = 10 * 12
-    SELECTED_COUPLES = 6
+    SELECTED_COUPLES = 2
     INITIAL_COUPLES = 50
     STARTING_LOCATION = (850, 400)
 
@@ -22,6 +22,7 @@ class Simulation:
             Region(location=Simulation.STARTING_LOCATION,
                    surrounding_biomes=self.map.get_surroundings(self.map.biome_map, Simulation.STARTING_LOCATION),
                    biome=self.map.get_biome(Simulation.STARTING_LOCATION)))
+        self.region_iterator = [initial_region_index]
 
         if type(imported) is np.ndarray and imported.any():
             actual_brains = Simulation.assemble_brains(imported[:Simulation.SELECTED_COUPLES])
@@ -58,17 +59,16 @@ class Simulation:
                     i.brain.get_first_impression(j)
 
         self.Time = 0
-        self.Pregnant_Women = []
 
     # @jit(target_backend='cuda')
     def month_advancement(self):
         self.Time += 1
 
-        for i, j in zip(*np.where(self.regions)):
+        for i, j in self.region_iterator:
             self.regions[i, j].falsify_action_flags()
 
         # Person.ages[:Person.runningID] += 1 // might decide to transfer it to this format later
-        for i, j in zip(*np.where(self.regions)):
+        for i, j in self.region_iterator:
             # noinspection PyTypeChecker
             reg: Region = self.regions[i, j]
             newborns = []
@@ -123,6 +123,7 @@ class Simulation:
                             new_reg.add_person(p)
                             self.regions[tuple(np.flip(p.location))] = new_reg
                             self.update_neighbors(neighbors)
+                            self.region_iterator.append(tuple(np.flip(p.location)))
 
                     p.action_flag = True
 
@@ -158,6 +159,7 @@ class Simulation:
 
             if not reg.Population:
                 self.regions[i, j] = None
+                self.region_iterator.remove((i, j))
                 neighbors = self.map.get_surroundings(self.regions, (j, i), dtype=Region)
                 self.update_neighbors(neighbors)
 
