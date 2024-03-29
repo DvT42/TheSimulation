@@ -64,9 +64,9 @@ class Brain:
                                "AMG": Amygdala(models[1]),
                                "HPC": Hippocampus()}
 
-    def evolve(self):  # Evolvement currently on hold
-        for brainpart in self.brainparts.values():
-            brainpart.evolvement()
+    # def evolve(self):  # Evolvement currently on hold
+    #     for brainpart in self.brainparts.values():
+    #         brainpart.evolvement()
 
     def call_decision_making(self, region):
         if self.person.gender == 0:
@@ -194,17 +194,17 @@ class BrainPart:
         else:
             return self.model.get_weights(), self.model.get_biases()
 
-    def evolvement(self):
-        if self.model:
-            new_weights = np.asarray(self.model.get_weights())
-
-            for matrix in new_weights[::2]:
-                matrix += np.array(
-                    [[(random.uniform(-0.01, 0.01) if random.random() < 0.2 else 0) for _ in range(matrix.shape[1])]
-                     for _ in range(matrix.shape[0])]
-                )
-
-            self.model.set_weights(new_weights)
+    # def evolvement(self):
+    #     if self.model:
+    #         new_weights = np.asarray(self.model.get_weights())
+    #
+    #         for matrix in new_weights[::2]:
+    #             matrix += np.array(
+    #                 [[(random.uniform(-0.01, 0.01) if random.random() < 0.2 else 0) for _ in range(matrix.shape[1])]
+    #                  for _ in range(matrix.shape[0])]
+    #             )
+    #
+    #         self.model.set_weights(new_weights)
 
 
 class PrefrontalCortex(BrainPart):
@@ -239,10 +239,10 @@ class PrefrontalCortex(BrainPart):
             # choices = ["social connection", "strength", "location"[8]]
 
             neural_input = np.array([gender, age, strength, pregnancy, biowatch, readiness, child_num,
-                                     *get_choice_nodes(previous_choice),
-                                     *get_choice_nodes(father_choice),
-                                     *get_choice_nodes(mother_choice),
-                                     *get_choice_nodes(partner_choice),
+                                     *PrefrontalCortex.get_choice_nodes(previous_choice),
+                                     *PrefrontalCortex.get_choice_nodes(father_choice),
+                                     *PrefrontalCortex.get_choice_nodes(mother_choice),
+                                     *PrefrontalCortex.get_choice_nodes(partner_choice),
                                      *location,
                                      *partner_location,
                                      *regional_biomes.flatten(),
@@ -275,6 +275,15 @@ class PrefrontalCortex(BrainPart):
                 choice_index += PrefrontalCortex.CHOICE_NUM - 8
 
             return choice_index
+
+    @staticmethod
+    def get_choice_nodes(choice, options=CHOICE_NUM):
+        """Returns a list of zeroes with 1 at the index of the choice - 1, or no 1 at all if 0 is supplied"""
+
+        nodes = np.zeros(options, dtype=int)
+        if choice:
+            nodes[choice - 1] = 1
+        return nodes
 
 
 class Amygdala(BrainPart):
@@ -358,12 +367,3 @@ class Hippocampus(BrainPart):
 
         self.dead_impressions = {}
         self.first_impressions = {}
-
-
-def get_choice_nodes(choice, options=PrefrontalCortex.CHOICE_NUM):
-    """Returns a list of zeroes with 1 at the index of the choice - 1, or no 1 at all if 0 is supplied"""
-
-    nodes = np.zeros(options, dtype=int)
-    if choice:
-        nodes[choice - 1] = 1
-    return nodes
