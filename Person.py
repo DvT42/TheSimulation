@@ -165,6 +165,13 @@ class Person:
                 arr[np.argmax(arr)] = 0
             return None
 
+    # noinspection PyTypeChecker
+    def age(self):
+        return Person.ages[self.id]
+
+    def year(self):
+        return self.age() // 12
+
     @staticmethod
     def Person_reset(initial_couples):
         Person.runningID = 0
@@ -204,13 +211,6 @@ class Person:
                 txt += f"\n timer: {self.youngness}"
 
         return txt
-
-    # noinspection PyTypeChecker
-    def age(self):
-        return Person.ages[self.id]
-
-    def year(self):
-        return self.age() // 12
 
 
 class Gender(enum.IntEnum):
