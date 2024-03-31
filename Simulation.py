@@ -7,8 +7,8 @@ class Simulation:
     MARRIAGE_AGE = 12 * 12
     SHOULD_PROBABLY_BE_DEAD = 120 * 12
     IMMUNITY_TIME = 10 * 12
-    SELECTED_COUPLES = 2
-    INITIAL_COUPLES = 50
+    SELECTED_COUPLES = 1
+    INITIAL_COUPLES = 2
     STARTING_LOCATION = (850, 400)
 
     def __init__(self, sim_map, imported=None):
@@ -24,7 +24,7 @@ class Simulation:
                    biome=self.map.get_biome(Simulation.STARTING_LOCATION)))
         self.region_iterator = [initial_region_index]
 
-        if type(imported) is np.ndarray and imported.any():
+        if Simulation.SELECTED_COUPLES and type(imported) is np.ndarray and imported.any():
             actual_brains = Simulation.assemble_brains(imported[:Simulation.SELECTED_COUPLES])
             for brain_couple in actual_brains:
                 m = Person(father=[Gender.Male, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective)

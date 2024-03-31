@@ -199,7 +199,7 @@ class Person:
         else:
             txt = f"{self.id}: \n"
 
-        txt += f"gender: {self.gender.name}, age: {self.year()}\n" \
+        txt += f"gender: {self.gender.name}, age: {self.year()}, children: {self.child_num}\n" \
                f"strength: {self.strength}\n" \
                f"last action: {Brain.get_action_from_history(self.age(), self.brain.get_history())}"
 

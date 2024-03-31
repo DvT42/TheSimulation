@@ -59,7 +59,7 @@ class ControlBoard:
                 f'\n{history}')
 
     @staticmethod
-    def exact_skip(sim: Simulation, num: int, failsafe: bool = True):
+    def exact_skip(sim: Simulation, num: int, failsafe: bool = True, regressive=False):
         dest_time = sim.Time + num
         best_minds_lst = []
         quality_lst = np.empty((0, 3), dtype=int)
@@ -76,13 +76,15 @@ class ControlBoard:
                     processed_best_minds, unified_lst = Simulation.prepare_best_for_reprocess(best_minds,
                                                                                               male_lst[:, 1:],
                                                                                               female_lst[:, 1:])
-                    best_minds_lst.extend(processed_best_minds)
-                    quality_lst = np.append(quality_lst, unified_lst, axis=0)
+                    if regressive:
+                        best_minds_lst.extend(processed_best_minds)
+                        quality_lst = np.append(quality_lst, unified_lst, axis=0)
 
-                    best_minds, male_lst, female_lst = sim.find_best_minds(
-                        [best_minds_lst, quality_lst[:, 0], quality_lst[:, 1], quality_lst[:, 2]])
-                    processed_best_minds, unified_lst = Simulation.prepare_best_for_reprocess(
-                        best_minds, male_lst[:, 1:], female_lst[:, 1:])
+                        best_minds, male_lst, female_lst = sim.find_best_minds(
+                            [best_minds_lst, quality_lst[:, 0], quality_lst[:, 1], quality_lst[:, 2]])
+                        processed_best_minds, unified_lst = Simulation.prepare_best_for_reprocess(
+                            best_minds, male_lst[:, 1:], female_lst[:, 1:])
+
                     best_minds_lst = processed_best_minds
                     quality_lst = unified_lst
 
@@ -104,8 +106,8 @@ class ControlBoard:
                 return sim
 
     @staticmethod
-    def annual_skip(sim: Simulation, num: int, failsafe: bool = True):
-        return ControlBoard.exact_skip(sim, num=num * 12, failsafe=failsafe)
+    def annual_skip(sim: Simulation, num: int, failsafe: bool = True, regressive: bool = False):
+        return ControlBoard.exact_skip(sim, num=num * 12, failsafe=failsafe, regressive=regressive)
 
 
 class ProgressBar(tqdm.tqdm):
