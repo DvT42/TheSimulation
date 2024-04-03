@@ -7,8 +7,8 @@ class Simulation:
     MARRIAGE_AGE = 12 * 12
     SHOULD_PROBABLY_BE_DEAD = 120 * 12
     IMMUNITY_TIME = 10 * 12
-    SELECTED_COUPLES = 1
-    INITIAL_COUPLES = 2
+    SELECTED_COUPLES = 100
+    INITIAL_COUPLES = 1000
     STARTING_LOCATION = (850, 400)
 
     def __init__(self, sim_map, imported=None):

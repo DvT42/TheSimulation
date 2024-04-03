@@ -6,7 +6,7 @@ from Neural_Network import NeuralNetwork
 
 class Collective:
     # Collective Constants:
-    BASIC_POPULATION = 1000
+    BASIC_POPULATION = 10000
 
     # brainpart constants:
     INHERITANCE_RATIO = 0.5
@@ -14,7 +14,7 @@ class Collective:
     MUTATION_NORMALIZATION_RATIO = 0.3
 
     # PFC constants
-    CHOICE_RANDOMIZER = 0.1
+    CHOICE_RANDOMIZER = 0.0
     CHOICE_NUM = 10
 
     # HPC constants
