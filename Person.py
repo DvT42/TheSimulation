@@ -1,15 +1,15 @@
 import math
-import random
 import enum
-import numpy as np
-from Brain import Brain
+from Brain import *
 
 
 class Person:
     MAX_POPULATION = 10000000
     AGING_STARTING_AGE = 40 * 12
     DRASTIC_AGING_AGE = 75 * 12
+    STRENGTH_MODIFIER = 1
     DIFF_AGE = 15 * 12
+    GIVE_UP_DISTANCE = 1
     DEATH_NORMALIZER = 0.3
 
     runningID = 0
@@ -30,7 +30,6 @@ class Person:
         if Person.MAX_POPULATION < Person.runningID:
             print("Reached Max Person.runningID")
 
-        # list to save former actions in
         self.readiness = 12 * 12 + int(random.normalvariate(0, 12))
 
         self.brain = Brain(self, father, mother, collective)
@@ -114,7 +113,7 @@ class Person:
             # should improve attitudes/merge
             self.brain.set_history(self.age(), 1)
         if decision == 1:
-            self.strength += 0.5
+            self.strength += Person.STRENGTH_MODIFIER
             self.brain.set_history(self.age(), 2)
         if decision in np.arange(2, 10):
             if decision == 2:
@@ -147,22 +146,26 @@ class Person:
                 self.strength -= 1
 
     def is_possible_partner(self, other):
+        other: Person
         if other.isAlive:
-            if other.age() > other.readiness:
-                if self.gender != other.gender and not other.partner and abs(
-                        self.age() - other.age()) < Person.DIFF_AGE:
-                    if self.brain.get_attitudes(other) > 0.7 and other.brain.get_attitudes(self) > 0.7:
-                        return True
+            if (self.location == other.location).all():
+                if other.age() > other.readiness:
+                    if self.gender != other.gender and not other.partner and abs(
+                            self.age() - other.age()) < Person.DIFF_AGE:
+                        if self.brain.get_attitudes(other) > 0.7 and other.brain.get_attitudes(self) > 0.7:
+                            return True
         return False
 
-    def partner_selection(self):
+    def partner_selection(self, region):
         if self.age() > self.readiness:
-            arr: np.ndarray = np.copy(self.collective.world_attitudes[self.id, :self.collective.population_size])
-            while arr.any():
-                other = self.collective.historical_population[np.argmax(arr)]
+            available_ids = region.pop_id
+            arr: np.ndarray = self.collective.world_attitudes[self.id, :self.collective.population_size]
+            available = np.array([arr[i] for i in available_ids])
+            while available.any():
+                other = self.collective.historical_population[available_ids[np.argmax(available)]]
                 if self.is_possible_partner(other):
                     return other
-                arr[np.argmax(arr)] = 0
+                available[np.argmax(available)] = 0
             return None
 
     # noinspection PyTypeChecker

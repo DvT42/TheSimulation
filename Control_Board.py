@@ -59,9 +59,10 @@ class ControlBoard:
                 f'\n{history}')
 
     @staticmethod
-    def exact_skip(sim: Simulation, num: int, failsafe: bool = True, regressive=False):
+    def exact_skip(sim: Simulation, num: int, failsafe: bool = True, regressive='partial'):
         dest_time = sim.Time + num
         best_minds_lst = []
+        best = [0, 0, 0]
         quality_lst = np.empty((0, 3), dtype=int)
 
         while True:
@@ -72,11 +73,12 @@ class ControlBoard:
 
             if sim.Time < dest_time:
                 if failsafe:
+                    print(len(sim.collective.historical_population) - Simulation.INITIAL_COUPLES * 2)
                     best_minds, male_lst, female_lst = sim.find_best_minds(sim.evaluate())
                     processed_best_minds, unified_lst = Simulation.prepare_best_for_reprocess(best_minds,
                                                                                               male_lst[:, 1:],
                                                                                               female_lst[:, 1:])
-                    if regressive:
+                    if regressive == 'True':
                         best_minds_lst.extend(processed_best_minds)
                         quality_lst = np.append(quality_lst, unified_lst, axis=0)
 
@@ -85,14 +87,25 @@ class ControlBoard:
                         processed_best_minds, unified_lst = Simulation.prepare_best_for_reprocess(
                             best_minds, male_lst[:, 1:], female_lst[:, 1:])
 
+                    elif regressive == 'partial':
+                        if (unified_lst[len(processed_best_minds) // 2 - 1][1] > best[1] or
+                                (unified_lst[len(processed_best_minds) // 2 - 1][1] == best[1] and
+                                 unified_lst[len(processed_best_minds) // 2 - 1][2] > best[2])):
+                            best[0] = processed_best_minds[len(processed_best_minds) // 2 - 1]
+                            best[1] = unified_lst[len(processed_best_minds) // 2 - 1][1]
+                            best[2] = unified_lst[len(processed_best_minds) // 2 - 1][2]
+                        else:
+                            processed_best_minds = np.array(processed_best_minds)
+                            processed_best_minds[len(processed_best_minds) // 2 - 1:] = best[0]
+
                     best_minds_lst = processed_best_minds
                     quality_lst = unified_lst
 
                     new_sim = Simulation(sim_map=sim.map, imported=
                     np.reshape(
                         np.append(
-                            best_minds_lst[len(best_minds_lst) // 2:],
                             best_minds_lst[:len(best_minds_lst) // 2],
+                            best_minds_lst[len(best_minds_lst) // 2:],
                             axis=1),
                         (len(best_minds_lst) // 2, 2, 2)))
 
@@ -106,7 +119,7 @@ class ControlBoard:
                 return sim
 
     @staticmethod
-    def annual_skip(sim: Simulation, num: int, failsafe: bool = True, regressive: bool = False):
+    def annual_skip(sim: Simulation, num: int, failsafe: bool = True, regressive: str = 'partial'):
         return ControlBoard.exact_skip(sim, num=num * 12, failsafe=failsafe, regressive=regressive)
 
 

@@ -165,6 +165,10 @@ class Map:
         indexes = np.argmin(distances, axis=0)
         return [bins[i] for i in indexes], indexes
 
+    @staticmethod
+    def distance(point1, point2):
+        return np.max([abs(point1[0] - point2[0]), abs(point1[1] - point2[1])])
+
 
 if __name__ == "__main__":
     Map.BIOME_MAP_PATH = Map.BASE_PATH + r"\only_biome_map.png"

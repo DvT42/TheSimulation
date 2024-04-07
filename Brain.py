@@ -1,7 +1,6 @@
-import numpy as np
-from numpy import random
-
-from Neural_Network import NeuralNetwork
+import random
+from numpy import random as nprnd
+from Neural_Network import *
 
 
 class Collective:
@@ -14,7 +13,7 @@ class Collective:
     MUTATION_NORMALIZATION_RATIO = 0.3
 
     # PFC constants
-    CHOICE_RANDOMIZER = 0.0
+    CHOICE_RANDOMIZER = 0.1
     CHOICE_NUM = 10
 
     # HPC constants
@@ -91,11 +90,13 @@ class Brain:
         loc = region.location
         regional_biomes = region.surr_biomes
         regional_pop = region.surr_pop()
+        regional_resources = np.zeros(9)
 
         return self.brainparts.get("PFC").decision_making(
             self.person.gender, self.person.age(), self.person.strength, preg, youngness, self.person.readiness,
-            self.person.child_num, Brain.get_action_from_history(self.person.age() - 1, self.get_history()),
-            father_choice, mother_choice, partner_choice, loc, partner_loc, regional_biomes, regional_pop
+            self.person.child_num,
+            father_choice, mother_choice, partner_choice,
+            loc, partner_loc, regional_biomes, regional_pop, regional_resources
         )
 
     def get_first_impression(self, other):
@@ -178,17 +179,17 @@ class BrainPart:
             new_biases = father_biases
             for lnum, layer_weights in enumerate(new_weights):
                 for index, value in np.ndenumerate(layer_weights):
-                    if random.uniform(0, 1) < BrainPart.INHERITENCE_RATIO:
+                    if nprnd.uniform(0, 1) < BrainPart.INHERITENCE_RATIO:
                         new_weights[lnum][index] = mother_weights[lnum][index]
             for lnum, layer_biases in enumerate(new_biases):
                 for index, value in np.ndenumerate(layer_biases):
-                    if random.uniform(0, 1) < BrainPart.INHERITENCE_RATIO:
+                    if nprnd.uniform(0, 1) < BrainPart.INHERITENCE_RATIO:
                         new_biases[lnum][index] = mother_biases[lnum][index]
 
             for layer_weights in new_weights:
-                layer_weights += BrainPart.MUTATION_NORMALIZATION_RATIO * np.random.randn(*np.shape(layer_weights))
+                layer_weights += BrainPart.MUTATION_NORMALIZATION_RATIO * nprnd.randn(*np.shape(layer_weights))
             for layer_biases in new_biases:
-                layer_biases += BrainPart.MUTATION_NORMALIZATION_RATIO * np.random.randn(*np.shape(layer_biases))
+                layer_biases += BrainPart.MUTATION_NORMALIZATION_RATIO * nprnd.randn(*np.shape(layer_biases))
 
             return new_weights, new_biases
         else:
@@ -200,7 +201,7 @@ class BrainPart:
     #
     #         for matrix in new_weights[::2]:
     #             matrix += np.array(
-    #                 [[(random.uniform(-0.01, 0.01) if random.random() < 0.2 else 0) for _ in range(matrix.shape[1])]
+    #                 [[(nprnd.uniform(-0.01, 0.01) if nprnd.random() < 0.2 else 0) for _ in range(matrix.shape[1])]
     #                  for _ in range(matrix.shape[0])]
     #             )
     #
@@ -220,7 +221,7 @@ class PrefrontalCortex(BrainPart):
             self.model = model
 
         else:
-            input_num = 29 + PrefrontalCortex.CHOICE_NUM * 4
+            input_num = 38 + PrefrontalCortex.CHOICE_NUM * 3
 
             model = NeuralNetwork()
             model.add_layer(input_num, input_num=input_num, activation='relu')  # input layer (1)
@@ -231,22 +232,22 @@ class PrefrontalCortex(BrainPart):
             self.model = model
 
     def decision_making(
-            self, gender, age, strength, pregnancy, biowatch, readiness, child_num, previous_choice, father_choice,
-            mother_choice, partner_choice, location, partner_location, regional_biomes, regional_pop
+            self, gender, age, strength, pregnancy, biowatch, readiness, child_num, father_choice,
+            mother_choice, partner_choice, location, partner_location, regional_biomes, regional_pop, regional_resources
     ):
-        if random.random() > PrefrontalCortex.CHOICE_RANDOMIZER:
+        if nprnd.random() > PrefrontalCortex.CHOICE_RANDOMIZER:
             # this list is for convenience, to know what does each index of option means.
             # choices = ["social connection", "strength", "location"[8]]
 
             neural_input = np.array([gender, age, strength, pregnancy, biowatch, readiness, child_num,
-                                     *PrefrontalCortex.get_choice_nodes(previous_choice),
                                      *PrefrontalCortex.get_choice_nodes(father_choice),
                                      *PrefrontalCortex.get_choice_nodes(mother_choice),
                                      *PrefrontalCortex.get_choice_nodes(partner_choice),
                                      *location,
                                      *partner_location,
                                      *regional_biomes.flatten(),
-                                     *regional_pop])
+                                     *regional_pop,
+                                     *regional_resources])
 
             # need to preprocess the data to squash it between 0 and 1. ?
 
@@ -255,24 +256,8 @@ class PrefrontalCortex(BrainPart):
 
             return np.argmax(output_prob)
         else:
-            r = random.random()
-            # Calculate the slice index
-            choice_index = int(np.floor(r * (PrefrontalCortex.CHOICE_NUM - 8)))
-
-            # Adjust the slice index if the random number falls exactly on a slice boundary
-            if r == choice_index / (PrefrontalCortex.CHOICE_NUM - 8):
-                choice_index -= 1
-
-            if choice_index == (PrefrontalCortex.CHOICE_NUM - 8):
-                r = random.random()
-                # Calculate the slice index
-                choice_index = int(np.floor(r * 8))
-
-                # Adjust the slice index if the random number falls exactly on a slice boundary
-                if r == choice_index / 8:
-                    choice_index -= 1
-
-                choice_index += PrefrontalCortex.CHOICE_NUM - 8
+            choice_index = random.randint(0, PrefrontalCortex.CHOICE_NUM - 8 - 1)
+            # You can never relocate ranomally because of its unproportional magnitude.
 
             return choice_index
 
@@ -299,8 +284,8 @@ class Amygdala(BrainPart):
 
         else:
             model = NeuralNetwork()
-            model.add_layer(16, input_num=16, activation='relu')  # inp layer (1)
-            model.add_layer(4, input_num=16, activation='relu')  # hidden layer (2)
+            model.add_layer(18, input_num=18, activation='relu')  # inp layer (1)
+            model.add_layer(4, input_num=18, activation='relu')  # hidden layer (2)
             model.add_layer(1, input_num=4, activation='sigmoid')  # output layer (3)
             self.model = model
 
@@ -330,6 +315,9 @@ class Amygdala(BrainPart):
             other_biowatch = 0
         other_readiness = other.readiness
 
+        my_child_num = person.child_num
+        other_child_num = other.child_num
+
         # prepare the difference between two people
         gender_dif = abs(my_gender - other_gender)
         age_dif = abs(my_age - other_age)
@@ -340,7 +328,7 @@ class Amygdala(BrainPart):
         neural_input = np.asarray([
             my_gender, my_age, my_strength, my_pregnancy, my_biowatch, my_readiness,
             other_gender, other_age, other_strength, other_pregnancy, other_biowatch, other_readiness,
-            gender_dif, age_dif, strength_dif, readiness_dif
+            gender_dif, age_dif, strength_dif, readiness_dif, my_child_num, other_child_num
         ])
 
         return neural_input

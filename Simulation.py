@@ -1,12 +1,9 @@
-from Brain import *
 from Person import *
 from Region import *
 
 
 class Simulation:
-    MARRIAGE_AGE = 12 * 12
-    SHOULD_PROBABLY_BE_DEAD = 120 * 12
-    IMMUNITY_TIME = 10 * 12
+    IMMUNITY_TIME = 0 * 12
     SELECTED_COUPLES = 100
     INITIAL_COUPLES = 1000
     STARTING_LOCATION = (850, 400)
@@ -27,17 +24,18 @@ class Simulation:
         if Simulation.SELECTED_COUPLES and type(imported) is np.ndarray and imported.any():
             actual_brains = Simulation.assemble_brains(imported[:Simulation.SELECTED_COUPLES])
             for brain_couple in actual_brains:
-                m = Person(father=[Gender.Male, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective)
-                m.brain = brain_couple[0]
-                brain_couple[0].transfer_brain(m)
+                for _ in range(Simulation.INITIAL_COUPLES // Simulation.SELECTED_COUPLES):
+                    m = Person(father=[Gender.Male, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective)
+                    m.brain = brain_couple[0]
+                    brain_couple[0].transfer_brain(m)
 
-                f = Person(father=[Gender.Female, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective)
-                f.brain = brain_couple[1]
-                brain_couple[1].transfer_brain(f)
+                    f = Person(father=[Gender.Female, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective)
+                    f.brain = brain_couple[1]
+                    brain_couple[1].transfer_brain(f)
 
-                self.regions[initial_region_index].add_person(m)
-                self.regions[initial_region_index].add_person(f)
-            for c in range(Simulation.INITIAL_COUPLES - Simulation.SELECTED_COUPLES):
+                    self.regions[initial_region_index].add_person(m)
+                    self.regions[initial_region_index].add_person(f)
+            for c in range(Simulation.INITIAL_COUPLES - Simulation.INITIAL_COUPLES // Simulation.SELECTED_COUPLES):
                 self.regions[initial_region_index].add_person(Person(
                     father=[Gender.Male, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
                 self.regions[initial_region_index].add_person(Person(
@@ -63,6 +61,7 @@ class Simulation:
     # @jit(target_backend='cuda')
     def month_advancement(self):
         self.Time += 1
+        new_regions = []
 
         for i, j in self.region_iterator:
             self.regions[i, j].falsify_action_flags()
@@ -75,6 +74,7 @@ class Simulation:
             social_connectors = []
             dead = []
             relocating_people = []
+            action_pool = [0, 0, 0]
 
             for idx, p in enumerate(reg):
                 p: Person
@@ -84,7 +84,7 @@ class Simulation:
 
                     #  - handle pregnancy
                     if p.gender == Gender.Female:
-                        if p.father_of_child is not None:
+                        if p.father_of_child:
                             if p.pregnancy == 9:
                                 newborn = p.birth()
                                 newborns.append(newborn)
@@ -106,7 +106,12 @@ class Simulation:
                     action = p.action(region=reg)
                     if action == 0:
                         social_connectors.append(p)
-                    if action in np.arange(2, 10):
+                        action_pool[0] += 1
+                    elif action == 1:
+                        action_pool[1] += 1
+                    elif action in np.arange(2, 10):
+                        action_pool[2] += 1
+
                         if p.location[1] >= 800 or p.location[1] < 0:
                             dead.append(p)
                             continue
@@ -123,7 +128,7 @@ class Simulation:
                             new_reg.add_person(p)
                             self.regions[tuple(np.flip(p.location))] = new_reg
                             self.update_neighbors(neighbors)
-                            self.region_iterator.append(tuple(np.flip(p.location)))
+                            new_regions.append(tuple(np.flip(p.location)))
 
                     p.action_flag = True
 
@@ -145,8 +150,10 @@ class Simulation:
                     if social_connector.partner:
                         if social_connector.partner in social_connectors:
                             social_connector.prepare_next_generation(social_connector.partner)
+                        elif self.map.distance(social_connector.location, social_connector.partner.location) > Person.GIVE_UP_DISTANCE:
+                            social_connector.partner = None
                     else:
-                        social_connector.partner = social_connector.partner_selection()
+                        social_connector.partner = social_connector.partner_selection(region=reg)
                         if social_connector.partner:
                             social_connector.partner.partner = social_connector
                 else:
@@ -162,6 +169,8 @@ class Simulation:
                 self.region_iterator.remove((i, j))
                 neighbors = self.map.get_surroundings(self.regions, (j, i), dtype=Region)
                 self.update_neighbors(neighbors)
+
+        self.region_iterator.extend(new_regions)
 
     def is_eradicated(self):
         return not np.any(self.regions)
