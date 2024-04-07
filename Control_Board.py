@@ -38,9 +38,9 @@ class ControlBoard:
                 print(ControlBoard.info_search(sim, int(com[1:])))
 
         elif com[0].lower() == "s":
-            sim = ControlBoard.exact_skip(sim, int(com[1:]))
+            sim = ControlBoard.exact_skip(sim, int(com[1:]), regressive='False')
         elif com[0].lower() == "y":
-            sim = ControlBoard.annual_skip(sim, int(com[1:]))
+            sim = ControlBoard.annual_skip(sim, int(com[1:]), regressive='False')
 
         elif com[0].lower() == "x":
             sim = None
@@ -61,7 +61,7 @@ class ControlBoard:
                 f'\n{history}')
 
     @staticmethod
-    def exact_skip(sim: Simulation, num: int, failsafe: bool = True, regressive='partial'):
+    def exact_skip(sim: Simulation, num: int, failsafe: bool = True, regressive='False'):
         dest_time = sim.Time + num
         best_minds_lst = []
         best = [0, 0, 0]
@@ -121,7 +121,7 @@ class ControlBoard:
                 return sim
 
     @staticmethod
-    def annual_skip(sim: Simulation, num: int, failsafe: bool = True, regressive: str = 'partial'):
+    def annual_skip(sim: Simulation, num: int, failsafe: bool = True, regressive: str = 'False'):
         return ControlBoard.exact_skip(sim, num=num * 12, failsafe=failsafe, regressive=regressive)
 
 

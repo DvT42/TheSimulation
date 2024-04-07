@@ -1,4 +1,6 @@
 import random
+
+import numpy as np
 from numpy import random as nprnd
 from Neural_Network import *
 
@@ -100,12 +102,25 @@ class Brain:
         )
 
     def get_first_impression(self, other):
-        impression = self.brainparts.get("AMG").first_impression(self.person, other)
+        impression = self.brainparts.get("AMG").first_impression(
+            np.concatenate((Amygdala.get_relevant_info(self.person), Amygdala.get_relevant_info(other)), axis=1)
+        ).item()
 
-        self.brainparts.get("HPC").first_impressions[other] = impression
         self.collective.world_attitudes[self.id, other.id] = impression
 
         return impression
+
+    def raw_get_first_impression(self, neural_input):
+        impression = self.brainparts.get("AMG").first_impression(neural_input).item()
+
+        return impression
+
+    def get_mass_first_impressions(self, ids, info_batch):
+        ids = np.array(ids)
+        destined_indexes = ids.astype(int)
+        impressions = self.brainparts.get("AMG").first_impression(info_batch).flatten()
+
+        self.collective.world_attitudes[self.id, destined_indexes] = impressions
 
     @staticmethod
     def get_action_from_history(index, history):
@@ -225,9 +240,8 @@ class PrefrontalCortex(BrainPart):
 
             model = NeuralNetwork()
             model.add_layer(input_num, input_num=input_num, activation='relu')  # input layer (1)
-            model.add_layer(12, input_num=input_num, activation='relu')  # hidden layer (2)
-            model.add_layer(6, input_num=12, activation='relu')  # hidden layer (3)
-            model.add_layer(PrefrontalCortex.CHOICE_NUM, input_num=6, activation='softmax')  # output layer (4)
+            model.add_layer(39, input_num=input_num, activation='relu')  # hidden layer (2)
+            model.add_layer(PrefrontalCortex.CHOICE_NUM, input_num=39, activation='softmax')  # output layer (4)
 
             self.model = model
 
@@ -284,60 +298,34 @@ class Amygdala(BrainPart):
 
         else:
             model = NeuralNetwork()
-            model.add_layer(18, input_num=18, activation='relu')  # inp layer (1)
-            model.add_layer(9, input_num=18, activation='relu')  # hidden layer (2)
-            model.add_layer(1, input_num=9, activation='sigmoid')  # output layer (3)
+            model.add_layer(14, input_num=14, activation='relu')  # inp layer (1)
+            model.add_layer(7, input_num=14, activation='relu')  # hidden layer (2)
+            model.add_layer(1, input_num=7, activation='sigmoid')  # output layer (3)
             self.model = model
 
     @staticmethod
-    def prepare_neural_input(person, other):
-        # prepare the person's attributes.
-        my_gender = int(person.gender)
-        my_age = int(person.age())
-        my_strength = person.strength
-        if my_gender == 0:
-            my_pregnancy = person.pregnancy
-            my_biowatch = person.youngness
+    def get_relevant_info(person):
+        gender = int(person.gender)
+        age = int(person.age())
+        strength = person.strength
+
+        if gender == 0:
+            pregnancy = person.pregnancy
+            biowatch = person.youngness
+
         else:
-            my_pregnancy = 0
-            my_biowatch = 0
+            pregnancy = 0
+            biowatch = 0
+
         my_readiness = person.readiness
-
-        # prepare the other person's attributes.
-        other_gender = int(other.gender)
-        other_age = int(other.age())
-        other_strength = other.strength
-        if other_gender == 0:
-            other_pregnancy = other.pregnancy
-            other_biowatch = other.youngness
-        else:
-            other_pregnancy = 0
-            other_biowatch = 0
-        other_readiness = other.readiness
-
         my_child_num = person.child_num
-        other_child_num = other.child_num
 
-        # prepare the difference between two people
-        gender_dif = abs(my_gender - other_gender)
-        age_dif = abs(my_age - other_age)
-        strength_dif = abs(my_strength - other_strength)
-        readiness_dif = abs(my_readiness - other_readiness)
+        return np.asarray([gender, age, strength, pregnancy, biowatch, my_readiness, my_child_num])
 
-        # organize all the information.
-        neural_input = np.asarray([
-            my_gender, my_age, my_strength, my_pregnancy, my_biowatch, my_readiness,
-            other_gender, other_age, other_strength, other_pregnancy, other_biowatch, other_readiness,
-            gender_dif, age_dif, strength_dif, readiness_dif, my_child_num, other_child_num
-        ])
-
-        return neural_input
-
-    def first_impression(self, person, other):
-        neural_input = self.prepare_neural_input(person, other)
+    def first_impression(self, neural_input):
         output_prob: np.ndarray = self.model.feed(neural_input)
 
-        return output_prob[0][0]
+        return output_prob
 
 
 class Hippocampus(BrainPart):
@@ -354,4 +342,3 @@ class Hippocampus(BrainPart):
         self.location_history = []
 
         self.dead_impressions = {}
-        self.first_impressions = {}

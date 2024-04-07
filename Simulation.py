@@ -4,7 +4,7 @@ from Region import *
 
 class Simulation:
     IMMUNITY_TIME = 0 * 12
-    SELECTED_COUPLES = 100
+    SELECTED_COUPLES = 10
     INITIAL_COUPLES = 1000
     STARTING_LOCATION = (850, 400)
 
@@ -51,10 +51,8 @@ class Simulation:
         for p in self.regions[initial_region_index].Population:
             self.collective.add_person(p)
 
-        for i in self.regions[initial_region_index].Population:
-            for j in self.regions[initial_region_index].Population:
-                if j is not i:
-                    i.brain.get_first_impression(j)
+        Simulation.mass_encounter(pop_lst=self.regions[initial_region_index].Population,
+                                  ids=np.arange(Simulation.INITIAL_COUPLES * 2))
 
         self.Time = 0
 
@@ -118,6 +116,7 @@ class Simulation:
                         new_reg = self.regions[tuple(np.flip(p.location))]
                         relocating_people.append(p)
                         if new_reg:
+                            Simulation.mass_encounter(new_reg.Population, new_reg.pop_id, person=p)
                             new_reg.add_person(p)
                         else:
                             neighbors = self.map.get_surroundings(self.regions, p.location, dtype=Region)
@@ -134,10 +133,7 @@ class Simulation:
 
             for newborn in newborns:
                 self.collective.add_person(newborn)
-
-                for other in reg:
-                    newborn.brain.get_first_impression(other)
-                    other.brain.get_first_impression(newborn)
+                Simulation.mass_encounter(reg.Population, reg.pop_id, person=newborn)
 
                 reg.add_person(newborn)
 
@@ -188,6 +184,28 @@ class Simulation:
         p.isAlive = False
         if p.partner:
             p.partner.partner = None
+
+    @staticmethod
+    def mass_encounter(pop_lst, ids, person=None):
+        info_batch = np.empty(shape=(len(pop_lst), 7))
+        for i, p in enumerate(pop_lst):
+            info_batch[i] = Amygdala.get_relevant_info(person=p)
+
+        if person:
+            p_info = Amygdala.get_relevant_info(person=person)
+            tiled = np.tile(p_info, (len(pop_lst), 1))
+            person.brain.get_mass_first_impressions(ids, np.concatenate((info_batch, tiled), axis=1))
+
+            reflective = np.concatenate((tiled, info_batch), axis=1)
+            impressions = np.empty((len(pop_lst)))
+            for i, p in enumerate(pop_lst):
+                impressions[i] = p.brain.raw_get_first_impression(reflective[i])
+            person.collective.world_attitudes[ids, person.id] = impressions
+        else:
+            for i, p in enumerate(pop_lst):
+                p_info = info_batch[i]
+                tiled = np.tile(p_info, (len(pop_lst), 1))
+                p.brain.get_mass_first_impressions(ids, np.concatenate((info_batch, tiled), axis=1))
 
     def get_historical_figure(self, id):
         hf = self.collective.historical_population[id]
