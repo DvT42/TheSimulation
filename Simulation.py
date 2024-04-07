@@ -35,7 +35,7 @@ class Simulation:
 
                     self.regions[initial_region_index].add_person(m)
                     self.regions[initial_region_index].add_person(f)
-            for c in range(Simulation.INITIAL_COUPLES - Simulation.INITIAL_COUPLES // Simulation.SELECTED_COUPLES):
+            for c in range(Simulation.INITIAL_COUPLES % Simulation.SELECTED_COUPLES):
                 self.regions[initial_region_index].add_person(Person(
                     father=[Gender.Male, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
                 self.regions[initial_region_index].add_person(Person(

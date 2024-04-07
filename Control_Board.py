@@ -1,11 +1,13 @@
 import pickle
+import os
 import numpy as np
 import tqdm
 from Simulation import Simulation
 
 
 class ControlBoard:
-    SAVED_BRAINS_PATH = 'data/saved brains.pkl'
+    BASE_PATH = os.path.dirname(os.path.abspath("__file__"))
+    SAVED_BRAINS_PATH = os.path.join(BASE_PATH, 'data', 'saved brains.pkl')
 
     @staticmethod
     def process_command(sim: Simulation, com: str):

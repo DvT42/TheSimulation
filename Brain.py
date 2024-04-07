@@ -285,8 +285,8 @@ class Amygdala(BrainPart):
         else:
             model = NeuralNetwork()
             model.add_layer(18, input_num=18, activation='relu')  # inp layer (1)
-            model.add_layer(4, input_num=18, activation='relu')  # hidden layer (2)
-            model.add_layer(1, input_num=4, activation='sigmoid')  # output layer (3)
+            model.add_layer(9, input_num=18, activation='relu')  # hidden layer (2)
+            model.add_layer(1, input_num=9, activation='sigmoid')  # output layer (3)
             self.model = model
 
     @staticmethod
