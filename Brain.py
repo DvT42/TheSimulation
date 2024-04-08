@@ -1,6 +1,4 @@
 import random
-
-import numpy as np
 from numpy import random as nprnd
 from Neural_Network import *
 
@@ -43,7 +41,7 @@ class Collective:
 
 
 class Brain:
-    def __init__(self, person=None, f=None, m=None, collective=None, models=None):
+    def __init__(self, person=None, f=None, m=None, collective=None, models=None, mutate=True):
         self.person = person
         self.collective = collective
 
@@ -61,8 +59,8 @@ class Brain:
 
         elif type(models) is np.ndarray and models.any():
             self.id = None
-            self.brainparts = {"PFC": PrefrontalCortex(models[0]),
-                               "AMG": Amygdala(models[1]),
+            self.brainparts = {"PFC": PrefrontalCortex(models[0], mutate=mutate),
+                               "AMG": Amygdala(models[1], mutate=mutate),
                                "HPC": Hippocampus()}
 
     # def evolve(self):  # Evolvement currently on hold
@@ -201,14 +199,23 @@ class BrainPart:
                     if nprnd.uniform(0, 1) < BrainPart.INHERITENCE_RATIO:
                         new_biases[lnum][index] = mother_biases[lnum][index]
 
-            for layer_weights in new_weights:
-                layer_weights += BrainPart.MUTATION_NORMALIZATION_RATIO * nprnd.randn(*np.shape(layer_weights))
-            for layer_biases in new_biases:
-                layer_biases += BrainPart.MUTATION_NORMALIZATION_RATIO * nprnd.randn(*np.shape(layer_biases))
+            new_weights, new_biases = BrainPart.mutate(new_weights, new_biases)
 
             return new_weights, new_biases
         else:
             return self.model.get_weights(), self.model.get_biases()
+
+    @staticmethod
+    def mutate(weights, biases):
+        mutated_weights = []
+        mutated_biases = []
+        for layer_weights in weights:
+            mutated_weights.append(
+                layer_weights + BrainPart.MUTATION_NORMALIZATION_RATIO * nprnd.randn(*np.shape(layer_weights)))
+        for layer_biases in biases:
+            mutated_biases.append(
+                layer_biases + BrainPart.MUTATION_NORMALIZATION_RATIO * nprnd.randn(*np.shape(layer_biases)))
+        return mutated_weights, mutated_biases
 
     # def evolvement(self):
     #     if self.model:
@@ -230,10 +237,14 @@ class PrefrontalCortex(BrainPart):
     CHOICE_RANDOMIZER = Collective.CHOICE_RANDOMIZER
     CHOICE_NUM = Collective.CHOICE_NUM
 
-    def __init__(self, model=None):
+    def __init__(self, model=None, mutate=True):
         super().__init__()
         if model:
             self.model = model
+            if mutate:
+                new_weights, new_biases = BrainPart.mutate(self.model.get_weights(), self.model.get_biases())
+                self.model.set_weights(new_weights)
+                self.model.set_biases(new_biases)
 
         else:
             input_num = 38 + PrefrontalCortex.CHOICE_NUM * 3
@@ -290,11 +301,15 @@ class Amygdala(BrainPart):
     The part of the brain responsible for first impression.
     """
 
-    def __init__(self, model=None):
+    def __init__(self, model=None, mutate=True):
         super().__init__()
 
         if model:
             self.model = model
+            if mutate:
+                new_weights, new_biases = BrainPart.mutate(self.model.get_weights(), self.model.get_biases())
+                self.model.set_weights(new_weights)
+                self.model.set_biases(new_biases)
 
         else:
             model = NeuralNetwork()
