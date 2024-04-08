@@ -50,9 +50,9 @@ class ControlBoard:
                 print(ControlBoard.info_search(sim, int(com[1:])))
 
         elif com[0].lower() == "s":
-            sim = ControlBoard.exact_skip(sim, int(com[1:]), regressive='False')
+            sim = ControlBoard.exact_skip(sim, int(com[1:]), regressive='partial')
         elif com[0].lower() == "y":
-            sim = ControlBoard.annual_skip(sim, int(com[1:]), regressive='False')
+            sim = ControlBoard.annual_skip(sim, int(com[1:]), regressive='partial')
 
         elif com[0].lower() == "x":
             sim = None

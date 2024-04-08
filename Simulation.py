@@ -78,6 +78,9 @@ class Simulation:
     # @jit(target_backend='cuda')
     @profile
     def month_advancement(self):
+        """
+        This function constitutes all operations needed to be preformed each month.
+        """
         self.Time += 1
         new_regions = []
 
@@ -122,22 +125,25 @@ class Simulation:
                         continue
 
                     action = p.action(region=reg)
-                    if action == 0:
+                    if action == 0:  # social connection.
                         social_connectors.append(p)
                         action_pool[0] += 1
-                    elif action == 1:
+                    elif action == 1:  # strength.
                         action_pool[1] += 1
-                    elif action in np.arange(2, 10):
+                    elif action in np.arange(2, 10):  # relocation.
                         action_pool[2] += 1
 
-                        if p.location[1] >= 800 or p.location[1] < 0:
+                        if p.location[1] >= 800 or p.location[1] < 0:  # if exited the boundaries of the map.
                             dead.append(p)
                             continue
+
                         new_reg = self.regions[tuple(np.flip(p.location))]
-                        relocating_people.append(p)
-                        if new_reg:
+                        relocating_people.append(p)  # to not mess up the indexing in the original region.
+
+                        if new_reg:  # if tried to relocate into an occupied region.
                             Simulation.mass_encounter(new_reg.Population, new_reg.pop_id, person=p)
                             new_reg.add_person(p)
+
                         else:
                             neighbors = self.map.get_surroundings(self.regions, p.location, dtype=Region)
                             new_reg = Region(location=p.location,
@@ -146,10 +152,10 @@ class Simulation:
                                              neighbors=neighbors)
                             new_reg.add_person(p)
                             self.regions[tuple(np.flip(p.location))] = new_reg
-                            self.update_neighbors(neighbors)
+                            self.update_neighbors(neighbors)  # informs the neighbors that a person joined new_reg.
                             new_regions.append(tuple(np.flip(p.location)))
 
-                    p.action_flag = True
+                    p.action_flag = True  # so that it won't get iterated upon again if relocated.
 
             for newborn in newborns:
                 self.collective.add_person(newborn)
@@ -159,7 +165,7 @@ class Simulation:
 
             for social_connector in social_connectors:
                 social_connector: Person
-                if social_connector.brain.is_friendly():
+                if social_connector.brain.is_friendly():  # whether he likes any other people.
                     social_connector.brain.improve_attitudes_toward_me(region=reg)
                     social_connector.brain.improve_my_attitudes(multiplier=0.5)
 
