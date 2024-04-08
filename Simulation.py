@@ -1,3 +1,5 @@
+from line_profiler_pycharm import profile
+
 from Person import *
 from Region import *
 
@@ -8,33 +10,49 @@ class Simulation:
     INITIAL_COUPLES = 1000
     STARTING_LOCATION = (850, 400)
 
+    @profile
     def __init__(self, sim_map, imported=None):
+        """
+        The object handling macro operations and containing the whole simulation.
+
+        :param sim_map: A map with size (1600, 800) pixels. This map will determine the terrain on which the simulation
+        will run.
+        :param imported: an array containing couples of disassembled brains. imported.shape=(num, 2, 2)
+        """
         self.collective = Collective()
         Person.Person_reset(Simulation.INITIAL_COUPLES)
 
         self.map = sim_map
-        self.regions = np.empty((800, 1600), dtype=Region)
+        self.regions = np.empty((800, 1600), dtype=Region)  # an array containing all regions indexed by location.
         initial_region_index = tuple(np.flip(Simulation.STARTING_LOCATION, 0))
-        self.regions[initial_region_index] = (
+
+        self.regions[initial_region_index] = (  # First region to contain all initial Person-s.
             Region(location=Simulation.STARTING_LOCATION,
                    surrounding_biomes=self.map.get_surroundings(self.map.biome_map, Simulation.STARTING_LOCATION),
                    biome=self.map.get_biome(Simulation.STARTING_LOCATION)))
+
+        # a list containing all existing regions' indexes, to make the iteration easier.
         self.region_iterator = [initial_region_index]
 
-        if Simulation.SELECTED_COUPLES and type(imported) is np.ndarray and imported.any():
+        if Simulation.SELECTED_COUPLES and type(imported) is np.ndarray and imported.any():  # if importation is needed.
             actual_brains = Simulation.assemble_brains(imported[:Simulation.SELECTED_COUPLES])
+
             for brain_couple in actual_brains:
                 for _ in range(Simulation.INITIAL_COUPLES // Simulation.SELECTED_COUPLES):
+                    # initiate the male from the couple.
                     m = Person(father=[Gender.Male, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective)
                     m.brain = brain_couple[0]
                     brain_couple[0].transfer_brain(m)
 
+                    # initiate the female from the couple.
                     f = Person(father=[Gender.Female, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective)
                     f.brain = brain_couple[1]
                     brain_couple[1].transfer_brain(f)
 
                     self.regions[initial_region_index].add_person(m)
                     self.regions[initial_region_index].add_person(f)
+
+            # the remaining people will be initiated with random brains.
             for c in range(Simulation.INITIAL_COUPLES % Simulation.SELECTED_COUPLES):
                 self.regions[initial_region_index].add_person(Person(
                     father=[Gender.Male, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
@@ -42,7 +60,7 @@ class Simulation:
                     father=[Gender.Female, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
 
         else:
-            for i in range(Simulation.INITIAL_COUPLES):
+            for i in range(Simulation.INITIAL_COUPLES):  # people initiated with random brains.
                 self.regions[initial_region_index].add_person(Person(
                     father=[Gender.Male, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
                 self.regions[initial_region_index].add_person(Person(
@@ -51,12 +69,14 @@ class Simulation:
         for p in self.regions[initial_region_index].Population:
             self.collective.add_person(p)
 
+        # get all the first impressions of the initial people.
         Simulation.mass_encounter(pop_lst=self.regions[initial_region_index].Population,
                                   ids=np.arange(Simulation.INITIAL_COUPLES * 2))
 
         self.Time = 0
 
     # @jit(target_backend='cuda')
+    @profile
     def month_advancement(self):
         self.Time += 1
         new_regions = []

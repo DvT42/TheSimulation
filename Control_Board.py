@@ -2,6 +2,8 @@ import pickle
 import os
 import numpy as np
 import tqdm
+from line_profiler_pycharm import profile
+
 from Simulation import Simulation
 
 
@@ -11,6 +13,16 @@ class ControlBoard:
 
     @staticmethod
     def process_command(sim: Simulation, com: str):
+        """
+        The main function for operating with the simulation.
+
+        :param sim: The current Simulation object.
+        :param com: Any command among: {'load', 'save', 'best', 'i'+id, 'ia'+id, 'il'+id, 's'+num, 'y'+num, 'x'}. If a
+                    different command is supplied. the simulation will advance in 1 month.
+        :return: The given Simulation, modified according to the command. If unsuccessful at executing the command the
+                 returned Simulation will be the first that succeeded. If none succeeded, or if the command ordered to
+                 terminate the program, None is returned.
+        """
         if com.lower() == 'load':
             with open(ControlBoard.SAVED_BRAINS_PATH, 'rb') as f:
                 models = pickle.load(file=f)
@@ -61,10 +73,28 @@ class ControlBoard:
                 f'\n{history}')
 
     @staticmethod
+    @profile
     def exact_skip(sim: Simulation, num: int, failsafe: bool = True, regressive='False'):
+        """
+        The function that handles the advancement of a Simulation over time.
+
+        :param sim: the starting Simulation object.
+        :param num: the number of months requested. The Simulation will advance by this number.
+        :param failsafe: If true, the function will try to produce new Simulation until one succeeds to match the
+        destined Time (sim.Time + num).
+        :param regressive: {'True', 'False', 'partial'}. determines whether information will be saved globally across
+                           simulations. This directly affects the algorithm by which the Persons will learn.
+        :return: The given Simulation, advanced by the requested num of months. If the Simulation got eradicated the
+                  returned Simulation will be the first that succeeded. Or, if failsafe was set to False, None
+                  is returned.
+        """
         dest_time = sim.Time + num
         best_minds_lst = []
+
+        # representing the best male Person across all Simulations. Relevant only if regressive=partial.
         best = [0, 0, 0]
+
+        # representing the best Person-s across all Simulations. Relevant only if regressive=True.
         quality_lst = np.empty((0, 3), dtype=int)
 
         while True:
@@ -75,12 +105,17 @@ class ControlBoard:
 
             if sim.Time < dest_time:
                 if failsafe:
+                    # number of children born. used to access a Simulation's success
                     print(len(sim.collective.historical_population) - Simulation.INITIAL_COUPLES * 2)
+
                     best_minds, male_lst, female_lst = sim.find_best_minds(sim.evaluate())
                     processed_best_minds, unified_lst = Simulation.prepare_best_for_reprocess(best_minds,
                                                                                               male_lst[:, 1:],
                                                                                               female_lst[:, 1:])
+
                     if regressive == 'True':
+                        # This learning algorithm always chooses the best across all Simulations. It takes the best from
+                        # the last simulation and compares it to the former best
                         best_minds_lst.extend(processed_best_minds)
                         quality_lst = np.append(quality_lst, unified_lst, axis=0)
 
@@ -90,6 +125,8 @@ class ControlBoard:
                             best_minds, male_lst[:, 1:], female_lst[:, 1:])
 
                     elif regressive == 'partial':
+                        # This learning algorithm replaces all the males with the absolute best across all Simulations
+                        # if it weren't better than its former.
                         if (unified_lst[len(processed_best_minds) // 2 - 1][1] > best[1] or
                                 (unified_lst[len(processed_best_minds) // 2 - 1][1] == best[1] and
                                  unified_lst[len(processed_best_minds) // 2 - 1][2] > best[2])):
