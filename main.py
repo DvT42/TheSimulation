@@ -7,12 +7,12 @@ if __name__ == "__main__":
 
     # running code
     sim_map = Map()
-    TS = Simulation(sim_map=sim_map)
+    TS = None
     while True:
         command = input("please input command: ")
 
         start = datetime.now()
-        TS = ControlBoard.process_command(TS, command)
+        TS = ControlBoard.process_command(TS, sim_map, command)
         print(f"{(datetime.now() - start).total_seconds():.02f}s")
 
         if not TS:

@@ -13,7 +13,7 @@ class Collective:
     MUTATION_NORMALIZATION_RATIO = 0.3
 
     # PFC constants
-    CHOICE_RANDOMIZER = 0.1
+    CHOICE_RANDOMIZER = 0.0
     CHOICE_NUM = 10
 
     # HPC constants
@@ -257,14 +257,14 @@ class PrefrontalCortex(BrainPart):
             self.model = model
 
     def decision_making(
-            self, gender, age, strength, pregnancy, biowatch, readiness, child_num, father_choice,
+            self, gender, age, strength, pregnancy, youngness, readiness, child_num, father_choice,
             mother_choice, partner_choice, location, partner_location, regional_biomes, regional_pop, regional_resources
     ):
         if nprnd.random() > PrefrontalCortex.CHOICE_RANDOMIZER:
             # this list is for convenience, to know what does each index of option means.
             # choices = ["social connection", "strength", "location"[8]]
 
-            neural_input = np.array([gender, age, strength, pregnancy, biowatch, readiness, child_num,
+            neural_input = np.array([gender, age, strength, pregnancy, youngness, readiness, child_num,
                                      *PrefrontalCortex.get_choice_nodes(father_choice),
                                      *PrefrontalCortex.get_choice_nodes(mother_choice),
                                      *PrefrontalCortex.get_choice_nodes(partner_choice),
@@ -282,7 +282,7 @@ class PrefrontalCortex(BrainPart):
             return np.argmax(output_prob)
         else:
             choice_index = random.randint(0, PrefrontalCortex.CHOICE_NUM - 8 - 1)
-            # You can never relocate ranomally because of its unproportional magnitude.
+            # You can never relocate randomly because of its unproportional magnitude.
 
             return choice_index
 
@@ -326,16 +326,16 @@ class Amygdala(BrainPart):
 
         if gender == 0:
             pregnancy = person.pregnancy
-            biowatch = person.youngness
+            youngness = person.youngness
 
         else:
             pregnancy = 0
-            biowatch = 0
+            youngness = 0
 
         my_readiness = person.readiness
         my_child_num = person.child_num
 
-        return np.asarray([gender, age, strength, pregnancy, biowatch, my_readiness, my_child_num])
+        return np.asarray([gender, age, strength, pregnancy, youngness, my_readiness, my_child_num])
 
     def first_impression(self, neural_input):
         output_prob: np.ndarray = self.model.feed(neural_input)

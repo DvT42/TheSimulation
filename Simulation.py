@@ -1,5 +1,3 @@
-from line_profiler_pycharm import profile
-
 from Person import *
 from Region import *
 
@@ -7,11 +5,11 @@ from Region import *
 class Simulation:
     IMMUNITY_TIME = 0 * 12
     SELECTED_COUPLES = 10
-    INITIAL_COUPLES = 1000
+    INITIAL_COUPLES = 10
     STARTING_LOCATION = (850, 400)
+    INITIAL_STRENGTH = 10
 
-    @profile
-    def __init__(self, sim_map, imported=None):
+    def __init__(self, sim_map, imported=None, seperated_imported=None):
         """
         The object handling macro operations and containing the whole simulation.
 
@@ -40,12 +38,12 @@ class Simulation:
             for brain_couple in actual_brains:
                 for _ in range(Simulation.INITIAL_COUPLES // Simulation.SELECTED_COUPLES):
                     # initiate the male from the couple.
-                    m = Person(father=[Gender.Male, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective)
+                    m = Person(father=[Gender.Male, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)], collective=self.collective)
                     m.brain = brain_couple[0]
                     brain_couple[0].transfer_brain(m)
 
                     # initiate the female from the couple.
-                    f = Person(father=[Gender.Female, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective)
+                    f = Person(father=[Gender.Female, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)], collective=self.collective)
                     f.brain = brain_couple[1]
                     brain_couple[1].transfer_brain(f)
 
@@ -55,16 +53,48 @@ class Simulation:
             # the remaining people will be initiated with random brains.
             for c in range(Simulation.INITIAL_COUPLES % Simulation.SELECTED_COUPLES):
                 self.regions[initial_region_index].add_person(Person(
-                    father=[Gender.Male, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
+                    father=[Gender.Male, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
                 self.regions[initial_region_index].add_person(Person(
-                    father=[Gender.Female, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
+                    father=[Gender.Female, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
+
+        elif type(seperated_imported) is np.ndarray and seperated_imported.any():
+            actual_male_brains = Simulation.assemble_separated_brains(seperated_imported[0])
+            actual_female_brains = Simulation.assemble_separated_brains(seperated_imported[1])
+
+            for brain in actual_male_brains:
+                for _ in range(Simulation.INITIAL_COUPLES // len(actual_male_brains)):
+                    # initiate the male from the couple.
+                    m = Person(
+                        father=[Gender.Male, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)],
+                        collective=self.collective)
+                    m.brain = brain
+                    brain.transfer_brain(m)
+
+                    self.regions[initial_region_index].add_person(m)
+
+            for brain in actual_female_brains:
+                for _ in range(Simulation.INITIAL_COUPLES // len(actual_female_brains)):
+                    # initiate the female from the couple.
+                    f = Person(
+                        father=[Gender.Female, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)],
+                        collective=self.collective)
+                    f.brain = brain
+                    brain.transfer_brain(f)
+
+                    self.regions[initial_region_index].add_person(f)
+
+            for c in range(Simulation.INITIAL_COUPLES - len(self.regions[initial_region_index].Population)):
+                self.regions[initial_region_index].add_person(Person(
+                    father=[Gender.Male, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
+                self.regions[initial_region_index].add_person(Person(
+                    father=[Gender.Female, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
 
         else:
             for i in range(Simulation.INITIAL_COUPLES):  # people initiated with random brains.
                 self.regions[initial_region_index].add_person(Person(
-                    father=[Gender.Male, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
+                    father=[Gender.Male, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
                 self.regions[initial_region_index].add_person(Person(
-                    father=[Gender.Female, 100, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
+                    father=[Gender.Female, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
 
         for p in self.regions[initial_region_index].Population:
             self.collective.add_person(p)
@@ -76,7 +106,6 @@ class Simulation:
         self.Time = 0
 
     # @jit(target_backend='cuda')
-    @profile
     def month_advancement(self):
         """
         This function constitutes all operations needed to be preformed each month.
@@ -106,8 +135,8 @@ class Simulation:
                     #  - handle pregnancy
                     if p.gender == Gender.Female:
                         if p.father_of_child:
-                            if p.pregnancy == 9:
-                                newborn = p.birth()
+                            if p.pregnancy == Person.PREGNANCY_LENGTH:
+                                newborn = p.birth(self.Time)
                                 newborns.append(newborn)
                             else:
                                 p.pregnancy += 1
@@ -117,7 +146,7 @@ class Simulation:
                     p.aging()  # handles old people's aging process.
 
                     # handle growing up
-                    if p.year() < 15:
+                    if p.age() < 15 * 12:
                         p.strength += 0.25
 
                     if p.natural_death_chance() and self.Time > Simulation.IMMUNITY_TIME:
@@ -240,19 +269,28 @@ class Simulation:
     def get_attitudes(self, id):
         return self.collective.historical_population[id].collective.world_attitudes[id]
 
-    def evaluate(self):
-        return ([person.brain.get_models() for person in self.collective.historical_population],
-                [p.gender for p in self.collective.historical_population],
-                [person.child_num for person in self.collective.historical_population],
-                Person.ages[:len(self.collective.historical_population)])
+    def evaluate(self, by_alive=False):
+        if by_alive:
+            return ([p.brain.get_models() for p in self.collective.historical_population if p.isAlive and p.gender == 1],
+                    [p.brain.get_models() for p in self.collective.historical_population if p.isAlive and p.gender == 0])
+
+        else:
+            return ([person.brain.get_models() for person in self.collective.historical_population],
+                    [p.gender for p in self.collective.historical_population],
+                    [person.child_num for person in self.collective.historical_population],
+                    Person.ages[:len(self.collective.historical_population)])
 
     @staticmethod
-    def find_best_minds(evaluated_list):
+    def find_best_minds(evaluated_list, date=False):
         neural_list, genders, children, ages = evaluated_list
         best_minds = []
         his = np.swapaxes(np.array([np.arange(len(neural_list)), genders, children, ages]), 0, 1)
-        sorted_idx = np.lexsort((his[:, 3], his[:, 2], his[:, 1]))
-        sorted_his = np.array([his[i] for i in sorted_idx])
+        if date:
+            sorted_idx = np.lexsort((his[:, 4], his[:, 3], his[:, 2], his[:, 1]))
+            sorted_his = np.array([his[i] for i in sorted_idx])
+        else:
+            sorted_idx = np.lexsort((his[:, 3], his[:, 2], his[:, 1]))
+            sorted_his = np.array([his[i] for i in sorted_idx])
 
         gender_idx = np.argmax(sorted_his[:, 1])
         male_lst, female_lst = sorted_his[gender_idx:], sorted_his[:gender_idx]
@@ -284,6 +322,13 @@ class Simulation:
         return brain_couples
 
     @staticmethod
+    def assemble_separated_brains(neural_list):
+        brains = []
+        for models in neural_list:
+            brains.append((Brain(models=models[0]), Brain(models=models[1])))
+        return brains
+
+    @staticmethod
     def disassemble_brains(brain_couples):
         neural_list = []
         for brain_couple in brain_couples:
@@ -296,8 +341,11 @@ class Simulation:
 
     def display(self):
         txt = f"Year: {self.Time // 12}\n\n"
+        pop_num = 0
 
-        for i, j in zip(*np.where(self.regions)):
+        for i, j in self.region_iterator:
+            pop_num += len(self.regions[i, j].Population)
+
             txt += self.regions[i, j].display()
             txt += '\n----------\n\n\n'
 
@@ -305,3 +353,4 @@ class Simulation:
             txt = "SPECIES GONE"
 
         print(txt)
+        print(pop_num)

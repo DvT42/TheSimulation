@@ -11,17 +11,20 @@ class Person:
     DIFF_AGE = 15 * 12
     GIVE_UP_DISTANCE = 1
     DEATH_NORMALIZER = 0.3
+    INITIAL_AGE = 0 * 12
+    PREGNANCY_LENGTH = 12
 
     runningID = 0
     ages = np.zeros(MAX_POPULATION, dtype=int)
 
-    def __init__(self, collective, father, mother=None):
+    def __init__(self, collective, father, mother=None, birthday=0):
         # ID assignment
         self.isAlive = True
         self.isManual = type(father) is list
         self.action_flag = False
         self.id = Person.runningID
         Person.runningID += 1
+        self.birthday = birthday
 
         self.collective = collective
 
@@ -90,7 +93,7 @@ class Person:
                 self.partner = other
                 other.partner = self
 
-    def birth(self):
+    def birth(self, birthday):
         f: Person = self.father_of_child
         self.father_of_child = None
 
@@ -98,7 +101,7 @@ class Person:
         self.child_num += 1
         f.child_num += 1
 
-        return Person(collective=self.collective, father=f, mother=self)
+        return Person(collective=self.collective, father=f, mother=self, birthday=birthday)
 
     def natural_death_chance(self):
         death_chance = Person.DEATH_NORMALIZER * 0.06 * math.exp(-0.02 * self.strength)
@@ -179,7 +182,7 @@ class Person:
     def Person_reset(initial_couples):
         Person.runningID = 0
         Person.ages = np.zeros(Person.MAX_POPULATION, dtype=int)
-        Person.ages[:initial_couples * 2] = 20 * 12
+        Person.ages[:initial_couples * 2] = Person.INITIAL_AGE
 
     # Override of the conversion to string
     def __repr__(self):
@@ -202,7 +205,7 @@ class Person:
         else:
             txt = f"{self.id}: \n"
 
-        txt += f"gender: {self.gender.name}, age: {self.year()}, children: {self.child_num}\n" \
+        txt += f"gender: {self.gender.name}, age: {self.year()}, birthday: {self.birthday}, children: {self.child_num}\n" \
                f"strength: {self.strength}\n" \
                f"last action: {Brain.get_action_from_history(self.age(), self.brain.get_history())}"
 

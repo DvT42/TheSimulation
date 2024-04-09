@@ -2,17 +2,17 @@ import pickle
 import os
 import numpy as np
 import tqdm
-from line_profiler_pycharm import profile
-
 from Simulation import Simulation
 
 
 class ControlBoard:
     BASE_PATH = os.path.dirname(os.path.abspath("__file__"))
     SAVED_BRAINS_PATH = os.path.join(BASE_PATH, 'data', 'saved brains.pkl')
+    MALE_BRAINS_PATH = os.path.join(BASE_PATH, 'data', 'saved male brains.pkl')
+    FEMALE_BRAINS_PATH = os.path.join(BASE_PATH, 'data', 'saved female brains.pkl')
 
     @staticmethod
-    def process_command(sim: Simulation, com: str):
+    def process_command(sim, sim_map, com: str):
         """
         The main function for operating with the simulation.
 
@@ -26,8 +26,18 @@ class ControlBoard:
         if com.lower() == 'load':
             with open(ControlBoard.SAVED_BRAINS_PATH, 'rb') as f:
                 models = pickle.load(file=f)
-                new_sim = Simulation(sim_map=sim.map, imported=models)
+                new_sim = Simulation(sim_map=sim_map, imported=models)
                 f.close()
+            sim = new_sim
+
+        elif com.lower() == 'load alive':
+            with open(ControlBoard.SAVED_BRAINS_PATH, 'rb') as f:
+                male_models = pickle.load(file=f)
+                f.close()
+            with open(ControlBoard.SAVED_BRAINS_PATH, 'rb') as f:
+                female_models = pickle.load(file=f)
+                f.close()
+            new_sim = Simulation(sim_map=sim_map, seperated_imported=(male_models, female_models))
             sim = new_sim
 
         elif com.lower() == 'save':
@@ -36,29 +46,41 @@ class ControlBoard:
                 pickle.dump(minds_to_pickle, f)
                 f.close()
 
+        elif com.lower() == 'save alive':
+            male_minds_to_pickle, female_minds_to_pickle = sim.evaluate(by_alive=True)
+            with open(ControlBoard.MALE_BRAINS_PATH, 'wb') as f:
+                pickle.dump(male_minds_to_pickle, f)
+                f.close()
+            with open(ControlBoard.FEMALE_BRAINS_PATH, 'wb') as f:
+                pickle.dump(female_minds_to_pickle, f)
+                f.close()
+
         elif com.lower() == 'best':
             _, best_male, best_female = sim.find_best_minds(sim.evaluate())
             for i in range(len(best_male)):
                 print(f'male: {best_male[-i - 1][0]}, female: {best_female[-i - 1][0]}')
 
-        elif com[0].lower() == 'i':
-            if com[1].lower() == 'a':
-                print(ControlBoard.info_search(sim, int(com[2:]), is_att=True))
-            elif com[1].lower() == 'l':
-                print(ControlBoard.info_search(sim, int(com[2:]), is_loc=True))
-            else:
-                print(ControlBoard.info_search(sim, int(com[1:])))
-
-        elif com[0].lower() == "s":
-            sim = ControlBoard.exact_skip(sim, int(com[1:]), regressive='partial')
-        elif com[0].lower() == "y":
-            sim = ControlBoard.annual_skip(sim, int(com[1:]), regressive='partial')
-
-        elif com[0].lower() == "x":
-            sim = None
-
         else:
-            sim = ControlBoard.exact_skip(sim, 1)
+            if sim is None:
+                sim = Simulation(sim_map)
+            if com[0].lower() == 'i':
+                if com[1].lower() == 'a':
+                    print(ControlBoard.info_search(sim, int(com[2:]), is_att=True))
+                elif com[1].lower() == 'l':
+                    print(ControlBoard.info_search(sim, int(com[2:]), is_loc=True))
+                else:
+                    print(ControlBoard.info_search(sim, int(com[1:])))
+
+            elif com[0].lower() == "s":
+                sim = ControlBoard.exact_skip(sim, int(com[1:]), regressive='partial')
+            elif com[0].lower() == "y":
+                sim = ControlBoard.annual_skip(sim, int(com[1:]), regressive='partial')
+
+            elif com[0].lower() == "x":
+                sim = None
+
+            else:
+                sim = ControlBoard.exact_skip(sim, 1)
 
         return sim
 
@@ -73,7 +95,6 @@ class ControlBoard:
                 f'\n{history}')
 
     @staticmethod
-    @profile
     def exact_skip(sim: Simulation, num: int, failsafe: bool = True, regressive='False'):
         """
         The function that handles the advancement of a Simulation over time.
