@@ -2,6 +2,8 @@ import pickle
 import os
 import numpy as np
 import tqdm
+from line_profiler_pycharm import profile
+
 from Simulation import Simulation
 
 
@@ -12,10 +14,11 @@ class ControlBoard:
     FEMALE_BRAINS_PATH = os.path.join(BASE_PATH, 'data', 'saved female brains.pkl')
 
     @staticmethod
-    def process_command(sim, sim_map, com: str):
+    def process_command(sim: Simulation, com: str, sim_map=None):
         """
         The main function for operating with the simulation.
 
+        :param sim_map: The intended map with which the simulation will work. For some commands this will not be needed.
         :param sim: The current Simulation object.
         :param com: Any command among: {'load', 'save', 'best', 'i'+id, 'ia'+id, 'il'+id, 's'+num, 'y'+num, 'x'}. If a
                     different command is supplied. the simulation will advance in 1 month.
@@ -37,7 +40,7 @@ class ControlBoard:
             with open(ControlBoard.SAVED_BRAINS_PATH, 'rb') as f:
                 female_models = pickle.load(file=f)
                 f.close()
-            new_sim = Simulation(sim_map=sim_map, seperated_imported=(male_models, female_models))
+            new_sim = Simulation(sim_map=sim_map, separated_imported=(male_models, female_models))
             sim = new_sim
 
         elif com.lower() == 'save':
@@ -95,6 +98,7 @@ class ControlBoard:
                 f'\n{history}')
 
     @staticmethod
+    @profile
     def exact_skip(sim: Simulation, num: int, failsafe: bool = True, regressive='False'):
         """
         The function that handles the advancement of a Simulation over time.
@@ -161,8 +165,7 @@ class ControlBoard:
                     best_minds_lst = processed_best_minds
                     quality_lst = unified_lst
 
-                    new_sim = Simulation(sim_map=sim.map, imported=
-                    np.reshape(
+                    new_sim = Simulation(sim_map=sim.map, imported=np.reshape(
                         np.append(
                             best_minds_lst[:len(best_minds_lst) // 2],
                             best_minds_lst[len(best_minds_lst) // 2:],

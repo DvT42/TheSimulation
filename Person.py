@@ -17,14 +17,13 @@ class Person:
     runningID = 0
     ages = np.zeros(MAX_POPULATION, dtype=int)
 
-    def __init__(self, collective, father, mother=None, birthday=0):
+    def __init__(self, collective, father, mother=None):
         # ID assignment
         self.isAlive = True
         self.isManual = type(father) is list
         self.action_flag = False
         self.id = Person.runningID
         Person.runningID += 1
-        self.birthday = birthday
 
         self.collective = collective
 
@@ -58,6 +57,8 @@ class Person:
             # get born in the mother's place
             self.location = mother.location
 
+            self.generation = max(father.generation, mother.generation)
+
         # - Manual creation
         else:
             # [0]
@@ -69,6 +70,8 @@ class Person:
 
             # [2]
             self.location = father[2]
+
+            self.generation = 0
 
         self.brain.update_location_history()  # insert the birthplace into location history.
 
@@ -93,7 +96,7 @@ class Person:
                 self.partner = other
                 other.partner = self
 
-    def birth(self, birthday):
+    def birth(self):
         f: Person = self.father_of_child
         self.father_of_child = None
 
@@ -101,7 +104,7 @@ class Person:
         self.child_num += 1
         f.child_num += 1
 
-        return Person(collective=self.collective, father=f, mother=self, birthday=birthday)
+        return Person(collective=self.collective, father=f, mother=self)
 
     def natural_death_chance(self):
         death_chance = Person.DEATH_NORMALIZER * 0.06 * math.exp(-0.02 * self.strength)
@@ -201,11 +204,11 @@ class Person:
         # basic information
         if not self.isManual:
             txt = f"{self.id}: \n" \
-                  f"parents: [{self.fatherID}, {self.motherID}] \n"
+                  f"parents: [{self.fatherID}, {self.motherID}], generation: {self.generation} \n"
         else:
             txt = f"{self.id}: \n"
 
-        txt += f"gender: {self.gender.name}, age: {self.year()}, birthday: {self.birthday}, children: {self.child_num}\n" \
+        txt += f"gender: {self.gender.name}, age: {self.year()}, children: {self.child_num}\n" \
                f"strength: {self.strength}\n" \
                f"last action: {Brain.get_action_from_history(self.age(), self.brain.get_history())}"
 

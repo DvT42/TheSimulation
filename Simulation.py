@@ -1,3 +1,5 @@
+from line_profiler_pycharm import profile
+
 from Person import *
 from Region import *
 
@@ -5,11 +7,11 @@ from Region import *
 class Simulation:
     IMMUNITY_TIME = 0 * 12
     SELECTED_COUPLES = 10
-    INITIAL_COUPLES = 10
+    INITIAL_COUPLES = 1000
     STARTING_LOCATION = (850, 400)
     INITIAL_STRENGTH = 10
 
-    def __init__(self, sim_map, imported=None, seperated_imported=None):
+    def __init__(self, sim_map, imported=None, separated_imported=None):
         """
         The object handling macro operations and containing the whole simulation.
 
@@ -57,9 +59,9 @@ class Simulation:
                 self.regions[initial_region_index].add_person(Person(
                     father=[Gender.Female, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
 
-        elif type(seperated_imported) is np.ndarray and seperated_imported.any():
-            actual_male_brains = Simulation.assemble_separated_brains(seperated_imported[0])
-            actual_female_brains = Simulation.assemble_separated_brains(seperated_imported[1])
+        elif type(separated_imported) is np.ndarray and separated_imported.any():
+            actual_male_brains = Simulation.assemble_separated_brains(separated_imported[0])
+            actual_female_brains = Simulation.assemble_separated_brains(separated_imported[1])
 
             for brain in actual_male_brains:
                 for _ in range(Simulation.INITIAL_COUPLES // len(actual_male_brains)):
@@ -106,6 +108,7 @@ class Simulation:
         self.Time = 0
 
     # @jit(target_backend='cuda')
+    @profile
     def month_advancement(self):
         """
         This function constitutes all operations needed to be preformed each month.
@@ -136,7 +139,7 @@ class Simulation:
                     if p.gender == Gender.Female:
                         if p.father_of_child:
                             if p.pregnancy == Person.PREGNANCY_LENGTH:
-                                newborn = p.birth(self.Time)
+                                newborn = p.birth()
                                 newborns.append(newborn)
                             else:
                                 p.pregnancy += 1
@@ -215,12 +218,13 @@ class Simulation:
             for rlp in relocating_people:
                 reg.remove_person(rlp)
 
+        for i, j in self.region_iterator:
+            reg = self.regions[i, j]
             if not reg.Population:
                 self.regions[i, j] = None
                 self.region_iterator.remove((i, j))
                 neighbors = self.map.get_surroundings(self.regions, (j, i), dtype=Region)
                 self.update_neighbors(neighbors)
-
         self.region_iterator.extend(new_regions)
 
     def is_eradicated(self):
