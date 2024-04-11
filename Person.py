@@ -4,13 +4,13 @@ from Brain import *
 
 
 class Person:
-    MAX_POPULATION = 10000000
+    MAX_POPULATION = 1000000
     AGING_STARTING_AGE = 40 * 12
     DRASTIC_AGING_AGE = 75 * 12
-    STRENGTH_MODIFIER = 1
+    STRENGTH_MODIFIER = 0.75
     DIFF_AGE = 15 * 12
     GIVE_UP_DISTANCE = 1
-    DEATH_NORMALIZER = 0.3
+    DEATH_NORMALIZER = 0.5
     INITIAL_AGE = 0 * 12
     PREGNANCY_LENGTH = 12
 
@@ -206,7 +206,8 @@ class Person:
             txt = f"{self.id}: \n" \
                   f"parents: [{self.fatherID}, {self.motherID}], generation: {self.generation} \n"
         else:
-            txt = f"{self.id}: \n"
+            txt = (f"{self.id}: \n"
+                   f"generation: {self.generation}")
 
         txt += f"gender: {self.gender.name}, age: {self.year()}, children: {self.child_num}\n" \
                f"strength: {self.strength}\n" \

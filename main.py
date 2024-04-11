@@ -1,4 +1,3 @@
-from Simulation import Simulation
 from Control_Board import ControlBoard
 from datetime import datetime
 from map.Map import Map

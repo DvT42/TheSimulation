@@ -2,7 +2,6 @@ import pickle
 import os
 import numpy as np
 import tqdm
-from line_profiler_pycharm import profile
 
 from Simulation import Simulation
 
@@ -98,7 +97,6 @@ class ControlBoard:
                 f'\n{history}')
 
     @staticmethod
-    @profile
     def exact_skip(sim: Simulation, num: int, failsafe: bool = True, regressive='False'):
         """
         The function that handles the advancement of a Simulation over time.

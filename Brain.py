@@ -105,6 +105,7 @@ class Brain:
         ).item()
 
         self.collective.world_attitudes[self.id, other.id] = impression
+        self.brainparts.get("HPC").already_met.append(other.id)
 
         return impression
 
@@ -117,6 +118,7 @@ class Brain:
         ids = np.array(ids)
         destined_indexes = ids.astype(int)
         impressions = self.brainparts.get("AMG").first_impression(info_batch).flatten()
+        self.brainparts.get("HPC").already_met.extend(ids)
 
         self.collective.world_attitudes[self.id, destined_indexes] = impressions
 
@@ -142,7 +144,7 @@ class Brain:
         return self.collective.world_attitudes[self.id, :self.collective.population_size]
 
     def improve_my_attitudes(self, multiplier=1):
-        self.collective.world_attitudes[self.id, :self.collective.population_size] += (
+        self.collective.world_attitudes[self.id, self.brainparts.get("HPC").already_met] += (
                 Collective.SELF_ATTITUDE_IMPROVEMENT_BONUS * multiplier)
 
     def improve_attitudes_toward_me(self, region):
@@ -356,4 +358,5 @@ class Hippocampus(BrainPart):
         self.history = np.zeros(120 * 12, dtype=int)
         self.location_history = []
 
-        self.dead_impressions = {}
+        self.already_met = []
+

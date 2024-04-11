@@ -1,5 +1,3 @@
-from line_profiler_pycharm import profile
-
 from Person import *
 from Region import *
 
@@ -7,7 +5,7 @@ from Region import *
 class Simulation:
     IMMUNITY_TIME = 0 * 12
     SELECTED_COUPLES = 10
-    INITIAL_COUPLES = 1000
+    INITIAL_COUPLES = 2000
     STARTING_LOCATION = (850, 400)
     INITIAL_STRENGTH = 10
 
@@ -108,7 +106,6 @@ class Simulation:
         self.Time = 0
 
     # @jit(target_backend='cuda')
-    @profile
     def month_advancement(self):
         """
         This function constitutes all operations needed to be preformed each month.
@@ -252,14 +249,20 @@ class Simulation:
 
         if person:
             p_info = Amygdala.get_relevant_info(person=person)
-            tiled = np.tile(p_info, (len(pop_lst), 1))
-            person.brain.get_mass_first_impressions(ids, np.concatenate((info_batch, tiled), axis=1))
+            never_met = [(ids[i], p, info_batch[i]) for i, p in enumerate(pop_lst) if ids[i] not in person.brain.brainparts.get("HPC").already_met]
+            info_batch = np.array([i[2] for i in never_met])
+            never_met = np.array([i[:2] for i in never_met], dtype=object)
+            if never_met.any():
+                new_ids = never_met[:, 0].astype(int)
+                tiled = np.tile(p_info, (len(new_ids), 1))
+                person.brain.get_mass_first_impressions(new_ids, np.concatenate((info_batch, tiled), axis=1))
 
-            reflective = np.concatenate((tiled, info_batch), axis=1)
-            impressions = np.empty((len(pop_lst)))
-            for i, p in enumerate(pop_lst):
-                impressions[i] = p.brain.raw_get_first_impression(reflective[i])
-            person.collective.world_attitudes[ids, person.id] = impressions
+                reflective = np.concatenate((tiled, info_batch), axis=1)
+                impressions = np.empty((len(new_ids)))
+                for i, p in enumerate(never_met[:, 1]):
+                    impressions[i] = p.brain.raw_get_first_impression(reflective[i])
+                    p.brain.brainparts.get("HPC").already_met.append(person.id)
+                person.collective.world_attitudes[new_ids, person.id] = impressions
         else:
             for i, p in enumerate(pop_lst):
                 p_info = info_batch[i]
