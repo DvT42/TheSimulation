@@ -1,11 +1,11 @@
-from Person import *
+from multiprocessing import Queue
 from Region import *
 
 
 class Simulation:
     IMMUNITY_TIME = 0 * 12
     SELECTED_COUPLES = 10
-    INITIAL_COUPLES = 2000
+    INITIAL_COUPLES = 1000
     STARTING_LOCATION = (850, 400)
     INITIAL_STRENGTH = 10
 
@@ -62,6 +62,7 @@ class Simulation:
             actual_female_brains = Simulation.assemble_separated_brains(separated_imported[1])
 
             for brain in actual_male_brains:
+                brain: Brain
                 for _ in range(Simulation.INITIAL_COUPLES // len(actual_male_brains)):
                     # initiate the male from the couple.
                     m = Person(
@@ -73,6 +74,7 @@ class Simulation:
                     self.regions[initial_region_index].add_person(m)
 
             for brain in actual_female_brains:
+                brain: Brain
                 for _ in range(Simulation.INITIAL_COUPLES // len(actual_female_brains)):
                     # initiate the female from the couple.
                     f = Person(
@@ -100,129 +102,150 @@ class Simulation:
             self.collective.add_person(p)
 
         # get all the first impressions of the initial people.
-        Simulation.mass_encounter(pop_lst=self.regions[initial_region_index].Population,
-                                  ids=np.arange(Simulation.INITIAL_COUPLES * 2))
+        self.regions[initial_region_index].mass_encounter()
+
+        self.new_regions = []
 
         self.Time = 0
 
     # @jit(target_backend='cuda')
-    def month_advancement(self):
+    def month_advancement(self, executor: concurrent.futures.Executor):
         """
         This function constitutes all operations needed to be preformed each month.
         """
         self.Time += 1
-        new_regions = []
+        self.new_regions = []
 
         for i, j in self.region_iterator:
             self.regions[i, j].falsify_action_flags()
 
-        # Person.ages[:Person.runningID] += 1 // might decide to transfer it to this format later
-        for i, j in self.region_iterator:
-            # noinspection PyTypeChecker
-            reg: Region = self.regions[i, j]
-            newborns = []
-            social_connectors = []
-            dead = []
-            relocating_people = []
-            action_pool = [0, 0, 0]
+        # results_region = Queue()
+        futures_region = [executor.submit(self.handle_region, self.regions[i, j], executor) for i, j in
+                          self.region_iterator]
+        # for future in concurrent.futures.as_completed(futures_region):
+        #     results_region.put(future.result())
+        concurrent.futures.wait(futures_region)
 
-            for idx, p in enumerate(reg):
-                p: Person
+        results_region = Queue()
+        futures_region = [executor.submit(self.regions[i, j].introduce_newcomers, executor) for i, j in
+                          self.region_iterator]
+        for future in concurrent.futures.as_completed(futures_region):
+            results_region.put(future.result())
+        concurrent.futures.wait(futures_region)
 
-                if not p.action_flag:
-                    Person.ages[p.id] += 1
-
-                    #  - handle pregnancy
-                    if p.gender == Gender.Female:
-                        if p.father_of_child:
-                            if p.pregnancy == Person.PREGNANCY_LENGTH:
-                                newborn = p.birth()
-                                newborns.append(newborn)
-                            else:
-                                p.pregnancy += 1
-                        elif p.age() > p.readiness and p.youngness > 0:
-                            p.youngness -= 1
-
-                    p.aging()  # handles old people's aging process.
-
-                    # handle growing up
-                    if p.age() < 15 * 12:
-                        p.strength += 0.25
-
-                    if p.natural_death_chance() and self.Time > Simulation.IMMUNITY_TIME:
-                        dead.append(p)
-                        continue
-
-                    action = p.action(region=reg)
-                    if action == 0:  # social connection.
-                        social_connectors.append(p)
-                        action_pool[0] += 1
-                    elif action == 1:  # strength.
-                        action_pool[1] += 1
-                    elif action in np.arange(2, 10):  # relocation.
-                        action_pool[2] += 1
-
-                        if p.location[1] >= 800 or p.location[1] < 0:  # if exited the boundaries of the map.
-                            dead.append(p)
-                            continue
-
-                        new_reg = self.regions[tuple(np.flip(p.location))]
-                        relocating_people.append(p)  # to not mess up the indexing in the original region.
-
-                        if new_reg:  # if tried to relocate into an occupied region.
-                            Simulation.mass_encounter(new_reg.Population, new_reg.pop_id, person=p)
-                            new_reg.add_person(p)
-
-                        else:
-                            neighbors = self.map.get_surroundings(self.regions, p.location, dtype=Region)
-                            new_reg = Region(location=p.location,
-                                             surrounding_biomes=self.map.get_surroundings(self.map.biome_map, p.location),
-                                             biome=self.map.get_biome(p.location),
-                                             neighbors=neighbors)
-                            new_reg.add_person(p)
-                            self.regions[tuple(np.flip(p.location))] = new_reg
-                            self.update_neighbors(neighbors)  # informs the neighbors that a person joined new_reg.
-                            new_regions.append(tuple(np.flip(p.location)))
-
-                    p.action_flag = True  # so that it won't get iterated upon again if relocated.
-
-            for newborn in newborns:
-                self.collective.add_person(newborn)
-                Simulation.mass_encounter(reg.Population, reg.pop_id, person=newborn)
-
-                reg.add_person(newborn)
-
-            for social_connector in social_connectors:
-                social_connector: Person
-                if social_connector.brain.is_friendly():  # whether he likes any other people.
-                    social_connector.brain.improve_attitudes_toward_me(region=reg)
-                    social_connector.brain.improve_my_attitudes(multiplier=0.5)
-
-                    if social_connector.partner:
-                        if social_connector.partner in social_connectors:
-                            social_connector.prepare_next_generation(social_connector.partner)
-                        elif self.map.distance(social_connector.location, social_connector.partner.location) > Person.GIVE_UP_DISTANCE:
-                            social_connector.partner = None
-                    else:
-                        social_connector.partner = social_connector.partner_selection(region=reg)
-                        if social_connector.partner:
-                            social_connector.partner.partner = social_connector
-                else:
-                    social_connector.brain.improve_my_attitudes()
-
-            for d in dead:
-                Simulation.kill_person(d, reg)
-            for rlp in relocating_people:
-                reg.remove_person(rlp)
-
+        empty_regions = []
         for i, j in self.region_iterator:
             reg = self.regions[i, j]
             if not reg.Population:
-                self.regions[i, j] = None
-                self.region_iterator.remove((i, j))
-                neighbors = self.map.get_surroundings(self.regions, (j, i), dtype=Region)
-                self.update_neighbors(neighbors)
-        self.region_iterator.extend(new_regions)
+                empty_regions.append((i, j))
+
+        for i, j in empty_regions:
+            self.regions[i, j] = None
+            self.region_iterator.remove((i, j))
+            neighbors = self.map.get_surroundings(self.regions, (j, i), dtype=Region)
+            self.update_neighbors(neighbors)
+
+        self.region_iterator.extend(self.new_regions)
+
+    def handle_region(self, reg: Region, executor):
+        reg.dead = []
+        reg.action_pool = [0, 0, 0]
+        reg.newborns = []
+        reg.social_connectors = []
+        reg.relocating_people = []
+        reg.newcomers = []
+
+        # results = Queue()
+        futures_person = [executor.submit(self.handle_person, person, reg) for person in reg.Population]
+        # for future in concurrent.futures.as_completed(futures_person):
+        #     results.put(future.result())
+        concurrent.futures.wait(futures_person)
+
+        for newborn in reg.newborns:
+            self.collective.add_person(newborn)
+            reg.add_person(newborn)
+
+        for social_connector in reg.social_connectors:
+            social_connector: Person
+            if social_connector.brain.is_friendly():  # whether he likes any other people.
+                social_connector.brain.improve_attitudes_toward_me(region=reg)
+                social_connector.brain.improve_my_attitudes(multiplier=0.5)
+
+                if social_connector.partner:
+                    if social_connector.partner in reg.social_connectors:
+                        social_connector.prepare_next_generation(social_connector.partner)
+                    elif self.map.distance(social_connector.location,
+                                           social_connector.partner.location) > Person.GIVE_UP_DISTANCE:
+                        social_connector.partner = None
+                else:
+                    social_connector.partner = social_connector.partner_selection(region=reg)
+                    if social_connector.partner:
+                        social_connector.partner.partner = social_connector
+            else:
+                social_connector.brain.improve_my_attitudes()
+
+        for d in reg.dead:
+            Simulation.kill_person(d, reg)
+        for rlp in reg.relocating_people:
+            reg.remove_person(rlp)
+
+    def handle_person(self, p: Person, reg: Region):
+        if not p.action_flag:
+            # Person.ages[:Person.runningID] += 1 // might decide to transfer it to this format later
+            Person.ages[p.id] += 1
+
+            #  - handle pregnancy
+            if p.gender == Gender.Female:
+                if p.father_of_child:
+                    if p.pregnancy == Person.PREGNANCY_LENGTH:
+                        newborn = p.birth()
+                        reg.newborns.append(newborn)
+                    else:
+                        p.pregnancy += 1
+                elif p.age() > p.readiness and p.youngness > 0:
+                    p.youngness -= 1
+
+            p.aging()  # handles old people's aging process.
+
+            # handle growing up
+            if p.age() < 15 * 12:
+                p.strength += 0.25
+
+            if p.natural_death_chance() and self.Time > Simulation.IMMUNITY_TIME:
+                reg.dead.append(p)
+                return None
+
+            action = p.action(region=reg)
+            if action == 0:  # social connection.
+                reg.social_connectors.append(p)
+                reg.action_pool[0] += 1
+            elif action == 1:  # strength.
+                reg.action_pool[1] += 1
+            elif action in np.arange(2, 10):  # relocation.
+                reg.action_pool[2] += 1
+
+                if p.location[1] >= 800 or p.location[1] < 0:  # if exited the boundaries of the map.
+                    reg.dead.append(p)
+                    return None
+
+                new_reg = self.regions[tuple(np.flip(p.location))]
+                reg.relocating_people.append(p)  # to not mess up the indexing in the original region.
+
+                if new_reg:  # if tried to relocate into an occupied region.
+                    new_reg.add_person(p)
+
+                else:
+                    neighbors = self.map.get_surroundings(self.regions, p.location, dtype=Region)
+                    new_reg = Region(location=p.location,
+                                     surrounding_biomes=self.map.get_surroundings(self.map.biome_map, p.location),
+                                     biome=self.map.get_biome(p.location),
+                                     neighbors=neighbors)
+                    new_reg.add_person(p)
+                    self.regions[tuple(np.flip(p.location))] = new_reg
+                    self.update_neighbors(neighbors)  # informs the neighbors that a person joined new_reg.
+                    self.new_regions.append(tuple(np.flip(p.location)))
+
+            p.action_flag = True  # so that it won't get iterated upon again if relocated.
 
     def is_eradicated(self):
         return not np.any(self.regions)
@@ -240,34 +263,6 @@ class Simulation:
         p.isAlive = False
         if p.partner:
             p.partner.partner = None
-
-    @staticmethod
-    def mass_encounter(pop_lst, ids, person=None):
-        info_batch = np.empty(shape=(len(pop_lst), 7))
-        for i, p in enumerate(pop_lst):
-            info_batch[i] = Amygdala.get_relevant_info(person=p)
-
-        if person:
-            p_info = Amygdala.get_relevant_info(person=person)
-            never_met = [(ids[i], p, info_batch[i]) for i, p in enumerate(pop_lst) if ids[i] not in person.brain.brainparts.get("HPC").already_met]
-            info_batch = np.array([i[2] for i in never_met])
-            never_met = np.array([i[:2] for i in never_met], dtype=object)
-            if never_met.any():
-                new_ids = never_met[:, 0].astype(int)
-                tiled = np.tile(p_info, (len(new_ids), 1))
-                person.brain.get_mass_first_impressions(new_ids, np.concatenate((info_batch, tiled), axis=1))
-
-                reflective = np.concatenate((tiled, info_batch), axis=1)
-                impressions = np.empty((len(new_ids)))
-                for i, p in enumerate(never_met[:, 1]):
-                    impressions[i] = p.brain.raw_get_first_impression(reflective[i])
-                    p.brain.brainparts.get("HPC").already_met.append(person.id)
-                person.collective.world_attitudes[new_ids, person.id] = impressions
-        else:
-            for i, p in enumerate(pop_lst):
-                p_info = info_batch[i]
-                tiled = np.tile(p_info, (len(pop_lst), 1))
-                p.brain.get_mass_first_impressions(ids, np.concatenate((info_batch, tiled), axis=1))
 
     def get_historical_figure(self, id):
         hf = self.collective.historical_population[id]

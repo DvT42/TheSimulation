@@ -1,9 +1,8 @@
 import pickle
 import os
-import numpy as np
 import tqdm
 
-from Simulation import Simulation
+from Simulation import *
 
 
 class ControlBoard:
@@ -119,10 +118,11 @@ class ControlBoard:
 
         # representing the best Person-s across all Simulations. Relevant only if regressive=True.
         quality_lst = np.empty((0, 3), dtype=int)
+        exec = concurrent.futures.ThreadPoolExecutor()
 
         while True:
             for _ in ProgressBar(dest_time - sim.Time):
-                sim.month_advancement()
+                sim.month_advancement(exec)
                 if sim.is_eradicated():
                     break
 
