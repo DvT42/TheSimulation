@@ -1,5 +1,6 @@
 from Person import *
 import concurrent.futures
+from threading import Lock
 
 
 class Region:
@@ -7,21 +8,88 @@ class Region:
         self.location = np.array(location)
         self.biome = biome
         self.surr_biomes = surrounding_biomes
-        self.neighbors = neighbors
-        self.neighbors[1, 1] = self
+        self._neighbors = neighbors
+        self._neighbors[1, 1] = self
 
-        self.dead = []
+        self._dead = []
         self.action_pool = [0, 0, 0]
-        self.newborns = []
-        self.social_connectors = []
-        self.relocating_people = []
-        self.newcomers = []
+        self._newborns = []
+        self._social_connectors = []
+        self._relocating_people = []
+        self._newcomers = []
+        self._lock = Lock()
 
         if population:
             self.Population = population
         else:
             self.Population = []
         self.pop_id = [p.id for p in self.Population]
+
+    @property
+    def neighbors(self):
+        return self._neighbors
+
+    @neighbors.setter
+    def neighbors(self, new_neighbors):
+        with self._lock:
+            self._neighbors = new_neighbors
+
+    def neighbors_update(self, pos, value):
+        with self._lock:
+            self._neighbors[pos] = value
+
+    @property
+    def newborns(self):
+        return self._newborns
+
+    @newborns.setter
+    def newborns(self, new_newborns):
+        with self._lock:
+            self._newborns.append(new_newborns)
+
+    @property
+    def dead(self):
+        return self._dead
+
+    @dead.setter
+    def dead(self, new_dead):
+        with self._lock:
+            self._dead.append(new_dead)
+
+    @property
+    def social_connectors(self):
+        return self._social_connectors
+
+    @social_connectors.setter
+    def social_connectors(self, new_social_connectors):
+        with self._lock:
+            self._social_connectors.append(new_social_connectors)
+
+    @property
+    def relocating_people(self):
+        return self._relocating_people
+
+    @relocating_people.setter
+    def relocating_people(self, new_relocating_people):
+        with self._lock:
+            self._relocating_people.append(new_relocating_people)
+
+    @property
+    def newcomers(self):
+        return self._newcomers
+
+    @newcomers.setter
+    def newcomers(self, new_newcomers):
+        with self._lock:
+            self._newborns.append(new_newcomers)
+
+    def clear(self):
+        self._dead = []
+        self.action_pool = [0, 0, 0]
+        self._newborns = []
+        self._social_connectors = []
+        self._relocating_people = []
+        self._newcomers = []
 
     def add_person(self, person):
         self.Population.append(person)
@@ -32,9 +100,11 @@ class Region:
         self.Population.remove(person)
         self.pop_id.remove(person.id)
 
-    def introduce_newcomers(self, executor):
-        futures_region = [executor.submit(self.mass_encounter, n) for n in self.newcomers]
+    def introduce_newcomers(self):
+        newcomers_exec = concurrent.futures.ThreadPoolExecutor(max_workers=100)
+        futures_region = [newcomers_exec.submit(self.mass_encounter, n) for n in self.newcomers]
         concurrent.futures.wait(futures_region)
+        newcomers_exec.shutdown()
 
     def mass_encounter(self, person=None):
         pop_lst = self.Population

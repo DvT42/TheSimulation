@@ -23,6 +23,7 @@ class Collective:
 
     def __init__(self):
         self.population_size = 0
+        self.dead = 0
         self.world_attitudes = np.zeros((Collective.BASIC_POPULATION, Collective.BASIC_POPULATION), dtype=float)
         self.arranged_indexes = np.arange(Collective.BASIC_POPULATION)
         self.historical_population = []

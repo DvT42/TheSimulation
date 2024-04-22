@@ -118,11 +118,13 @@ class ControlBoard:
 
         # representing the best Person-s across all Simulations. Relevant only if regressive=True.
         quality_lst = np.empty((0, 3), dtype=int)
-        exec = concurrent.futures.ThreadPoolExecutor()
 
+        executers = concurrent.futures.ThreadPoolExecutor(max_workers=100)
         while True:
-            for _ in ProgressBar(dest_time - sim.Time):
-                sim.month_advancement(exec)
+            pbar = ProgressBar(dest_time - sim.Time)
+            for _ in pbar:
+                pbar.set_description(f'{sim.pop_num()}')
+                sim.month_advancement(executers)
                 if sim.is_eradicated():
                     break
 
