@@ -1,6 +1,7 @@
 import random
 from numpy import random as nprnd
 from Neural_Network import *
+from line_profiler_pycharm import profile
 
 
 class Collective:
@@ -68,6 +69,7 @@ class Brain:
     #     for brainpart in self.brainparts.values():
     #         brainpart.evolvement()
 
+    @profile
     def call_decision_making(self, region):
         if self.person.gender == 0:
             preg = self.person.pregnancy
@@ -259,6 +261,7 @@ class PrefrontalCortex(BrainPart):
 
             self.model = model
 
+    @profile
     def decision_making(
             self, gender, age, strength, pregnancy, youngness, readiness, child_num, father_choice,
             mother_choice, partner_choice, location, partner_location, regional_biomes, regional_pop, regional_resources

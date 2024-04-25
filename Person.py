@@ -112,6 +112,7 @@ class Person:
         return random_number < death_chance
 
     # noinspection PyTypeChecker
+    @profile
     def action(self, region):
         decision = self.brain.call_decision_making(region=region)
 

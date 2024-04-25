@@ -119,7 +119,7 @@ class ControlBoard:
         # representing the best Person-s across all Simulations. Relevant only if regressive=True.
         quality_lst = np.empty((0, 3), dtype=int)
 
-        executers = concurrent.futures.ThreadPoolExecutor(max_workers=100)
+        executers = concurrent.futures.ThreadPoolExecutor()
         while True:
             pbar = ProgressBar(dest_time - sim.Time)
             for _ in pbar:
@@ -182,7 +182,7 @@ class ControlBoard:
                 return sim
 
     @staticmethod
-    def annual_skip(sim: Simulation, num: int, failsafe: bool = True, regressive: str = 'False'):
+    def annual_skip(sim: Simulation, num: int, failsafe: bool = False, regressive: str = 'False'):
         return ControlBoard.exact_skip(sim, num=num * 12, failsafe=failsafe, regressive=regressive)
 
 

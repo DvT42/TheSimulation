@@ -1,10 +1,12 @@
+from line_profiler_pycharm import profile
 from multiprocessing import Queue
 from Region import *
+
 
 class Simulation:
     IMMUNITY_TIME = 0 * 12
     SELECTED_COUPLES = 10
-    INITIAL_COUPLES = 2000
+    INITIAL_COUPLES = 1000
     STARTING_LOCATION = (850, 400)
     INITIAL_STRENGTH = 10
     NEW_REGION_LOCK = Lock()
@@ -110,7 +112,8 @@ class Simulation:
         self.Time = 0
 
     # @jit(target_backend='cuda')
-    def month_advancement(self, executers:concurrent.futures.ThreadPoolExecutor):
+    @profile
+    def month_advancement(self, executors: concurrent.futures.ThreadPoolExecutor):
         """
         This function constitutes all operations needed to be preformed each month.
         """
@@ -122,7 +125,8 @@ class Simulation:
 
         # results_region = Queue()
         # region_exec = concurrent.futures.ThreadPoolExecutor(max_workers=100)
-        futures_region = [executers.submit(self.handle_region, self.regions[i, j]) for i, j in
+        # noinspection PyTypeChecker
+        futures_region = [executors.submit(self.handle_region, self.regions[i, j]) for i, j in
                           self.region_iterator]
         # for future in concurrent.futures.as_completed(futures_region):
         #     results_region.put(future.result())
@@ -131,39 +135,37 @@ class Simulation:
 
         results_region = Queue()
         # introduce_exec = concurrent.futures.ThreadPoolExecutor(max_workers=100)
-        futures_region = [executers.submit(self.regions[i, j].introduce_newcomers) for i, j in
+        futures_region = [executors.submit(self.regions[i, j].introduce_newcomers) for i, j in
                           self.region_iterator]
         for future in concurrent.futures.as_completed(futures_region):
             results_region.put(future.result())
         # concurrent.futures.wait(futures_region)
         # region_exec.shutdown()
 
-        empty_regions = []
-        for i, j in self.region_iterator:
-            reg = self.regions[i, j]
-            if not reg.Population:
-                empty_regions.append((i, j))
+        # empty_regions = []
+        # for i, j in self.region_iterator:
+        #     reg = self.regions[i, j]
+        #     if not reg.Population:
+        #         empty_regions.append((i, j))
 
-        for i, j in empty_regions:
-            self.regions[i, j] = None
-            self.region_iterator.remove((i, j))
-            neighbors = self.map.get_surroundings(self.regions, (j, i), dtype=Region)
-            self.update_neighbors(neighbors)
+        # for i, j in empty_regions:
+        #     self.regions[i, j] = None
+        #     self.region_iterator.remove((i, j))
+        #     neighbors = self.map.get_surroundings(self.regions, (j, i), dtype=Region)
+        #     self.update_neighbors(neighbors)
 
         self.region_iterator.extend(self.new_regions)
 
+    @profile
     def handle_region(self, reg: Region):
         reg.clear()
 
-        # results = Queue()
-        # print("1: ", reg.location)
-        person_exec = concurrent.futures.ThreadPoolExecutor(max_workers=100)
-        futures_person = [person_exec.submit(self.handle_person, person, reg) for person in reg.Population]
-        # for future in concurrent.futures.as_completed(futures_person):
-        #     results.put(future.result())
-        # print("2: ", reg.location, len(reg.Population))
-        concurrent.futures.wait(futures_person)
-        person_exec.shutdown()
+        # person_exec = concurrent.futures.ThreadPoolExecutor()
+        # futures_person = [person_exec.submit(self.handle_person, person, reg) for person in reg.Population]
+        # concurrent.futures.wait(futures_person)
+        # person_exec.shutdown()
+        for p in reg.Population:
+            self.handle_person(p, reg)
 
         # print("3: ", reg.location)
         for newborn in reg.newborns:
@@ -208,6 +210,7 @@ class Simulation:
             reg.remove_person(rlp)
             # print("8b: ", reg.location)
 
+    @profile
     def handle_person(self, p: Person, reg: Region):
         # print("P1: ", reg.location, p.id)
         if not p.action_flag:
@@ -235,7 +238,7 @@ class Simulation:
 
             # print("P4: ", reg.location, p.id)
             if p.natural_death_chance() and self.Time > Simulation.IMMUNITY_TIME:
-                reg.dead.append(p)
+                reg.dead = p
                 # print("P5: ", reg.location, p.id)
                 return None
 
@@ -243,7 +246,7 @@ class Simulation:
             action = p.action(region=reg)
             # print("P7: ", reg.location, p.id)
             if action == 0:  # social connection.
-                reg.social_connectors.append(p)
+                reg.social_connectors = p
                 with self.ACTION_POOL_LOCK:
                     reg.action_pool[0] += 1
             elif action == 1:  # strength.
@@ -255,33 +258,39 @@ class Simulation:
 
                 # print("P8: ", reg.location, p.id)
                 if p.location[1] >= 800 or p.location[1] < 0:  # if exited the boundaries of the map.
-                    reg.dead.append(p)
+                    reg.dead = p
                     # print("P9: ", reg.location, p.id)
                     return None
-                with self.NEW_REGION_LOCK:
-                    new_reg = self.regions[tuple(np.flip(p.location))]
-                    reg.relocating_people.append(p)  # to not mess up the indexing in the original region.
 
-                    # print("P10: ", reg.location, p.id)
-                    if new_reg:  # if tried to relocate into an occupied region.
-                        new_reg.add_person(p)
-                        # print("P11a: ", reg.location, p.id)
+                reg.relocating_people = p  # to not mess up the indexing in the original region.
 
-                    else:
-                        # print("P11b: ", reg.location, p.id)
-                        neighbors = self.map.get_surroundings(self.regions, p.location, dtype=Region)
-                        # print("P11c: ", reg.location, p.id)
-                        new_reg = Region(location=p.location,
-                                         surrounding_biomes=self.map.get_surroundings(self.map.biome_map, p.location),
-                                         biome=self.map.get_biome(p.location),
-                                         neighbors=neighbors)
-                        # print("P11d: ", reg.location, p.id)
-                        new_reg.add_person(p)
-                        self.regions[tuple(np.flip(p.location))] = new_reg
-                        # print("P11e: ", reg.location, p.id)
-                        self.update_neighbors(neighbors)  # informs the neighbors that a person joined new_reg.
-                        # print("P11f: ", reg.location, p.id)
-                        self.new_regions.append(tuple(np.flip(p.location)))
+                new_reg = self.regions[tuple(np.flip(p.location))]
+                # print("P10: ", reg.location, p.id)
+                if new_reg:  # if tried to relocate into an occupied region.
+                    new_reg.add_person(p)
+                    # print("P11a: ", reg.location, p.id)
+                else:
+                    with self.NEW_REGION_LOCK:
+                        new_reg = self.regions[tuple(np.flip(p.location))]
+                        # print("P10: ", reg.location, p.id)
+                        if new_reg:  # if tried to relocate into an occupied region.
+                            new_reg.add_person(p)
+
+                        else:
+                            # print("P11b: ", reg.location, p.id)
+                            neighbors = self.map.get_surroundings(self.regions, p.location, dtype=Region)
+                            # print("P11c: ", reg.location, p.id)
+                            new_reg = Region(location=p.location,
+                                             surrounding_biomes=self.map.get_surroundings(self.map.biome_map, p.location),
+                                             biome=self.map.get_biome(p.location),
+                                             neighbors=neighbors)
+                            # print("P11d: ", reg.location, p.id)
+                            new_reg.add_person(p)
+                            self.regions[tuple(np.flip(p.location))] = new_reg
+                            # print("P11e: ", reg.location, p.id)
+                            self.update_neighbors(neighbors)  # informs the neighbors that a person joined new_reg.
+                            # print("P11f: ", reg.location, p.id)
+                            self.new_regions.append(tuple(np.flip(p.location)))
 
             p.action_flag = True  # so that it won't get iterated upon again if relocated.
             # print("P12: ", reg.location, p.id)

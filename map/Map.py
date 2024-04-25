@@ -35,19 +35,18 @@ class Map:
 
         # Set working dir & get data
         # data = et.data.get_data('spatial-vector-lidar', verbose=True)
-        os.chdir(os.path.join(et.io.HOME, 'earth-analytics'))
 
         # Import world boundary shapefile
-        worldBound_path = os.path.join("data", "spatial-vector-lidar", "global",
+        worldBound_path = os.path.join(et.io.HOME, 'earth-analytics', "data", "spatial-vector-lidar", "global",
                                        "ne_110m_land", "ne_110m_land.shp")
         self.worldBound = gpd.read_file(worldBound_path)
 
         # Import graticule & world bounding box shapefile data
-        graticule_path = os.path.join("data", "spatial-vector-lidar", "global",
+        graticule_path = os.path.join(et.io.HOME, 'earth-analytics', "data", "spatial-vector-lidar", "global",
                                       "ne_110m_graticules_all", "ne_110m_graticules_15.shp")
         self.graticule = gpd.read_file(graticule_path)
 
-        bbox_path = os.path.join("data", "spatial-vector-lidar", "global",
+        bbox_path = os.path.join(et.io.HOME, 'earth-analytics', "data", "spatial-vector-lidar", "global",
                                  "ne_110m_graticules_all", "ne_110m_wgs84_bounding_box.shp")
         self.bbox = gpd.read_file(bbox_path)
 
