@@ -32,10 +32,10 @@ class ControlBoard:
             sim = new_sim
 
         elif com.lower() == 'load alive':
-            with open(ControlBoard.SAVED_BRAINS_PATH, 'rb') as f:
+            with open(ControlBoard.MALE_BRAINS_PATH, 'rb') as f:
                 male_models = pickle.load(file=f)
                 f.close()
-            with open(ControlBoard.SAVED_BRAINS_PATH, 'rb') as f:
+            with open(ControlBoard.FEMALE_BRAINS_PATH, 'rb') as f:
                 female_models = pickle.load(file=f)
                 f.close()
             new_sim = Simulation(sim_map=sim_map, separated_imported=(male_models, female_models))

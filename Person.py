@@ -3,6 +3,7 @@ import enum
 from Brain import *
 
 
+
 class Person:
     MAX_POPULATION = 1000000
     AGING_STARTING_AGE = 40 * 12
@@ -13,17 +14,18 @@ class Person:
     DEATH_NORMALIZER = 0.3
     INITIAL_AGE = 0 * 12
     PREGNANCY_LENGTH = 12
-
     runningID = 0
     ages = np.zeros(MAX_POPULATION, dtype=int)
+    _lock = Lock()
 
-    def __init__(self, collective, father, mother=None):
+    def __init__(self, collective, father, mother=None, brain=None):
         # ID assignment
         self.isAlive = True
         self.isManual = type(father) is list
         self.action_flag = False
-        self.id = Person.runningID
-        Person.runningID += 1
+        with self._lock:
+            self.id = Person.runningID
+            Person.runningID += 1
 
         self.collective = collective
 
@@ -34,7 +36,7 @@ class Person:
 
         self.readiness = 12 * 12 + int(random.normalvariate(0, 12))
 
-        self.brain = Brain(self, father, mother, collective)
+        self.brain = brain if brain else Brain(self, father, mother, collective)
 
         self.partner = None
         self.child_num = 0
@@ -55,7 +57,7 @@ class Person:
             self.strength = self.starting_strength // 10
 
             # get born in the mother's place
-            self.location = mother.location
+            self.location = np.copy(mother.location)
 
             self.generation = max(father.generation, mother.generation)
 
@@ -69,7 +71,7 @@ class Person:
             self.starting_strength = self.strength
 
             # [2]
-            self.location = father[2]
+            self.location = np.copy(father[2])
 
             self.generation = 0
 

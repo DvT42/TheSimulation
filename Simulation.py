@@ -40,14 +40,17 @@ class Simulation:
             for brain_couple in actual_brains:
                 for _ in range(Simulation.INITIAL_COUPLES // Simulation.SELECTED_COUPLES):
                     # initiate the male from the couple.
-                    m = Person(father=[Gender.Male, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)], collective=self.collective)
-                    m.brain = brain_couple[0]
-                    brain_couple[0].transfer_brain(m)
+                    m = Person(
+                        father=[Gender.Male, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)],
+                        collective=self.collective,
+                        brain=brain_couple[0])
+                    m.brain.transfer_brain(m)
 
                     # initiate the female from the couple.
-                    f = Person(father=[Gender.Female, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)], collective=self.collective)
-                    f.brain = brain_couple[1]
-                    brain_couple[1].transfer_brain(f)
+                    f = Person(father=[Gender.Female, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)],
+                               collective=self.collective,
+                               brain=brain_couple[1])
+                    f.brain.transfer_brain(f)
 
                     self.regions[initial_region_index].add_person(m)
                     self.regions[initial_region_index].add_person(f)
@@ -55,11 +58,13 @@ class Simulation:
             # the remaining people will be initiated with random brains.
             for c in range(Simulation.INITIAL_COUPLES % Simulation.SELECTED_COUPLES):
                 self.regions[initial_region_index].add_person(Person(
-                    father=[Gender.Male, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
+                    father=[Gender.Male, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)],
+                    collective=self.collective))
                 self.regions[initial_region_index].add_person(Person(
-                    father=[Gender.Female, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
+                    father=[Gender.Female, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)],
+                    collective=self.collective))
 
-        elif type(separated_imported) is np.ndarray and separated_imported.any():
+        elif separated_imported:
             actual_male_brains = Simulation.assemble_separated_brains(separated_imported[0])
             actual_female_brains = Simulation.assemble_separated_brains(separated_imported[1])
 
@@ -69,11 +74,16 @@ class Simulation:
                     # initiate the male from the couple.
                     m = Person(
                         father=[Gender.Male, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)],
-                        collective=self.collective)
-                    m.brain = brain
-                    brain.transfer_brain(m)
+                        collective=self.collective,
+                        brain=brain)
+                    m.brain.transfer_brain(m)
 
                     self.regions[initial_region_index].add_person(m)
+
+            for c in range(Simulation.INITIAL_COUPLES - len(self.regions[initial_region_index].Population)):
+                self.regions[initial_region_index].add_person(Person(
+                    father=[Gender.Male, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)],
+                    collective=self.collective))
 
             for brain in actual_female_brains:
                 brain: Brain
@@ -81,24 +91,25 @@ class Simulation:
                     # initiate the female from the couple.
                     f = Person(
                         father=[Gender.Female, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)],
-                        collective=self.collective)
-                    f.brain = brain
-                    brain.transfer_brain(f)
+                        collective=self.collective,
+                        brain=brain)
+                    f.brain.transfer_brain(f)
 
                     self.regions[initial_region_index].add_person(f)
 
-            for c in range(Simulation.INITIAL_COUPLES - len(self.regions[initial_region_index].Population)):
+            for c in range(Simulation.INITIAL_COUPLES * 2 - len(self.regions[initial_region_index].Population)):
                 self.regions[initial_region_index].add_person(Person(
-                    father=[Gender.Male, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
-                self.regions[initial_region_index].add_person(Person(
-                    father=[Gender.Female, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
+                    father=[Gender.Female, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)],
+                    collective=self.collective))
 
         else:
             for i in range(Simulation.INITIAL_COUPLES):  # people initiated with random brains.
                 self.regions[initial_region_index].add_person(Person(
-                    father=[Gender.Male, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
+                    father=[Gender.Male, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)],
+                    collective=self.collective))
                 self.regions[initial_region_index].add_person(Person(
-                    father=[Gender.Female, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)], collective=self.collective))
+                    father=[Gender.Female, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)],
+                    collective=self.collective))
 
         for p in self.regions[initial_region_index].Population:
             self.collective.add_person(p)
@@ -157,8 +168,8 @@ class Simulation:
         for i, j in self.region_iterator:
             pop += len(self.regions[i, j].Population)
 
-        if (self.collective.population_size - self.collective.dead) != pop:
-            pop = -1
+        if self.pop_num() != pop:
+            print(pop)
 
 
     @profile
@@ -320,12 +331,12 @@ class Simulation:
         if p.partner:
             p.partner.partner = None
 
-    def get_historical_figure(self, id):
-        hf = self.collective.historical_population[id]
+    def get_historical_figure(self, pid):
+        hf = self.collective.historical_population[pid]
         return hf, hf.brain.get_history()[:hf.age() + 1]
 
-    def get_attitudes(self, id):
-        return self.collective.historical_population[id].collective.world_attitudes[id]
+    def get_attitudes(self, pid):
+        return self.collective.historical_population[pid].collective.world_attitudes[pid]
 
     def evaluate(self, by_alive=False):
         if by_alive:
@@ -383,7 +394,7 @@ class Simulation:
     def assemble_separated_brains(neural_list):
         brains = []
         for models in neural_list:
-            brains.append((Brain(models=models[0]), Brain(models=models[1])))
+            brains.append(Brain(models=models))
         return brains
 
     @staticmethod
