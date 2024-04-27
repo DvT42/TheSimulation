@@ -79,19 +79,19 @@ class Person:
         if self.gender == Gender.Female:
             self.pregnancy = 0
             self.father_of_child = None
-            self.youngness = 30 * 12 + int(random.normalvariate(0, 24))
+            self.youth = 30 * 12 + int(random.normalvariate(0, 24))
             if self.isManual:
-                self.youngness -= 8 * 12
+                self.youth -= 8 * 12
 
     def prepare_next_generation(self, other):
         other: Person
         if self.gender == Gender.Female:
-            if self.pregnancy == 0 and self.father_of_child is None and self.age() >= self.readiness and self.youngness > 0:
+            if self.pregnancy == 0 and self.father_of_child is None and self.age() >= self.readiness and self.youth > 0:
                 self.father_of_child = other
                 self.partner = other
                 other.partner = self
         else:
-            if other.pregnancy == 0 and other.father_of_child is None and other.age() >= other.readiness and other.youngness > 0:
+            if other.pregnancy == 0 and other.father_of_child is None and other.age() >= other.readiness and other.youth > 0:
                 other.father_of_child = self
                 self.partner = other
                 other.partner = self
@@ -208,7 +208,7 @@ class Person:
                   f"parents: [{self.fatherID}, {self.motherID}], generation: {self.generation} \n"
         else:
             txt = (f"{self.id}: \n"
-                   f"generation: {self.generation}")
+                   f"generation: {self.generation} \n")
 
         txt += f"gender: {self.gender.name}, age: {self.year()}, children: {self.child_num}\n" \
                f"strength: {self.strength}\n" \
@@ -219,7 +219,7 @@ class Person:
             if self.pregnancy != 0:
                 txt += f"\n pregnancy: {self.pregnancy}, mate: {self.father_of_child.id}"
             else:
-                txt += f"\n timer: {self.youngness}"
+                txt += f"\n timer: {self.youth}"
 
         return txt
 

@@ -2,6 +2,7 @@ import random
 from numpy import random as nprnd
 from Neural_Network import *
 from line_profiler_pycharm import profile
+from threading import Lock
 
 
 class Collective:
@@ -24,23 +25,32 @@ class Collective:
 
     def __init__(self):
         self.population_size = 0
-        self.dead = 0
+        self._dead = 0
         self.world_attitudes = np.zeros((Collective.BASIC_POPULATION, Collective.BASIC_POPULATION), dtype=float)
         self.arranged_indexes = np.arange(Collective.BASIC_POPULATION)
         self.historical_population = []
+        self._lock = Lock()
 
     def add_person(self, person):
-        self.historical_population.append(person)
+        with self._lock:
+            self.historical_population.append(person)
 
-        if self.population_size >= Collective.BASIC_POPULATION:
-            new_world_attitudes = np.zeros((self.population_size + 1, self.population_size + 1))
-            new_world_attitudes[:self.population_size, :self.population_size] = self.world_attitudes
-            self.world_attitudes = new_world_attitudes
+            if self.population_size >= Collective.BASIC_POPULATION:
+                new_world_attitudes = np.zeros((self.population_size + 1, self.population_size + 1))
+                new_world_attitudes[:self.population_size, :self.population_size] = self.world_attitudes
+                self.world_attitudes = new_world_attitudes
 
-            self.arranged_indexes = np.append(self.arranged_indexes, self.population_size)
+                self.arranged_indexes = np.append(self.arranged_indexes, self.population_size)
 
-        self.population_size += 1
+            self.population_size += 1
 
+    @property
+    def dead(self):
+        return self._dead
+
+    def remove_person(self):
+        with self._lock:
+            self._dead += 1
 
 class Brain:
     def __init__(self, person=None, f=None, m=None, collective=None, models=None, mutate=True):
@@ -73,7 +83,7 @@ class Brain:
     def call_decision_making(self, region):
         if self.person.gender == 0:
             preg = self.person.pregnancy
-            youngness = self.person.youngness
+            youngness = self.person.youth
         else:
             preg = 0
             youngness = 0
@@ -95,12 +105,11 @@ class Brain:
         regional_pop = region.surr_pop()
         regional_resources = np.zeros(9)
 
-        return self.brainparts.get("PFC").decision_making(
-            self.person.gender, self.person.age(), self.person.strength, preg, youngness, self.person.readiness,
-            self.person.child_num,
-            father_choice, mother_choice, partner_choice,
-            loc, partner_loc, regional_biomes, regional_pop, regional_resources
-        )
+        return self.brainparts.get("PFC").decision_making(self.person.gender, self.person.age(), self.person.strength,
+                                                          preg, youngness, self.person.readiness, self.person.child_num,
+                                                          father_choice, mother_choice, partner_choice, loc,
+                                                          partner_loc, regional_biomes, regional_pop,
+                                                          regional_resources)
 
     def get_first_impression(self, other):
         impression = self.brainparts.get("AMG").first_impression(
@@ -263,14 +272,14 @@ class PrefrontalCortex(BrainPart):
 
     @profile
     def decision_making(
-            self, gender, age, strength, pregnancy, youngness, readiness, child_num, father_choice,
+            self, gender, age, strength, pregnancy, youth, readiness, child_num, father_choice,
             mother_choice, partner_choice, location, partner_location, regional_biomes, regional_pop, regional_resources
     ):
         if nprnd.random() > PrefrontalCortex.CHOICE_RANDOMIZER:
             # this list is for convenience, to know what does each index of option means.
             # choices = ["social connection", "strength", "location"[8]]
 
-            neural_input = np.array([gender, age, strength, pregnancy, youngness, readiness, child_num,
+            neural_input = np.array([gender, age, strength, pregnancy, youth, readiness, child_num,
                                      *PrefrontalCortex.get_choice_nodes(father_choice),
                                      *PrefrontalCortex.get_choice_nodes(mother_choice),
                                      *PrefrontalCortex.get_choice_nodes(partner_choice),
@@ -332,16 +341,16 @@ class Amygdala(BrainPart):
 
         if gender == 0:
             pregnancy = person.pregnancy
-            youngness = person.youngness
+            youth = person.youth
 
         else:
             pregnancy = 0
-            youngness = 0
+            youth = 0
 
         my_readiness = person.readiness
         my_child_num = person.child_num
 
-        return np.asarray([gender, age, strength, pregnancy, youngness, my_readiness, my_child_num])
+        return np.asarray([gender, age, strength, pregnancy, youth, my_readiness, my_child_num])
 
     def first_impression(self, neural_input):
         output_prob: np.ndarray = self.model.feed(neural_input)

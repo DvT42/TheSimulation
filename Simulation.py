@@ -1,4 +1,3 @@
-from line_profiler_pycharm import profile
 from multiprocessing import Queue
 from Region import *
 
@@ -133,28 +132,34 @@ class Simulation:
         concurrent.futures.wait(futures_region)
         # region_exec.shutdown()
 
-        results_region = Queue()
+        # results_region = Queue()
         # introduce_exec = concurrent.futures.ThreadPoolExecutor(max_workers=100)
         futures_region = [executors.submit(self.regions[i, j].introduce_newcomers) for i, j in
                           self.region_iterator]
-        for future in concurrent.futures.as_completed(futures_region):
-            results_region.put(future.result())
-        # concurrent.futures.wait(futures_region)
+        # for future in concurrent.futures.as_completed(futures_region):
+        #     results_region.put(future.result())
+        concurrent.futures.wait(futures_region)
         # region_exec.shutdown()
 
-        # empty_regions = []
-        # for i, j in self.region_iterator:
-        #     reg = self.regions[i, j]
-        #     if not reg.Population:
-        #         empty_regions.append((i, j))
-
-        # for i, j in empty_regions:
-        #     self.regions[i, j] = None
-        #     self.region_iterator.remove((i, j))
-        #     neighbors = self.map.get_surroundings(self.regions, (j, i), dtype=Region)
-        #     self.update_neighbors(neighbors)
-
         self.region_iterator.extend(self.new_regions)
+        empty_regions = []
+        for i, j in self.region_iterator:
+            if len(self.regions[i, j].Population) == 0:
+                empty_regions.append((i, j))
+
+        for i, j in empty_regions:
+            self.region_iterator.remove((i, j))
+            # self.regions[i, j] = None
+            # neighbors = self.map.get_surroundings(self.regions, (j, i), dtype=Region)
+            # self.update_neighbors(neighbors)
+
+        pop = 0
+        for i, j in self.region_iterator:
+            pop += len(self.regions[i, j].Population)
+
+        if (self.collective.population_size - self.collective.dead) != pop:
+            pop = -1
+
 
     @profile
     def handle_region(self, reg: Region):
@@ -226,8 +231,8 @@ class Simulation:
                         reg.newborns = newborn
                     else:
                         p.pregnancy += 1
-                elif p.age() > p.readiness and p.youngness > 0:
-                    p.youngness -= 1
+                elif p.age() > p.readiness and p.youth > 0:
+                    p.youth -= 1
 
             # print("P3: ", reg.location, p.id)
             p.aging()  # handles old people's aging process.
@@ -263,19 +268,21 @@ class Simulation:
                     return None
 
                 reg.relocating_people = p  # to not mess up the indexing in the original region.
-
-                new_reg = self.regions[tuple(np.flip(p.location))]
+                location = tuple(np.flip(p.location))
+                new_reg = self.regions[location]
                 # print("P10: ", reg.location, p.id)
-                if new_reg:  # if tried to relocate into an occupied region.
+                if new_reg and new_reg.Population:  # if tried to relocate into an occupied region.
                     new_reg.add_person(p)
                     # print("P11a: ", reg.location, p.id)
                 else:
-                    with self.NEW_REGION_LOCK:
-                        new_reg = self.regions[tuple(np.flip(p.location))]
+                    with (self.NEW_REGION_LOCK):
+                        if self.new_regions.count(location) == 0 and \
+                           self.region_iterator.count(location) == 0:
+                            self.new_regions.append(location)
+                        new_reg = self.regions[location]
                         # print("P10: ", reg.location, p.id)
                         if new_reg:  # if tried to relocate into an occupied region.
                             new_reg.add_person(p)
-
                         else:
                             # print("P11b: ", reg.location, p.id)
                             neighbors = self.map.get_surroundings(self.regions, p.location, dtype=Region)
@@ -286,17 +293,16 @@ class Simulation:
                                              neighbors=neighbors)
                             # print("P11d: ", reg.location, p.id)
                             new_reg.add_person(p)
-                            self.regions[tuple(np.flip(p.location))] = new_reg
                             # print("P11e: ", reg.location, p.id)
                             self.update_neighbors(neighbors)  # informs the neighbors that a person joined new_reg.
                             # print("P11f: ", reg.location, p.id)
-                            self.new_regions.append(tuple(np.flip(p.location)))
+                        self.regions[location] = new_reg
 
             p.action_flag = True  # so that it won't get iterated upon again if relocated.
             # print("P12: ", reg.location, p.id)
 
     def is_eradicated(self):
-        return not np.any(self.regions)
+        return not self.region_iterator
 
     @staticmethod
     def update_neighbors(area):
@@ -306,8 +312,9 @@ class Simulation:
             area[i, j].neighbors_update(tuple([1, 1] + relative_position), center)
 
     @staticmethod
+    @profile
     def kill_person(p, reg, collective):
-        collective.dead += 1
+        collective.remove_person()
         reg.remove_person(p)
         p.isAlive = False
         if p.partner:
@@ -395,7 +402,6 @@ class Simulation:
 
     def display(self):
         txt = f"Year: {self.Time // 12}\n\n"
-        pop_num = 0
 
         for i, j in self.region_iterator:
 

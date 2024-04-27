@@ -1,6 +1,5 @@
 from Person import *
 import concurrent.futures
-from threading import Lock
 
 
 class Region:
@@ -20,10 +19,10 @@ class Region:
         self._lock = Lock()
 
         if population:
-            self.Population = population
+            self._Population = population
         else:
-            self.Population = []
-        self.pop_id = [p.id for p in self.Population]
+            self._Population = []
+        self.pop_id = [p.id for p in self._Population]
 
     @property
     def neighbors(self):
@@ -97,16 +96,24 @@ class Region:
         self._relocating_people = []
         self._newcomers = []
 
+    @property
+    @profile
+    def Population(self):
+        with self._lock:
+            return self._Population
+
     def add_person(self, person):
         with self._lock:
-            self.Population.append(person)
-            self.pop_id.append(person.id)
-            self.newcomers.append(person)
+            if person.id not in self.pop_id:
+                self._Population.append(person)
+                self.pop_id.append(person.id)
+                self.newcomers.append(person)
 
     def remove_person(self, person):
         with self._lock:
-            self.Population.remove(person)
-            self.pop_id.remove(person.id)
+            if person.id in self.pop_id:
+                self._Population.remove(person)
+                self.pop_id.remove(person.id)
 
     def introduce_newcomers(self):
         newcomers_exec = concurrent.futures.ThreadPoolExecutor()
@@ -130,16 +137,17 @@ class Region:
             info_batch = np.array([i[2] for i in never_met])
             never_met = np.array([i[:2] for i in never_met], dtype=object)
             if never_met.any():
-                new_ids = never_met[:, 0].astype(int)
-                tiled = np.tile(p_info, (len(new_ids), 1))
-                person.brain.get_mass_first_impressions(new_ids, np.concatenate((info_batch, tiled), axis=1))
+                with self._lock:
+                    new_ids = never_met[:, 0].astype(int)
+                    tiled = np.tile(p_info, (len(new_ids), 1))
+                    person.brain.get_mass_first_impressions(new_ids, np.concatenate((info_batch, tiled), axis=1))
 
-                reflective = np.concatenate((tiled, info_batch), axis=1)
-                impressions = np.empty((len(new_ids)))
-                for i, p in enumerate(never_met[:, 1]):
-                    impressions[i] = p.brain.raw_get_first_impression(reflective[i])
-                    p.brain.brainparts.get("HPC").already_met.append(person.id)
-                person.collective.world_attitudes[new_ids, person.id] = impressions
+                    reflective = np.concatenate((tiled, info_batch), axis=1)
+                    impressions = np.empty((len(new_ids)))
+                    for i, p in enumerate(never_met[:, 1]):
+                        impressions[i] = p.brain.raw_get_first_impression(reflective[i])
+                        p.brain.brainparts.get("HPC").already_met.append(person.id)
+                    person.collective.world_attitudes[new_ids, person.id] = impressions
         else:
             for i, p in enumerate(pop_lst):
                 p_info = info_batch[i]
@@ -151,10 +159,10 @@ class Region:
             p.action_flag = False
 
     def surr_pop(self):
-        lst = np.zeros(9).reshape((3, 3))
-        for i, j in zip(*np.where(self.neighbors)):
-            lst[i, j] = len(self.neighbors[i, j].Population)
-        return lst.flatten()
+            lst = np.zeros(9).reshape((3, 3))
+            for i, j in zip(*np.where(self.neighbors)):
+                lst[i, j] = len(self.neighbors[i, j].Population)
+            return lst.flatten()
 
     def __iter__(self):
         return (p for p in self.Population)
