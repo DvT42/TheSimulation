@@ -77,7 +77,7 @@ class Simulation:
                         collective=self.collective,
                         brain=brain)
                     m.brain.transfer_brain(m)
-
+                    m.brain.update_location_history()
                     self.regions[initial_region_index].add_person(m)
 
             for c in range(Simulation.INITIAL_COUPLES - len(self.regions[initial_region_index].Population)):
@@ -94,6 +94,7 @@ class Simulation:
                         collective=self.collective,
                         brain=brain)
                     f.brain.transfer_brain(f)
+                    f.brain.update_location_history()
 
                     self.regions[initial_region_index].add_person(f)
 

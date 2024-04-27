@@ -69,7 +69,7 @@ class Brain:
                     bp.model.set_weights(new_weights)
                     bp.model.set_biases(new_biases)
 
-        elif type(models) is np.ndarray and models.any():
+        elif models:
             self.id = None
             self.brainparts = {"PFC": PrefrontalCortex(models[0], mutate=mutate),
                                "AMG": Amygdala(models[1], mutate=mutate),
@@ -167,8 +167,12 @@ class Brain:
 
         self.collective.world_attitudes[:self.collective.population_size, self.person.id] = arr
 
-    def update_location_history(self):
-        self.brainparts.get("HPC").location_history.append((str(self.person.location), self.person.age()))
+    def update_location_history(self, loc=None, age=None):
+        if type(loc) is not np.ndarray or not loc.any():
+            loc = self.person.location
+        if age is None:
+            age = self.person.age()
+        self.brainparts.get("HPC").location_history.append(str((loc, age)))
 
     def get_location_history(self):
         return self.brainparts.get("HPC").location_history

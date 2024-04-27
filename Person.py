@@ -37,7 +37,6 @@ class Person:
         self.readiness = 12 * 12 + int(random.normalvariate(0, 12))
 
         self.brain = brain if brain else Brain(self, father, mother, collective)
-
         self.partner = None
         self.child_num = 0
 
@@ -60,22 +59,20 @@ class Person:
             self.location = np.copy(mother.location)
 
             self.generation = max(father.generation, mother.generation)
+            self.brain.update_location_history()
 
         # - Manual creation
         else:
             # [0]
             self.gender = father[0]
-
             # [1]
             self.strength = father[1]
             self.starting_strength = self.strength
-
             # [2]
             self.location = np.copy(father[2])
-
             self.generation = 0
+            self.brain.update_location_history(self.location, 0)
 
-        self.brain.update_location_history()  # insert the birthplace into location history.
 
         # procreation availability.
         if self.gender == Gender.Female:
