@@ -15,7 +15,7 @@ class Collective:
     MUTATION_NORMALIZATION_RATIO = 0.3
 
     # PFC constants
-    CHOICE_RANDOMIZER = 0.0
+    CHOICE_RANDOMIZER = 0.083
     CHOICE_NUM = 10
 
     # HPC constants

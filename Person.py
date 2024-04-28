@@ -58,7 +58,7 @@ class Person:
             # get born in the mother's place
             self.location = np.copy(mother.location)
 
-            self.generation = max(father.generation, mother.generation)
+            self.generation = max(father.generation, mother.generation) + 1
             self.brain.update_location_history()
 
         # - Manual creation
@@ -72,7 +72,6 @@ class Person:
             self.location = np.copy(father[2])
             self.generation = 0
             self.brain.update_location_history(self.location, 0)
-
 
         # procreation availability.
         if self.gender == Gender.Female:

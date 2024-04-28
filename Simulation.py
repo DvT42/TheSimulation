@@ -242,6 +242,10 @@ class Simulation:
                 # print("5g: ", reg.location)
                 social_connector.brain.improve_my_attitudes()
 
+        a = [x for x in reg.Population if reg.Population.count(x) > 1]
+        if a:
+            print(f"duplicate: {reg.location}, {a}")
+
         # print("6: ", reg.location)
         for d in reg.dead:
             # print("7a: ", reg.location)
@@ -437,6 +441,15 @@ class Simulation:
         for models in neural_list:
             brains.append(Brain(models=models))
         return brains
+
+    def kill_all_travelers(self):
+        for i, j in self.region_iterator:
+            if (i, j) != (400, 850):
+                self.regions[i, j]._Population = None
+                self.regions[i, j] = None
+                neighbors = self.map.get_surroundings(self.regions, (j, i), dtype=Region)
+                self.update_neighbors(neighbors)
+        self.region_iterator = [(400, 850)]
 
     def pop_num(self):
         return self.collective.population_size - self.collective.dead
