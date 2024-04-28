@@ -41,6 +41,13 @@ class ControlBoard:
             new_sim = Simulation(sim_map=sim_map, separated_imported=(male_models, female_models))
             sim = new_sim
 
+        elif com.lower() == 'load children':
+            with open(ControlBoard.SAVED_BRAINS_PATH, 'rb') as f:
+                models = pickle.load(file=f)
+                new_sim = Simulation(sim_map=sim_map, imported=models, all_couples=True)
+                f.close()
+            sim = new_sim
+
         elif com.lower() == 'save':
             with open(ControlBoard.SAVED_BRAINS_PATH, 'wb') as f:
                 minds_to_pickle, _, _ = sim.find_best_minds(sim.evaluate())
@@ -54,6 +61,12 @@ class ControlBoard:
                 f.close()
             with open(ControlBoard.FEMALE_BRAINS_PATH, 'wb') as f:
                 pickle.dump(female_minds_to_pickle, f)
+                f.close()
+
+        elif com.lower() == 'save children':
+            with open(ControlBoard.SAVED_BRAINS_PATH, 'wb') as f:
+                minds_to_pickle, _, _ = sim.find_best_minds(sim.evaluate(), take_all=True)
+                pickle.dump(minds_to_pickle, f)
                 f.close()
 
         elif com.lower() == 'best':
@@ -170,13 +183,13 @@ class ControlBoard:
                             best_minds_lst[:len(best_minds_lst) // 2],
                             best_minds_lst[len(best_minds_lst) // 2:],
                             axis=1),
-                        (len(best_minds_lst) // 2, 2, 2)))
+                        (len(best_minds_lst) // 2, 3, 2)))
 
                     del sim
                     sim = new_sim
                 else:
                     sim.display()
-                    return None
+                    return sim
             else:
                 sim.display()
                 return sim

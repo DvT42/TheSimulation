@@ -1,4 +1,3 @@
-from multiprocessing import Queue
 from Region import *
 
 
@@ -11,13 +10,13 @@ class Simulation:
     NEW_REGION_LOCK = Lock()
     ACTION_POOL_LOCK = Lock()
 
-    def __init__(self, sim_map, imported=None, separated_imported=None):
+    def __init__(self, sim_map, imported=None, separated_imported=None, all_couples=False):
         """
         The object handling macro operations and containing the whole simulation.
 
         :param sim_map: A map with size (1600, 800) pixels. This map will determine the terrain on which the simulation
         will run.
-        :param imported: an array containing couples of disassembled brains. imported.shape=(num, 2, 2)
+        :param imported: a list containing couples of disassembled brains. imported.shape=(num, 2, 2)
         """
         self.collective = Collective()
         Person.Person_reset(Simulation.INITIAL_COUPLES)
@@ -34,7 +33,38 @@ class Simulation:
         # a list containing all existing regions' indexes, to make the iteration easier.
         self.region_iterator = [initial_region_index]
 
-        if Simulation.SELECTED_COUPLES and type(imported) is np.ndarray and imported.any():  # if importation is needed.
+        if all_couples and imported:
+            actual_brains = Simulation.assemble_brains(imported)
+
+            for brain_couple in actual_brains:
+                for _ in range(Simulation.INITIAL_COUPLES // len(actual_brains)):
+                    # initiate the male from the couple.
+                    m = Person(
+                        father=[Gender.Male, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)],
+                        collective=self.collective,
+                        brain=brain_couple[0])
+                    m.brain.transfer_brain(m)
+
+                    # initiate the female from the couple.
+                    f = Person(
+                        father=[Gender.Female, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)],
+                        collective=self.collective,
+                        brain=brain_couple[1])
+                    f.brain.transfer_brain(f)
+
+                    self.regions[initial_region_index].add_person(m)
+                    self.regions[initial_region_index].add_person(f)
+
+            # the remaining people will be initiated with random brains.
+            for c in range(Simulation.INITIAL_COUPLES % len(actual_brains)):
+                self.regions[initial_region_index].add_person(Person(
+                    father=[Gender.Male, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)],
+                    collective=self.collective))
+                self.regions[initial_region_index].add_person(Person(
+                    father=[Gender.Female, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)],
+                    collective=self.collective))
+
+        elif Simulation.SELECTED_COUPLES and type(imported) is np.ndarray and imported.any():
             actual_brains = Simulation.assemble_brains(imported[:Simulation.SELECTED_COUPLES])
 
             for brain_couple in actual_brains:
@@ -78,6 +108,7 @@ class Simulation:
                         brain=brain)
                     m.brain.transfer_brain(m)
                     m.brain.update_location_history()
+
                     self.regions[initial_region_index].add_person(m)
 
             for c in range(Simulation.INITIAL_COUPLES - len(self.regions[initial_region_index].Population)):
@@ -134,24 +165,18 @@ class Simulation:
         for i, j in self.region_iterator:
             self.regions[i, j].falsify_action_flags()
 
-        # results_region = Queue()
-        # region_exec = concurrent.futures.ThreadPoolExecutor(max_workers=100)
         # noinspection PyTypeChecker
         futures_region = [executors.submit(self.handle_region, self.regions[i, j]) for i, j in
                           self.region_iterator]
-        # for future in concurrent.futures.as_completed(futures_region):
-        #     results_region.put(future.result())
         concurrent.futures.wait(futures_region)
-        # region_exec.shutdown()
+        # for i, j in self.region_iterator:
+        #     self.handle_region(self.regions[i, j])
 
-        # results_region = Queue()
-        # introduce_exec = concurrent.futures.ThreadPoolExecutor(max_workers=100)
         futures_region = [executors.submit(self.regions[i, j].introduce_newcomers) for i, j in
                           self.region_iterator]
-        # for future in concurrent.futures.as_completed(futures_region):
-        #     results_region.put(future.result())
         concurrent.futures.wait(futures_region)
-        # region_exec.shutdown()
+        # for i, j in self.region_iterator:
+        #     self.regions[i, j].introduce_newcomers()
 
         self.region_iterator.extend(self.new_regions)
         empty_regions = []
@@ -162,7 +187,8 @@ class Simulation:
         for i, j in empty_regions:
             self.region_iterator.remove((i, j))
             # self.regions[i, j] = None
-            # neighbors = self.map.get_surroundings(self.regions, (j, i), dtype=Region)
+            # neighbors = self.map.get_surroundings(self.regions, (j, i), d
+            # type=Region)
             # self.update_neighbors(neighbors)
 
         pop = 0
@@ -171,7 +197,6 @@ class Simulation:
 
         if self.pop_num() != pop:
             print(pop)
-
 
     @profile
     def handle_region(self, reg: Region):
@@ -334,24 +359,27 @@ class Simulation:
 
     def get_historical_figure(self, pid):
         hf = self.collective.historical_population[pid]
-        return hf, hf.brain.get_history()[:hf.age() + 1]
+        history = hf.brain.get_history()[1:hf.age() + 1]
+        return hf, np.reshape(np.append(history, np.zeros((12 - len(history) % 12) % 12)), (-1, 12))
 
     def get_attitudes(self, pid):
         return self.collective.historical_population[pid].collective.world_attitudes[pid]
 
     def evaluate(self, by_alive=False):
         if by_alive:
-            return ([p.brain.get_models() for p in self.collective.historical_population if p.isAlive and p.gender == 1],
-                    [p.brain.get_models() for p in self.collective.historical_population if p.isAlive and p.gender == 0])
+            return ([(p.brain.get_models(), (p.brain.brain_id, 0))
+                     for p in self.collective.historical_population if p.isAlive and p.gender == 1],
+                    [(p.brain.get_models(), (p.brain.brain_id, 0))
+                     for p in self.collective.historical_population if p.isAlive and p.gender == 0])
 
         else:
-            return ([person.brain.get_models() for person in self.collective.historical_population],
+            return ([(person.brain.get_models(), (person.brain.brain_id, 0)) for person in self.collective.historical_population],
                     [p.gender for p in self.collective.historical_population],
                     [person.child_num for person in self.collective.historical_population],
                     Person.ages[:len(self.collective.historical_population)])
 
     @staticmethod
-    def find_best_minds(evaluated_list, date=False):
+    def find_best_minds(evaluated_list, date=False, take_all=False):
         neural_list, genders, children, ages = evaluated_list
         best_minds = []
         his = np.swapaxes(np.array([np.arange(len(neural_list)), genders, children, ages]), 0, 1)
@@ -364,6 +392,17 @@ class Simulation:
 
         gender_idx = np.argmax(sorted_his[:, 1])
         male_lst, female_lst = sorted_his[gender_idx:], sorted_his[:gender_idx]
+
+        if take_all:
+            m_children_antidx = np.argmin(np.flip(male_lst[:, 2]))
+            f_children_antidx = np.argmin(np.flip(female_lst[:, 2]))
+
+            for i in range(min(m_children_antidx, f_children_antidx)):
+                best_minds.append((neural_list[male_lst[-i - 1][0]], neural_list[female_lst[-i - 1][0]]))
+
+            return (best_minds,
+                    male_lst[-Simulation.SELECTED_COUPLES:],
+                    female_lst[-Simulation.SELECTED_COUPLES:])
 
         for i in range(Simulation.SELECTED_COUPLES):
             best_minds.append((neural_list[male_lst[-i - 1][0]], neural_list[female_lst[-i - 1][0]]))
@@ -388,7 +427,8 @@ class Simulation:
     def assemble_brains(neural_list):
         brain_couples = []
         for models_couple in neural_list:
-            brain_couples.append((Brain(models=models_couple[0]), Brain(models=models_couple[1])))
+            brain_couples.append((Brain(models=models_couple[0][0], brain_id=models_couple[0][1][0]),
+                                  Brain(models=models_couple[1][0], brain_id=models_couple[1][1][0])))
         return brain_couples
 
     @staticmethod
@@ -397,13 +437,6 @@ class Simulation:
         for models in neural_list:
             brains.append(Brain(models=models))
         return brains
-
-    @staticmethod
-    def disassemble_brains(brain_couples):
-        neural_list = []
-        for brain_couple in brain_couples:
-            neural_list.append((brain_couple[0].get_models(), brain_couple[1].get_models()))
-        return neural_list
 
     def pop_num(self):
         return self.collective.population_size - self.collective.dead

@@ -52,10 +52,19 @@ class Collective:
         with self._lock:
             self._dead += 1
 
+
 class Brain:
-    def __init__(self, person=None, f=None, m=None, collective=None, models=None, mutate=True):
+    runningID = 0
+
+    def __init__(self, person=None, f=None, m=None, collective=None, models=None, mutate=True, brain_id=None):
         self.person = person
         self.collective = collective
+
+        if brain_id:
+            self.brain_id = brain_id
+        else:
+            self.brain_id = Brain.runningID
+            Brain.runningID += 1
 
         if person and collective:
             self.id = person.id
