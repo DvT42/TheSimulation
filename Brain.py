@@ -172,12 +172,13 @@ class Brain:
                 Collective.SELF_ATTITUDE_IMPROVEMENT_BONUS * multiplier)
 
     def improve_attitudes_toward_me(self, region):
-        arr = np.copy(self.collective.world_attitudes[:self.collective.population_size, self.person.id])
+        pop_size = self.collective.population_size
+        arr = np.copy(self.collective.world_attitudes[:pop_size, self.person.id])
         arr = np.where((arr > 0) &
-                       np.isin(self.collective.arranged_indexes[:self.collective.population_size], region.pop_id),
+                       np.isin(self.collective.arranged_indexes[:pop_size], region.pop_id),
                        arr + Hippocampus.ATTITUDE_IMPROVEMENT_BONUS, arr)
 
-        self.collective.world_attitudes[:self.collective.population_size, self.person.id] = arr
+        self.collective.world_attitudes[:pop_size, self.person.id] = arr
 
     def update_location_history(self, loc=None, age=None):
         if type(loc) is not np.ndarray or not loc.any():

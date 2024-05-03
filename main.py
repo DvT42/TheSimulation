@@ -20,27 +20,27 @@ if __name__ == "__main__":
     # running code
     TS = None
     processes = [
-        ['load alive', 'y120', 'save alive'],
-        ['load alive', 'y120', 'save alive'],
-        ['load alive', 'y120', 'save alive'],
-        ['load alive', 'y120', 'save alive'],
-        ['load alive', 'y120', 'save alive'],
-        ['load alive', 'y120', 'save alive'],
-        ['load alive', 'y120', 'save alive'],
-        ['load alive', 'y120', 'save alive'],
-        ['load alive', 'y120', 'save alive'],
-        ['load alive', 'y120', 'save alive'],
-        ['load alive', 'y120', 'save alive'],
-        ['load alive', 'y120', 'save alive'],
-        ['load alive', 'y120', 'save alive'],
-        ['load alive', 'y120', 'save alive'],
-        ['load alive', 'y120', 'save alive'],
-        ['load alive', 'y120', 'save alive'],
-        ['load alive', 'y120', 'save alive'],
-        ['load alive', 'y120', 'save alive'],
-        ['load alive', 'y120', 'save alive'],
-        ['load alive', 'y120', 'save alive'],
-        ['load alive', 'y120', 'save alive']
+        ['load alive', 'y50', 'save alive'],
+        ['load alive', 'y50', 'save alive'],
+        ['load alive', 'y50', 'save alive'],
+        ['load alive', 'y50', 'save alive'],
+        ['load alive', 'y50', 'save alive'],
+        ['load alive', 'y50', 'save alive'],
+        ['load alive', 'y50', 'save alive'],
+        ['load alive', 'y50', 'save alive'],
+        ['load alive', 'y50', 'save alive'],
+        ['load alive', 'y50', 'save alive'],
+        ['load alive', 'y50', 'save alive'],
+        ['load alive', 'y50', 'save alive'],
+        ['load alive', 'y50', 'save alive'],
+        ['load alive', 'y50', 'save alive'],
+        ['load alive', 'y50', 'save alive'],
+        ['load alive', 'y50', 'save alive'],
+        ['load alive', 'y50', 'save alive'],
+        ['load alive', 'y50', 'save alive'],
+        ['load alive', 'y50', 'save alive'],
+        ['load alive', 'y50', 'save alive'],
+        ['load alive', 'y50', 'save alive']
     ]
     done = False
     while True:
