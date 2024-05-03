@@ -137,6 +137,7 @@ class Simulation:
                     brain=brain)
                 m.brain.transfer_brain(m)
                 m.brain.update_location_history()
+                self.regions[initial_region_index].add_person(m)
 
             for brain in actual_female_brains:
                 brain: Brain
