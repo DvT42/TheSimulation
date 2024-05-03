@@ -1,7 +1,6 @@
 import pickle
 import os
 import tqdm
-
 from Simulation import *
 
 
@@ -74,25 +73,24 @@ class ControlBoard:
             for i in range(len(best_male)):
                 print(f'male: {best_male[-i - 1][0]}, female: {best_female[-i - 1][0]}')
 
+        elif com[0].lower() == 'i':
+            if com[1].lower() == 'a':
+                print(ControlBoard.info_search(sim, int(com[2:]), is_att=True))
+            elif com[1].lower() == 'l':
+                print(ControlBoard.info_search(sim, int(com[2:]), is_loc=True))
+            else:
+                print(ControlBoard.info_search(sim, int(com[1:])))
+
+        elif com[0].lower() == "x":
+            sim = None
+
         else:
             if sim is None:
                 sim = Simulation(sim_map)
-            if com[0].lower() == 'i':
-                if com[1].lower() == 'a':
-                    print(ControlBoard.info_search(sim, int(com[2:]), is_att=True))
-                elif com[1].lower() == 'l':
-                    print(ControlBoard.info_search(sim, int(com[2:]), is_loc=True))
-                else:
-                    print(ControlBoard.info_search(sim, int(com[1:])))
-
-            elif com[0].lower() == "s":
+            if com[0].lower() == "s":
                 sim = ControlBoard.exact_skip(sim, int(com[1:]), regressive='partial')
             elif com[0].lower() == "y":
                 sim = ControlBoard.annual_skip(sim, int(com[1:]), regressive='partial')
-
-            elif com[0].lower() == "x":
-                sim = None
-
             else:
                 sim = ControlBoard.exact_skip(sim, 1)
 
@@ -191,7 +189,7 @@ class ControlBoard:
                     sim.display()
                     return sim
             else:
-                sim.display()
+                # sim.display()
                 return sim
 
     @staticmethod

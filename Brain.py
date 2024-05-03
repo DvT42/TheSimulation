@@ -88,6 +88,9 @@ class Brain:
     #     for brainpart in self.brainparts.values():
     #         brainpart.evolvement()
 
+    def copy(self):
+        return Brain(models=self.get_models(), mutate=False, brain_id=self.brain_id)
+
     @profile
     def call_decision_making(self, region):
         if self.person.gender == 0:
@@ -215,8 +218,8 @@ class BrainPart:
             mother_biases = mother.brain.brainparts.get(part).model.get_biases()
 
             # inheritance of parent's weights & biases
-            new_weights = father_weights
-            new_biases = father_biases
+            new_weights = father_weights.copy()
+            new_biases = father_biases.copy()
             for lnum, layer_weights in enumerate(new_weights):
                 for index, value in np.ndenumerate(layer_weights):
                     if nprnd.uniform(0, 1) < BrainPart.INHERITENCE_RATIO:
@@ -267,7 +270,7 @@ class PrefrontalCortex(BrainPart):
     def __init__(self, model=None, mutate=True):
         super().__init__()
         if model:
-            self.model = model
+            self.model = model.copy()
             if mutate:
                 new_weights, new_biases = BrainPart.mutate(self.model.get_weights(), self.model.get_biases())
                 self.model.set_weights(new_weights)
@@ -333,7 +336,7 @@ class Amygdala(BrainPart):
         super().__init__()
 
         if model:
-            self.model = model
+            self.model = model.copy()
             if mutate:
                 new_weights, new_biases = BrainPart.mutate(self.model.get_weights(), self.model.get_biases())
                 self.model.set_weights(new_weights)

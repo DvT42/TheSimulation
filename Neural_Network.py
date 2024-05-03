@@ -9,8 +9,8 @@ import numpy as np
 
 
 class NeuralNetwork:
-    def __init__(self):
-        self.layers = []
+    def __init__(self, layers=None):
+        self.layers = [] if not layers else layers.copy()
 
     def add_layer(self, neuron_num, input_num, activation: str):
         self.layers.append(
@@ -48,6 +48,9 @@ class NeuralNetwork:
 
     def __repr__(self):
         return f'{self.layers}'
+
+    def copy(self):
+        return NeuralNetwork(self.layers)
 
 
 class NeuronLayer:

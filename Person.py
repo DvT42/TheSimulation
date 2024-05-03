@@ -36,7 +36,7 @@ class Person:
 
         self.readiness = 12 * 12 + int(random.normalvariate(0, 12))
 
-        self.brain = brain if brain else Brain(self, father, mother, collective)
+        self.brain = brain.copy() if brain else Brain(self, father, mother, collective)
         self.partner = None
         self.child_num = 0
 
@@ -145,7 +145,10 @@ class Person:
         return decision
 
     def aging(self):
-        if self.age() > Person.AGING_STARTING_AGE:
+        if self.age() < 15 * 12:
+            self.strength += 0.25
+
+        elif self.age() > Person.AGING_STARTING_AGE:
             self.strength -= 1
             if self.age() > Person.DRASTIC_AGING_AGE:
                 self.strength -= 1
