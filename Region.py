@@ -33,7 +33,6 @@ class Region:
         with self._lock:
             self._neighbors = new_neighbors
 
-    @profile
     def neighbors_update(self, pos, value):
         with self._lock:
             self._neighbors[pos] = value
@@ -43,7 +42,6 @@ class Region:
         return self._newborns
 
     @newborns.setter
-    @profile
     def newborns(self, new_newborns):
         with self._lock:
             self._newborns.append(new_newborns)
@@ -53,7 +51,6 @@ class Region:
         return self._dead
 
     @dead.setter
-    @profile
     def dead(self, new_dead):
         with self._lock:
             self._dead.append(new_dead)
@@ -63,7 +60,6 @@ class Region:
         return self._social_connectors
 
     @social_connectors.setter
-    @profile
     def social_connectors(self, new_social_connectors):
         with self._lock:
             self._social_connectors.append(new_social_connectors)
@@ -73,7 +69,6 @@ class Region:
         return self._relocating_people
 
     @relocating_people.setter
-    @profile
     def relocating_people(self, new_relocating_people):
         with self._lock:
             self._relocating_people.append(new_relocating_people)
@@ -83,7 +78,6 @@ class Region:
         return self._newcomers
 
     @newcomers.setter
-    @profile
     def newcomers(self, new_newcomers):
         with self._lock:
             self._newborns.append(new_newcomers)
@@ -97,7 +91,6 @@ class Region:
         self._newcomers = []
 
     @property
-    @profile
     def Population(self):
         with self._lock:
             return self._Population

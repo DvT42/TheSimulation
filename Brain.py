@@ -1,7 +1,6 @@
 import random
 from numpy import random as nprnd
 from Neural_Network import *
-from line_profiler_pycharm import profile
 from threading import Lock
 
 
@@ -91,7 +90,6 @@ class Brain:
     def copy(self):
         return Brain(models=self.get_models(), mutate=False, brain_id=self.brain_id)
 
-    @profile
     def call_decision_making(self, region):
         if self.person.gender == 0:
             preg = self.person.pregnancy
@@ -287,7 +285,6 @@ class PrefrontalCortex(BrainPart):
 
             self.model = model
 
-    @profile
     def decision_making(
             self, gender, age, strength, pregnancy, youth, readiness, child_num, father_choice,
             mother_choice, partner_choice, location, partner_location, regional_biomes, regional_pop, regional_resources

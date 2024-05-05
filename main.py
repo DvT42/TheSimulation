@@ -19,29 +19,8 @@ def runOnce(commands, done):
 if __name__ == "__main__":
     # running code
     TS = None
-    processes = [
-        ['load alive', 'y50', 'save alive'],
-        ['load alive', 'y50', 'save alive'],
-        ['load alive', 'y50', 'save alive'],
-        ['load alive', 'y50', 'save alive'],
-        ['load alive', 'y50', 'save alive'],
-        ['load alive', 'y50', 'save alive'],
-        ['load alive', 'y50', 'save alive'],
-        ['load alive', 'y50', 'save alive'],
-        ['load alive', 'y50', 'save alive'],
-        ['load alive', 'y50', 'save alive'],
-        ['load alive', 'y50', 'save alive'],
-        ['load alive', 'y50', 'save alive'],
-        ['load alive', 'y50', 'save alive'],
-        ['load alive', 'y50', 'save alive'],
-        ['load alive', 'y50', 'save alive'],
-        ['load alive', 'y50', 'save alive'],
-        ['load alive', 'y50', 'save alive'],
-        ['load alive', 'y50', 'save alive'],
-        ['load alive', 'y50', 'save alive'],
-        ['load alive', 'y50', 'save alive'],
-        ['load alive', 'y50', 'save alive']
-    ]
+    processes = ([['load alive', 'y50', 'save alive']] +
+                 [['load alive', 'y50', 'save alive']] * 20)
     done = False
     while True:
         for pro in processes:

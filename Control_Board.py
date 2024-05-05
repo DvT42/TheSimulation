@@ -1,5 +1,7 @@
 import pickle
 import os
+
+import numpy as np
 import tqdm
 from Simulation import *
 
@@ -9,6 +11,7 @@ class ControlBoard:
     SAVED_BRAINS_PATH = os.path.join(BASE_PATH, 'data', 'saved brains.pkl')
     MALE_BRAINS_PATH = os.path.join(BASE_PATH, 'data', 'saved male brains.pkl')
     FEMALE_BRAINS_PATH = os.path.join(BASE_PATH, 'data', 'saved female brains.pkl')
+    SAVED_BRAINS_INFO_PATH = os.path.join(BASE_PATH, 'data', 'saved brains info.pkl')
 
     @staticmethod
     def process_command(sim: Simulation, com: str, sim_map=None):
@@ -27,46 +30,42 @@ class ControlBoard:
             with open(ControlBoard.SAVED_BRAINS_PATH, 'rb') as f:
                 models = pickle.load(file=f)
                 new_sim = Simulation(sim_map=sim_map, imported=models)
-                f.close()
             sim = new_sim
 
         elif com.lower() == 'load alive':
             with open(ControlBoard.MALE_BRAINS_PATH, 'rb') as f:
                 male_models = pickle.load(file=f)
-                f.close()
             with open(ControlBoard.FEMALE_BRAINS_PATH, 'rb') as f:
                 female_models = pickle.load(file=f)
-                f.close()
             new_sim = Simulation(sim_map=sim_map, separated_imported=(male_models, female_models))
             sim = new_sim
 
         elif com.lower() == 'load children':
             with open(ControlBoard.SAVED_BRAINS_PATH, 'rb') as f:
                 models = pickle.load(file=f)
-                new_sim = Simulation(sim_map=sim_map, imported=models, all_couples=True)
-                f.close()
+                with open(ControlBoard.SAVED_BRAINS_INFO_PATH, 'rb') as f2:
+                    new_models, _, _ = Simulation.find_best_minds((models, *pickle.load(file=f2)))
+                new_sim = Simulation(sim_map=sim_map, imported=new_models, all_couples=True)
             sim = new_sim
 
         elif com.lower() == 'save':
             with open(ControlBoard.SAVED_BRAINS_PATH, 'wb') as f:
                 minds_to_pickle, _, _ = sim.find_best_minds(sim.evaluate())
                 pickle.dump(minds_to_pickle, f)
-                f.close()
 
         elif com.lower() == 'save alive':
             male_minds_to_pickle, female_minds_to_pickle = sim.evaluate(by_alive=True)
             with open(ControlBoard.MALE_BRAINS_PATH, 'wb') as f:
                 pickle.dump(male_minds_to_pickle, f)
-                f.close()
             with open(ControlBoard.FEMALE_BRAINS_PATH, 'wb') as f:
                 pickle.dump(female_minds_to_pickle, f)
-                f.close()
 
         elif com.lower() == 'save children':
             with open(ControlBoard.SAVED_BRAINS_PATH, 'wb') as f:
-                minds_to_pickle, _, _ = sim.find_best_minds(sim.evaluate(), take_all=True)
+                minds_to_pickle, male_lst, female_lst = sim.find_best_minds(sim.evaluate(), take_all=True)
                 pickle.dump(minds_to_pickle, f)
-                f.close()
+            with open(ControlBoard.SAVED_BRAINS_INFO_PATH, 'wb') as f2:
+                pickle.dump(np.append(male_lst, female_lst, axis=0), f2)
 
         elif com.lower() == 'best':
             _, best_male, best_female = sim.find_best_minds(sim.evaluate())

@@ -183,7 +183,6 @@ class Simulation:
         self.Time = 0
 
     # @jit(target_backend='cuda')
-    @profile
     def month_advancement(self, executors: concurrent.futures.ThreadPoolExecutor):
         """
         This function constitutes all operations needed to be preformed each month.
@@ -227,7 +226,6 @@ class Simulation:
         if self.pop_num() != pop:
             print(pop)
 
-    @profile
     def handle_region(self, reg: Region):
         reg.clear()
 
@@ -285,7 +283,6 @@ class Simulation:
             reg.remove_person(rlp)
             # print("8b: ", reg.location)
 
-    @profile
     def handle_person(self, p: Person, reg: Region):
         # print("P1: ", reg.location, p.id)
         if not p.action_flag:
@@ -378,7 +375,6 @@ class Simulation:
             area[i, j].neighbors_update(tuple([1, 1] + relative_position), center)
 
     @staticmethod
-    @profile
     def kill_person(p, reg, collective):
         collective.remove_person()
         reg.remove_person(p)
@@ -408,7 +404,7 @@ class Simulation:
                     Person.ages[:len(self.collective.historical_population)])
 
     @staticmethod
-    def find_best_minds(evaluated_list, date=False, take_all=False):
+    def find_best_minds(evaluated_list, date=False, take_all=False, take_enough=False):
         neural_list, genders, children, ages = evaluated_list
         best_minds = []
         his = np.swapaxes(np.array([np.arange(len(neural_list)), genders, children, ages]), 0, 1)
@@ -432,6 +428,14 @@ class Simulation:
             return (best_minds,
                     male_lst[-len(best_minds):],
                     female_lst[-len(best_minds):])
+
+        elif take_enough:
+            for i in range(Simulation.INITIAL_COUPLES):
+                best_minds.append((neural_list[male_lst[-i - 1][0]], neural_list[female_lst[-i - 1][0]]))
+
+            return (best_minds,
+                    male_lst[-Simulation.INITIAL_COUPLES:],
+                    female_lst[-Simulation.INITIAL_COUPLES:])
 
         for i in range(Simulation.SELECTED_COUPLES):
             best_minds.append((neural_list[male_lst[-i - 1][0]], neural_list[female_lst[-i - 1][0]]))
