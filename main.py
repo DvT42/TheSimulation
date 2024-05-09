@@ -1,7 +1,7 @@
 from Control_Board import ControlBoard
 from datetime import datetime
 from map.Map import Map
-from multiprocessing import Process, Queue
+from multiprocessing import Process
 
 
 def runOnce(commands, done):
@@ -19,8 +19,8 @@ def runOnce(commands, done):
 if __name__ == "__main__":
     # running code
     TS = None
-    processes = ([['load alive', 'y50', 'save alive']] +
-                 [['load alive', 'y50', 'save alive']] * 20)
+    processes = ([['load alive', 'y150', 'save children']] +
+                 [['load children', 'y150', 'save children']] * 20)
     done = False
     while True:
         for pro in processes:

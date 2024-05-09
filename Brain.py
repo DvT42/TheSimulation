@@ -10,7 +10,6 @@ class Collective:
 
     # brainpart constants:
     INHERITANCE_RATIO = 0.5
-    MUTATION_RATIO = 0.2
     MUTATION_NORMALIZATION_RATIO = 0.3
 
     # PFC constants
@@ -55,9 +54,8 @@ class Collective:
 class Brain:
     runningID = 0
 
-    def __init__(self, person=None, f=None, m=None, collective=None, models=None, mutate=True, brain_id=None):
+    def __init__(self, person=None, f=None, m=None, models=None, mutate=True, brain_id=None):
         self.person = person
-        self.collective = collective
 
         if brain_id:
             self.brain_id = brain_id
@@ -65,15 +63,18 @@ class Brain:
             self.brain_id = Brain.runningID
             Brain.runningID += 1
 
-        if person and collective:
+        if person:
             self.id = person.id
+            self.collective = self.person.collective
             self.brainparts = {"PFC": PrefrontalCortex(),
                                "AMG": Amygdala(),
                                "HPC": Hippocampus()}
 
             for part, bp in self.brainparts.items():
                 if bp.model:
-                    new_weights, new_biases = bp.gene_inheritance(self.person.isManual, f, m, part)
+                    new_weights, new_biases = bp.gene_inheritance(f if not person.isManual else None,
+                                                                  m if not person.isManual else None,
+                                                                  part)
                     bp.model.set_weights(new_weights)
                     bp.model.set_biases(new_biases)
 
@@ -101,10 +102,10 @@ class Brain:
             father_choice = 0
             mother_choice = 0
         else:
-            father_choice = Brain.get_action_from_history(self.person.age(), self.person.father_history)
-            mother_choice = Brain.get_action_from_history(self.person.age(), self.person.mother_history)
+            father_choice = Brain.get_action_from_history(self.person.age, self.person.father_history)
+            mother_choice = Brain.get_action_from_history(self.person.age, self.person.mother_history)
         if self.person.partner:
-            partner_choice = Brain.get_action_from_history(self.person.age(), self.person.partner.brain.get_history())
+            partner_choice = Brain.get_action_from_history(self.person.age, self.person.partner.brain.get_history())
             partner_loc = self.person.partner.location
         else:
             partner_choice = 0
@@ -115,7 +116,7 @@ class Brain:
         regional_pop = region.surr_pop()
         regional_resources = np.zeros(9)
 
-        return self.brainparts.get("PFC").decision_making(self.person.gender, self.person.age(), self.person.strength,
+        return self.brainparts.get("PFC").decision_making(self.person.gender, self.person.age, self.person.strength,
                                                           preg, youngness, self.person.readiness, self.person.child_num,
                                                           father_choice, mother_choice, partner_choice, loc,
                                                           partner_loc, regional_biomes, regional_pop,
@@ -151,11 +152,14 @@ class Brain:
         else:
             return 0
 
-    def get_history(self):
+    def get_history(self, simplified=True):
+        if simplified:
+            his = self.brainparts.get("HPC").history
+            return np.where(his > 2, 3, his)
         return self.brainparts.get("HPC").history
 
     def set_history(self, index: int, value):
-        if self.person.age() < Hippocampus.SHOULD_PROBABLY_BE_DEAD:
+        if self.person.age < Collective.SHOULD_PROBABLY_BE_DEAD:
             self.brainparts.get("HPC").history[index] = value
         else:
             self.brainparts.get("HPC").history = np.append(self.brainparts.get("HPC").history, value)
@@ -174,7 +178,7 @@ class Brain:
         arr = np.copy(self.collective.world_attitudes[:pop_size, self.person.id])
         arr = np.where((arr > 0) &
                        np.isin(self.collective.arranged_indexes[:pop_size], region.pop_id),
-                       arr + Hippocampus.ATTITUDE_IMPROVEMENT_BONUS, arr)
+                       arr + Collective.ATTITUDE_IMPROVEMENT_BONUS, arr)
 
         self.collective.world_attitudes[:pop_size, self.person.id] = arr
 
@@ -182,7 +186,7 @@ class Brain:
         if type(loc) is not np.ndarray or not loc.any():
             loc = self.person.location
         if age is None:
-            age = self.person.age()
+            age = self.person.age
         self.brainparts.get("HPC").location_history.append(str((loc, age)))
 
     def get_location_history(self):
@@ -200,17 +204,25 @@ class Brain:
     def get_models(self):
         return self.brainparts.get("PFC").model, self.brainparts.get("AMG").model
 
+    @staticmethod
+    def assemble_brains(neural_list):
+        brain_couples = []
+        for models_couple in neural_list:
+            brain_couples.append((Brain(models=models_couple[0][0], brain_id=models_couple[0][1][0]),
+                                  Brain(models=models_couple[1][0], brain_id=models_couple[1][1][0])))
+        return brain_couples
+
+    @staticmethod
+    def assemble_separated_brains(neural_list):
+        brains = []
+        for models in neural_list:
+            brains.append(Brain(models=models[0], brain_id=models[1][0], mutate=False))
+        return brains
+
 
 class BrainPart:
-    INHERITENCE_RATIO = Collective.INHERITANCE_RATIO
-    MUTATION_RATIO = Collective.MUTATION_RATIO
-    MUTATION_NORMALIZATION_RATIO = Collective.MUTATION_NORMALIZATION_RATIO
-
-    def __init__(self):
-        self.model = None
-
-    def gene_inheritance(self, isManual, father, mother, part: str):
-        if not isManual:
+    def gene_inheritance(self, part: str, father, mother):
+        if father and mother:
             father_weights = father.brain.brainparts.get(part).model.get_weights()
             mother_weights = mother.brain.brainparts.get(part).model.get_weights()
             father_biases = father.brain.brainparts.get(part).model.get_biases()
@@ -221,11 +233,11 @@ class BrainPart:
             new_biases = father_biases.copy()
             for lnum, layer_weights in enumerate(new_weights):
                 for index, value in np.ndenumerate(layer_weights):
-                    if nprnd.uniform(0, 1) < BrainPart.INHERITENCE_RATIO:
+                    if nprnd.uniform(0, 1) < Collective.INHERITANCE_RATIO:
                         new_weights[lnum][index] = mother_weights[lnum][index]
             for lnum, layer_biases in enumerate(new_biases):
                 for index, value in np.ndenumerate(layer_biases):
-                    if nprnd.uniform(0, 1) < BrainPart.INHERITENCE_RATIO:
+                    if nprnd.uniform(0, 1) < Collective.INHERITANCE_RATIO:
                         new_biases[lnum][index] = mother_biases[lnum][index]
 
             new_weights, new_biases = BrainPart.mutate(new_weights, new_biases)
@@ -240,34 +252,19 @@ class BrainPart:
         mutated_biases = []
         for layer_weights in weights:
             mutated_weights.append(
-                layer_weights + BrainPart.MUTATION_NORMALIZATION_RATIO * nprnd.randn(*np.shape(layer_weights)))
+                layer_weights + Collective.MUTATION_NORMALIZATION_RATIO * nprnd.randn(*np.shape(layer_weights)))
+        # should be gotten rid of?
         for layer_biases in biases:
             mutated_biases.append(
-                layer_biases + BrainPart.MUTATION_NORMALIZATION_RATIO * nprnd.randn(*np.shape(layer_biases)))
+                layer_biases + Collective.MUTATION_NORMALIZATION_RATIO * nprnd.randn(*np.shape(layer_biases)))
         return mutated_weights, mutated_biases
-
-    # def evolvement(self):
-    #     if self.model:
-    #         new_weights = np.asarray(self.model.get_weights())
-    #
-    #         for matrix in new_weights[::2]:
-    #             matrix += np.array(
-    #                 [[(nprnd.uniform(-0.01, 0.01) if nprnd.random() < 0.2 else 0) for _ in range(matrix.shape[1])]
-    #                  for _ in range(matrix.shape[0])]
-    #             )
-    #
-    #         self.model.set_weights(new_weights)
 
 
 class PrefrontalCortex(BrainPart):
     """
     That is the part in the brain that is responsible for making decisions.
     """
-    CHOICE_RANDOMIZER = Collective.CHOICE_RANDOMIZER
-    CHOICE_NUM = Collective.CHOICE_NUM
-
     def __init__(self, model=None, mutate=True):
-        super().__init__()
         if model:
             self.model = model.copy()
             if mutate:
@@ -276,12 +273,12 @@ class PrefrontalCortex(BrainPart):
                 self.model.set_biases(new_biases)
 
         else:
-            input_num = 38 + PrefrontalCortex.CHOICE_NUM * 3
+            input_num = 38 + Collective.CHOICE_NUM * 3
 
             model = NeuralNetwork()
             model.add_layer(input_num, input_num=input_num, activation='relu')  # input layer (1)
             model.add_layer(39, input_num=input_num, activation='relu')  # hidden layer (2)
-            model.add_layer(PrefrontalCortex.CHOICE_NUM, input_num=39, activation='softmax')  # output layer (4)
+            model.add_layer(Collective.CHOICE_NUM, input_num=39, activation='softmax')  # output layer (4)
 
             self.model = model
 
@@ -289,7 +286,7 @@ class PrefrontalCortex(BrainPart):
             self, gender, age, strength, pregnancy, youth, readiness, child_num, father_choice,
             mother_choice, partner_choice, location, partner_location, regional_biomes, regional_pop, regional_resources
     ):
-        if nprnd.random() > PrefrontalCortex.CHOICE_RANDOMIZER:
+        if nprnd.random() > Collective.CHOICE_RANDOMIZER:
             # this list is for convenience, to know what does each index of option means.
             # choices = ["social connection", "strength", "location"[8]]
 
@@ -310,13 +307,13 @@ class PrefrontalCortex(BrainPart):
 
             return np.argmax(output_prob)
         else:
-            choice_index = random.randint(0, PrefrontalCortex.CHOICE_NUM - 8 - 1)
+            choice_index = random.randint(0, Collective.CHOICE_NUM - 8 - 1)
             # You can never relocate randomly because of its unproportional magnitude.
 
             return choice_index
 
     @staticmethod
-    def get_choice_nodes(choice, options=CHOICE_NUM):
+    def get_choice_nodes(choice, options=Collective.CHOICE_NUM):
         """Returns a list of zeroes with 1 at the index of the choice - 1, or no 1 at all if 0 is supplied"""
 
         nodes = np.zeros(options, dtype=int)
@@ -331,8 +328,6 @@ class Amygdala(BrainPart):
     """
 
     def __init__(self, model=None, mutate=True):
-        super().__init__()
-
         if model:
             self.model = model.copy()
             if mutate:
@@ -350,7 +345,7 @@ class Amygdala(BrainPart):
     @staticmethod
     def get_relevant_info(person):
         gender = int(person.gender)
-        age = int(person.age())
+        age = int(person.age)
         strength = person.strength
 
         if gender == 0:
@@ -376,13 +371,9 @@ class Hippocampus(BrainPart):
     """
     The part of the brain responsible for memory.
     """
-    SHOULD_PROBABLY_BE_DEAD = Collective.SHOULD_PROBABLY_BE_DEAD
-    ATTITUDE_IMPROVEMENT_BONUS = Collective.ATTITUDE_IMPROVEMENT_BONUS
-
     def __init__(self):
-        super().__init__()
-
-        self.history = np.zeros(120 * 12, dtype=int)
+        self.model = None
+        self.history = np.zeros(Collective.SHOULD_PROBABLY_BE_DEAD * 12, dtype=int)
         self.location_history = []
 
         self.already_met = []

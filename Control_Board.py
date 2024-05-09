@@ -1,7 +1,5 @@
 import pickle
 import os
-
-import numpy as np
 import tqdm
 from Simulation import *
 
@@ -12,6 +10,7 @@ class ControlBoard:
     MALE_BRAINS_PATH = os.path.join(BASE_PATH, 'data', 'saved male brains.pkl')
     FEMALE_BRAINS_PATH = os.path.join(BASE_PATH, 'data', 'saved female brains.pkl')
     SAVED_BRAINS_INFO_PATH = os.path.join(BASE_PATH, 'data', 'saved brains info.pkl')
+    REGRESSIVE = 'partial'
 
     @staticmethod
     def process_command(sim: Simulation, com: str, sim_map=None):
@@ -44,7 +43,8 @@ class ControlBoard:
             with open(ControlBoard.SAVED_BRAINS_PATH, 'rb') as f:
                 models = pickle.load(file=f)
                 with open(ControlBoard.SAVED_BRAINS_INFO_PATH, 'rb') as f2:
-                    new_models, _, _ = Simulation.find_best_minds((models, *pickle.load(file=f2)))
+                    new_models, _, _ = Simulation.find_best_minds(
+                        (models, *pickle.load(file=f2)), children_bearers='enough')
                 new_sim = Simulation(sim_map=sim_map, imported=new_models, all_couples=True)
             sim = new_sim
 
@@ -62,7 +62,7 @@ class ControlBoard:
 
         elif com.lower() == 'save children':
             with open(ControlBoard.SAVED_BRAINS_PATH, 'wb') as f:
-                minds_to_pickle, male_lst, female_lst = sim.find_best_minds(sim.evaluate(), take_all=True)
+                minds_to_pickle, male_lst, female_lst = sim.find_best_minds(sim.evaluate(), children_bearers='all')
                 pickle.dump(minds_to_pickle, f)
             with open(ControlBoard.SAVED_BRAINS_INFO_PATH, 'wb') as f2:
                 pickle.dump(np.append(male_lst, female_lst, axis=0), f2)
@@ -74,9 +74,9 @@ class ControlBoard:
 
         elif com[0].lower() == 'i':
             if com[1].lower() == 'a':
-                print(ControlBoard.info_search(sim, int(com[2:]), is_att=True))
+                print(ControlBoard.info_search(sim, int(com[2:]), info='attitudes'))
             elif com[1].lower() == 'l':
-                print(ControlBoard.info_search(sim, int(com[2:]), is_loc=True))
+                print(ControlBoard.info_search(sim, int(com[2:]), info='locations'))
             else:
                 print(ControlBoard.info_search(sim, int(com[1:])))
 
@@ -87,29 +87,30 @@ class ControlBoard:
             if sim is None:
                 sim = Simulation(sim_map)
             if com[0].lower() == "s":
-                sim = ControlBoard.exact_skip(sim, int(com[1:]), regressive='partial')
+                sim = ControlBoard.exact_skip(sim, int(com[1:]), regressive=ControlBoard.REGRESSIVE)
             elif com[0].lower() == "y":
-                sim = ControlBoard.annual_skip(sim, int(com[1:]), regressive='partial')
+                sim = ControlBoard.exact_skip(sim, int(com[1:]) * 12, regressive=ControlBoard.REGRESSIVE)
             else:
                 sim = ControlBoard.exact_skip(sim, 1)
 
         return sim
 
     @staticmethod
-    def info_search(sim: Simulation, id: int, is_att=False, is_loc=False):
-        if is_att:
+    def info_search(sim: Simulation, id: int, info='basic'):
+        if info == 'attitudes':
             return sim.get_attitudes(id)
-        elif is_loc:
+        elif info == 'locations':
             return sim.get_historical_figure(id)[0].brain.get_location_history()
         person, history = sim.get_historical_figure(id)
         return (f'\n{person}'
                 f'\n{history}')
 
     @staticmethod
-    def exact_skip(sim: Simulation, num: int, failsafe: bool = True, regressive='False'):
+    def exact_skip(sim: Simulation, num: int, failsafe: bool = True, regressive='none', take_enough=False):
         """
         The function that handles the advancement of a Simulation over time.
 
+        :param take_enough: ?
         :param sim: the starting Simulation object.
         :param num: the number of months requested. The Simulation will advance by this number.
         :param failsafe: If true, the function will try to produce new Simulation until one succeeds to match the
@@ -138,24 +139,25 @@ class ControlBoard:
                 if sim.is_eradicated():
                     break
 
+            # number of children born. used to access a Simulation's success
+            print(sim.collective.population_size - Simulation.INITIAL_COUPLES * 2)
+
             if sim.Time < dest_time:
                 if failsafe:
-                    # number of children born. used to access a Simulation's success
-                    print(len(sim.collective.historical_population) - Simulation.INITIAL_COUPLES * 2)
-
-                    best_minds, male_lst, female_lst = sim.find_best_minds(sim.evaluate())
+                    best_minds, male_lst, female_lst = sim.find_best_minds(sim.evaluate(), children_bearers='enough')
                     processed_best_minds, unified_lst = Simulation.prepare_best_for_reprocess(best_minds,
                                                                                               male_lst[:, 1:],
                                                                                               female_lst[:, 1:])
 
-                    if regressive == 'True':
+                    if regressive == 'full':
                         # This learning algorithm always chooses the best across all Simulations. It takes the best from
                         # the last simulation and compares it to the former best
                         best_minds_lst.extend(processed_best_minds)
                         quality_lst = np.append(quality_lst, unified_lst, axis=0)
 
                         best_minds, male_lst, female_lst = sim.find_best_minds(
-                            [best_minds_lst, quality_lst[:, 0], quality_lst[:, 1], quality_lst[:, 2]])
+                            [best_minds_lst, quality_lst[:, 0], quality_lst[:, 1], quality_lst[:, 2]],
+                            children_bearers='enough' if take_enough else 'best')
                         processed_best_minds, unified_lst = Simulation.prepare_best_for_reprocess(
                             best_minds, male_lst[:, 1:], female_lst[:, 1:])
 
@@ -180,7 +182,8 @@ class ControlBoard:
                             best_minds_lst[:len(best_minds_lst) // 2],
                             best_minds_lst[len(best_minds_lst) // 2:],
                             axis=1),
-                        (len(best_minds_lst) // 2, 3, 2)))
+                        (len(best_minds_lst) // 2, 3, 2)),
+                                         )
 
                     del sim
                     sim = new_sim
@@ -190,10 +193,6 @@ class ControlBoard:
             else:
                 # sim.display()
                 return sim
-
-    @staticmethod
-    def annual_skip(sim: Simulation, num: int, failsafe: bool = False, regressive: str = 'False'):
-        return ControlBoard.exact_skip(sim, num=num * 12, failsafe=failsafe, regressive=regressive)
 
 
 class ProgressBar(tqdm.tqdm):

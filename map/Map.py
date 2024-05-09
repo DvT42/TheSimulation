@@ -1,5 +1,4 @@
 import os
-
 import earthpy as et
 import geopandas as gpd
 import imageio
@@ -27,7 +26,7 @@ class Map:
 
     def __init__(self):
         self.points = []
-        self.colored_biome_map, self.biome_map = Map.analyze_biome_map(Map.BIOME_MAP_PATH)
+        self.colored_biome_map, self.biome_map = Map.analyze_biome_map()
 
         # Adjust plot font sizes
         sns.set(font_scale=1.5)
@@ -146,15 +145,14 @@ class Map:
         plt.show()
 
     @staticmethod
-    def analyze_biome_map(map_path):
-        num_map = imageio.v3.imread(map_path)
+    def analyze_biome_map():
+        num_map = imageio.v3.imread(Map.BIOME_MAP_PATH)
         legend = Map.BIOME_LEGEND
         items = [item[1][0] for item in list(legend.items())]
         bins = np.array(items, dtype=int)
         processed_map = num_map
         biome_map = np.zeros(shape=(800, 1600), dtype=int)
         for i, line in enumerate(num_map):
-            # noinspection PyTypeChecker
             processed_map[i], biome_map[i] = Map.multidimensional_approximation(line, bins)
         return processed_map, biome_map
 

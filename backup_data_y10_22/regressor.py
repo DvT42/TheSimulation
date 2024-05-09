@@ -1,5 +1,0 @@
-p = open('protected saved brains.pkl', 'rb')
-f = open('saved brains.pkl', 'wb')
-f.write(p.read())
-f.close()
-p.close()

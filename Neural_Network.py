@@ -1,10 +1,6 @@
 """
 This file is supposed to include all the mechanical processes needed for the neural networks.
-
-IMPORTANT: Currently the neural network works with vectors, and not batches. I might want to reconsider this in the
-future for efficiency purposes.
 """
-
 import numpy as np
 
 

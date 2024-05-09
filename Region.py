@@ -3,9 +3,9 @@ import concurrent.futures
 
 
 class Region:
-    def __init__(self, location, surrounding_biomes, biome, neighbors=np.empty((3, 3), dtype=object), population=None):
+    def __init__(self, location, surrounding_biomes, neighbors=np.empty((3, 3), dtype=object), population=None):
         self.location = np.array(location)
-        self.biome = biome
+        self.biome = surrounding_biomes[1, 1]
         self.surr_biomes = surrounding_biomes
         self._neighbors = neighbors
         self._neighbors[1, 1] = self
@@ -42,9 +42,9 @@ class Region:
         return self._newborns
 
     @newborns.setter
-    def newborns(self, new_newborns):
+    def newborns(self, new_newborn):
         with self._lock:
-            self._newborns.append(new_newborns)
+            self._newborns.append(new_newborn)
 
     @property
     def dead(self):
@@ -60,27 +60,27 @@ class Region:
         return self._social_connectors
 
     @social_connectors.setter
-    def social_connectors(self, new_social_connectors):
+    def social_connectors(self, new_social_connector):
         with self._lock:
-            self._social_connectors.append(new_social_connectors)
+            self._social_connectors.append(new_social_connector)
 
     @property
     def relocating_people(self):
         return self._relocating_people
 
     @relocating_people.setter
-    def relocating_people(self, new_relocating_people):
+    def relocating_people(self, new_relocating_person):
         with self._lock:
-            self._relocating_people.append(new_relocating_people)
+            self._relocating_people.append(new_relocating_person)
 
     @property
     def newcomers(self):
         return self._newcomers
 
     @newcomers.setter
-    def newcomers(self, new_newcomers):
+    def newcomers(self, new_newcomer):
         with self._lock:
-            self._newborns.append(new_newcomers)
+            self._newborns.append(new_newcomer)
 
     def clear(self):
         self._dead = []
@@ -108,15 +108,23 @@ class Region:
                 self._Population.remove(person)
                 self.pop_id.remove(person.id)
 
+    # noinspection PyTypeChecker
     def introduce_newcomers(self):
+        newcomers_ids = [n.id for n in self.newcomers]
         newcomers_exec = concurrent.futures.ThreadPoolExecutor()
-        futures_region = [newcomers_exec.submit(self.mass_encounter, n) for n in self.newcomers]
+        futures_region = [newcomers_exec.submit(self.mass_encounter,
+                                                (self.newcomers + self.Population, newcomers_ids + self.pop_id, n)
+                                                ) for n in self.newcomers]
         concurrent.futures.wait(futures_region)
-        newcomers_exec.shutdown()
 
-    def mass_encounter(self, person=None):
-        pop_lst = self.Population
-        ids = self.pop_id
+        newcomers_exec.shutdown()
+        for n in self.newcomers:
+            self.mass_encounter(n)
+            self.mass_encounter(self.newcomers, newcomers_ids, n)
+
+    def mass_encounter(self, pop_lst=None, ids=None, person=None):
+        pop_lst = pop_lst if pop_lst else self.Population
+        ids = ids if ids else self.pop_id
         info_batch = np.empty(shape=(len(pop_lst), 7))
 
         for i, p in enumerate(pop_lst):
