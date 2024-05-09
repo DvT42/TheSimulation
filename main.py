@@ -21,14 +21,14 @@ if __name__ == "__main__":
     # running code
     TS = None
     processes = [(
-            [['y40', 'save both']] +
-            [['load both', 'y40', 'save both']] * 20
+            [['y35', 'save both']] +
+            [['load both', 'y35', 'save both']] * 20
     ), (
-            [['load both', 'y80', 'save both']] * 20
+            [['load both', 'y70', 'save both']] * 20
     ), (
-            [['load both', 'y120', 'save both']] * 20
+            [['load both', 'y100', 'save both']] * 20
     ), (
-            [['load both', 'y200', 'save both']] * 20)
+            [['load both', 'y130', 'save both']] * 20)
     ]
     done = False
     while True:
