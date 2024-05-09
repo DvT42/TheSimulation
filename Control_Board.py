@@ -11,6 +11,8 @@ class ControlBoard:
     FEMALE_BRAINS_PATH = os.path.join(BASE_PATH, 'data', 'saved female brains.pkl')
     SAVED_BRAINS_INFO_PATH = os.path.join(BASE_PATH, 'data', 'saved brains info.pkl')
     REGRESSIVE = 'partial'
+    IS_NEW_LEAP = True
+
 
     @staticmethod
     def process_command(sim: Simulation, com: str, sim_map=None):
@@ -41,11 +43,34 @@ class ControlBoard:
 
         elif com.lower() == 'load children':
             with open(ControlBoard.SAVED_BRAINS_PATH, 'rb') as f:
-                models = pickle.load(file=f)
+                models = np.array(pickle.load(file=f))
+                models = np.append(models[:, 0], models[:, 1], axis=0)
                 with open(ControlBoard.SAVED_BRAINS_INFO_PATH, 'rb') as f2:
                     new_models, _, _ = Simulation.find_best_minds(
-                        (models, *pickle.load(file=f2)), children_bearers='enough')
+                        (models, *(pickle.load(file=f2))[:,1:].T), children_bearers='enough')
                 new_sim = Simulation(sim_map=sim_map, imported=new_models, all_couples=True)
+            sim = new_sim
+
+        elif com.lower() == 'load both':
+            with open(ControlBoard.MALE_BRAINS_PATH, 'rb') as f:
+                male_models = pickle.load(file=f)
+            with open(ControlBoard.FEMALE_BRAINS_PATH, 'rb') as f:
+                female_models = pickle.load(file=f)
+            with open(ControlBoard.SAVED_BRAINS_PATH, 'rb') as f:
+                data = pickle.load(file=f)
+                if data:
+                    models = np.array(data)
+                    minds_to_pickle = models[:, 0]
+                    female_lst = models[:, 1]
+                    if len(male_models) > len(minds_to_pickle):
+                        minds_to_pickle = np.tile(minds_to_pickle, (len(male_models) // len(minds_to_pickle), 1))
+                    if len(female_models) > len(female_lst):
+                        female_lst = np.tile(female_lst, (len(female_models) // len(female_lst), 1))
+                    male_models = np.append(male_models,minds_to_pickle, axis=0) \
+                        if len(male_models) > 0 else minds_to_pickle
+                    female_models = np.append(female_models, female_lst, axis=0) \
+                        if len(female_models) > 0 else female_lst
+            new_sim = Simulation(sim_map=sim_map, separated_imported=(male_models, female_models))
             sim = new_sim
 
         elif com.lower() == 'save':
@@ -66,6 +91,28 @@ class ControlBoard:
                 pickle.dump(minds_to_pickle, f)
             with open(ControlBoard.SAVED_BRAINS_INFO_PATH, 'wb') as f2:
                 pickle.dump(np.append(male_lst, female_lst, axis=0), f2)
+
+        elif com.lower() == 'save both':
+            male_minds_to_pickle, female_minds_to_pickle = sim.evaluate(by_alive=True)
+            minds_to_pickle, male_lst, female_lst = sim.find_best_minds(sim.evaluate(), children_bearers='all')
+
+            with open(ControlBoard.MALE_BRAINS_PATH, 'rb') as f:
+                male_models = pickle.load(file=f)
+            with open(ControlBoard.FEMALE_BRAINS_PATH, 'rb') as f:
+                female_models = pickle.load(file=f)
+            with open(ControlBoard.SAVED_BRAINS_PATH, 'rb') as f:
+                data = pickle.load(file=f)
+            if ControlBoard.IS_NEW_LEAP or len(male_minds_to_pickle) >= len(male_models):
+                with open(ControlBoard.MALE_BRAINS_PATH, 'wb') as f:
+                    pickle.dump(male_minds_to_pickle, f)
+            if ControlBoard.IS_NEW_LEAP or len(female_minds_to_pickle) >= len(female_models):
+                with open(ControlBoard.FEMALE_BRAINS_PATH, 'wb') as f:
+                    pickle.dump(female_minds_to_pickle, f)
+
+            if ControlBoard.IS_NEW_LEAP or len(minds_to_pickle) >= len(data):
+                with open(ControlBoard.SAVED_BRAINS_PATH, 'wb') as f:
+                    pickle.dump(minds_to_pickle, f)
+            ControlBoard.IS_NEW_LEAP = False
 
         elif com.lower() == 'best':
             _, best_male, best_female = sim.find_best_minds(sim.evaluate())
@@ -106,7 +153,7 @@ class ControlBoard:
                 f'\n{history}')
 
     @staticmethod
-    def exact_skip(sim: Simulation, num: int, failsafe: bool = True, regressive='none', take_enough=False):
+    def exact_skip(sim: Simulation, num: int, failsafe: bool = False, regressive='none', take_enough=False):
         """
         The function that handles the advancement of a Simulation over time.
 
@@ -182,7 +229,7 @@ class ControlBoard:
                             best_minds_lst[:len(best_minds_lst) // 2],
                             best_minds_lst[len(best_minds_lst) // 2:],
                             axis=1),
-                        (len(best_minds_lst) // 2, 3, 2)),
+                        (len(best_minds_lst) // 2, 2, 2)),
                                          )
 
                     del sim

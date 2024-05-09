@@ -200,11 +200,11 @@ class Simulation:
         # for i, j in self.region_iterator:
         #     self.handle_region(self.regions[i, j])
 
-        futures_region = [executors.submit(self.regions[i, j].introduce_newcomers) for i, j in
-                          self.region_iterator]
-        concurrent.futures.wait(futures_region)
-        # for i, j in self.region_iterator:
-        #     self.regions[i, j].introduce_newcomers()
+        # futures_region = [executors.submit(self.regions[i, j].introduce_newcomers) for i, j in
+        #                   self.region_iterator]
+        # concurrent.futures.wait(futures_region)
+        for i, j in self.region_iterator:
+            self.regions[i, j].introduce_newcomers()
 
         self.region_iterator.extend(self.new_regions)
         empty_regions = []
@@ -226,57 +226,60 @@ class Simulation:
             print(pop)
 
     def handle_region(self, reg: Region):
-        reg.clear()
+        try:
+            reg.clear()
+            # person_exec = concurrent.futures.ThreadPoolExecutor()
+            # futures_person = [person_exec.submit(self.handle_person, person, reg) for person in reg.Population]
+            # concurrent.futures.wait(futures_person)
+            # person_exec.shutdown()
+            for p in reg.Population:
+                self.handle_person(p, reg)
 
-        # person_exec = concurrent.futures.ThreadPoolExecutor()
-        # futures_person = [person_exec.submit(self.handle_person, person, reg) for person in reg.Population]
-        # concurrent.futures.wait(futures_person)
-        # person_exec.shutdown()
-        for p in reg.Population:
-            self.handle_person(p, reg)
+            # print("3: ", reg.location)
+            for newborn in reg.newborns:
+                # print("4a: ", reg.location)
+                self.collective.add_person(newborn)
+                reg.add_person(newborn)
+                # print("4b: ", reg.location)
 
-        # print("3: ", reg.location)
-        for newborn in reg.newborns:
-            # print("4a: ", reg.location)
-            self.collective.add_person(newborn)
-            reg.add_person(newborn)
-            # print("4b: ", reg.location)
+            for social_connector in reg.social_connectors:
+                # print("5a: ", reg.location)
+                social_connector: Person
+                if social_connector.brain.is_friendly():  # whether he likes any other people.
+                    social_connector.brain.improve_attitudes_toward_me(region=reg)
+                    social_connector.brain.improve_my_attitudes(multiplier=0.5)
+                    # print("5b: ", reg.location)
 
-        for social_connector in reg.social_connectors:
-            # print("5a: ", reg.location)
-            social_connector: Person
-            if social_connector.brain.is_friendly():  # whether he likes any other people.
-                social_connector.brain.improve_attitudes_toward_me(region=reg)
-                social_connector.brain.improve_my_attitudes(multiplier=0.5)
-                # print("5b: ", reg.location)
-
-                if social_connector.partner:
-                    if social_connector.partner in reg.social_connectors:
-                        social_connector.prepare_next_generation(social_connector.partner)
-                        # print("5c: ", reg.location)
-                    elif self.map.distance(social_connector.location,
-                                           social_connector.partner.location) > Person.GIVE_UP_DISTANCE:
-                        social_connector.partner = None
-                else:
-                    # print("5d: ", reg.location)
-                    social_connector.partner = social_connector.partner_selection(region=reg)
-                    # print("5e: ", reg.location)
                     if social_connector.partner:
-                        social_connector.partner.partner = social_connector
-                        # print("5f: ", reg.location)
-            else:
-                # print("5g: ", reg.location)
-                social_connector.brain.improve_my_attitudes()
+                        if social_connector.partner in reg.social_connectors:
+                            social_connector.prepare_next_generation(social_connector.partner)
+                            # print("5c: ", reg.location)
+                        elif self.map.distance(social_connector.location,
+                                               social_connector.partner.location) > Person.GIVE_UP_DISTANCE:
+                            social_connector.partner = None
+                    else:
+                        # print("5d: ", reg.location)
+                        social_connector.partner = social_connector.partner_selection(region=reg)
+                        # print("5e: ", reg.location)
+                        if social_connector.partner:
+                            social_connector.partner.partner = social_connector
+                            # print("5f: ", reg.location)
+                else:
+                    # print("5g: ", reg.location)
+                    social_connector.brain.improve_my_attitudes()
 
-        # print("6: ", reg.location)
-        for d in reg.dead:
-            # print("7a: ", reg.location)
-            self.kill_person(d, reg)
-            # print("7b: ", reg.location)
-        for rlp in reg.relocating_people:
-            # print("8a: ", reg.location)
-            reg.remove_person(rlp)
-            # print("8b: ", reg.location)
+            # print("6: ", reg.location)
+            for d in reg.dead:
+                # print("7a: ", reg.location)
+                self.kill_person(d, reg)
+                # print("7b: ", reg.location)
+            for rlp in reg.relocating_people:
+                # print("8a: ", reg.location)
+                reg.remove_person(rlp)
+                # print("8b: ", reg.location)
+
+        except Exception as ex:
+            print('handle_region - Exception caught:', ex)
 
     def handle_person(self, p: Person, reg: Region):
         # print("P1: ", reg.location, p.id)
@@ -385,16 +388,16 @@ class Simulation:
 
     def evaluate(self, by_alive=False):
         if by_alive:
-            return ([(p.brain.get_models(), (p.brain.brain_id, 0))
+            return ([p.brain.get_models()
                      for p in self.collective.historical_population if p.isAlive and p.gender == 1],
-                    [(p.brain.get_models(), (p.brain.brain_id, 0))
+                    [p.brain.get_models()
                      for p in self.collective.historical_population if p.isAlive and p.gender == 0])
 
         else:
-            return ([(person.brain.get_models(), (person.brain.brain_id, 0)) for person in self.collective.historical_population],
+            return ([person.brain.get_models() for person in self.collective.historical_population],
                     [p.gender for p in self.collective.historical_population],
                     [person.child_num for person in self.collective.historical_population],
-                    Person.ages[:len(self.collective.historical_population)])
+                    [p.age for p in self.collective.historical_population])
 
     @staticmethod
     def find_best_minds(evaluated_list, children_bearers='best'):

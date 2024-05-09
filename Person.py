@@ -25,6 +25,9 @@ class Person:
             self.id = Person.runningID
             Person.runningID += 1
 
+        if self.id == 2000:
+            print(2000)
+
         self.collective = collective
 
         # Attributes that don't depend on the parents
@@ -165,9 +168,10 @@ class Person:
 
     def partner_selection(self, region):
         if self.age > self.readiness:
-            available_ids = region.pop_id
-            arr: np.ndarray = self.collective.world_attitudes[self.id, :self.collective.population_size]
-            available = np.array([arr[i] for i in available_ids])
+            available_ids = region.pop_id.copy()
+            pop_size = min(np.max(available_ids)+1, self.collective.population_size)
+            arr: np.ndarray = self.collective.world_attitudes[self.id, :pop_size]
+            available = np.array([arr[i] for i in available_ids if i < pop_size])
             while (available > 0).any():
                 other = self.collective.historical_population[available_ids[np.argmax(available)]]
                 if self.is_possible_partner(other):
@@ -185,7 +189,7 @@ class Person:
     # Override of the conversion to string
     def __repr__(self):
         # basic information
-        txt = f"{self.id}: gender: {self.gender.name}, age: {self.year()};"
+        txt = f";"
         return txt
 
     def display(self):

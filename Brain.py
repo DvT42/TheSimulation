@@ -52,16 +52,9 @@ class Collective:
 
 
 class Brain:
-    runningID = 0
 
-    def __init__(self, person=None, f=None, m=None, models=None, mutate=True, brain_id=None):
+    def __init__(self, person=None, f=None, m=None, models=None, mutate=True):
         self.person = person
-
-        if brain_id:
-            self.brain_id = brain_id
-        else:
-            self.brain_id = Brain.runningID
-            Brain.runningID += 1
 
         if person:
             self.id = person.id
@@ -72,13 +65,13 @@ class Brain:
 
             for part, bp in self.brainparts.items():
                 if bp.model:
-                    new_weights, new_biases = bp.gene_inheritance(f if not person.isManual else None,
-                                                                  m if not person.isManual else None,
-                                                                  part)
+                    new_weights, new_biases = bp.gene_inheritance(father=f if not person.isManual else None,
+                                                                  mother=m if not person.isManual else None,
+                                                                  part=part)
                     bp.model.set_weights(new_weights)
                     bp.model.set_biases(new_biases)
 
-        elif models:
+        elif models is not None:
             self.id = None
             self.brainparts = {"PFC": PrefrontalCortex(models[0], mutate=mutate),
                                "AMG": Amygdala(models[1], mutate=mutate),
@@ -89,7 +82,7 @@ class Brain:
     #         brainpart.evolvement()
 
     def copy(self):
-        return Brain(models=self.get_models(), mutate=False, brain_id=self.brain_id)
+        return Brain(models=self.get_models(), mutate=False)
 
     def call_decision_making(self, region):
         if self.person.gender == 0:
@@ -104,9 +97,11 @@ class Brain:
         else:
             father_choice = Brain.get_action_from_history(self.person.age, self.person.father_history)
             mother_choice = Brain.get_action_from_history(self.person.age, self.person.mother_history)
-        if self.person.partner:
-            partner_choice = Brain.get_action_from_history(self.person.age, self.person.partner.brain.get_history())
-            partner_loc = self.person.partner.location
+        partner = self.person.partner
+
+        if partner:
+            partner_choice = Brain.get_action_from_history(self.person.age, partner.brain.get_history())
+            partner_loc = partner.location
         else:
             partner_choice = 0
             partner_loc = np.array([0, 0])
@@ -208,15 +203,15 @@ class Brain:
     def assemble_brains(neural_list):
         brain_couples = []
         for models_couple in neural_list:
-            brain_couples.append((Brain(models=models_couple[0][0], brain_id=models_couple[0][1][0]),
-                                  Brain(models=models_couple[1][0], brain_id=models_couple[1][1][0])))
+            brain_couples.append((Brain(models=models_couple[0]),
+                                  Brain(models=models_couple[1])))
         return brain_couples
 
     @staticmethod
     def assemble_separated_brains(neural_list):
         brains = []
-        for models in neural_list:
-            brains.append(Brain(models=models[0], brain_id=models[1][0], mutate=False))
+        for model in neural_list:
+            brains.append(Brain(models=model, mutate=False))
         return brains
 
 

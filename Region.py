@@ -104,7 +104,7 @@ class Region:
 
     def remove_person(self, person):
         with self._lock:
-            if person.id in self.pop_id:
+            while person.id in self.pop_id:
                 self._Population.remove(person)
                 self.pop_id.remove(person.id)
 
@@ -113,14 +113,13 @@ class Region:
         newcomers_ids = [n.id for n in self.newcomers]
         newcomers_exec = concurrent.futures.ThreadPoolExecutor()
         futures_region = [newcomers_exec.submit(self.mass_encounter,
-                                                (self.newcomers + self.Population, newcomers_ids + self.pop_id, n)
-                                                ) for n in self.newcomers]
+                                                self.newcomers + self.Population, newcomers_ids + self.pop_id, n)
+                          for n in self.newcomers]
         concurrent.futures.wait(futures_region)
 
         newcomers_exec.shutdown()
-        for n in self.newcomers:
-            self.mass_encounter(n)
-            self.mass_encounter(self.newcomers, newcomers_ids, n)
+        # for n in self.newcomers:
+        #     self.mass_encounter(pop_lst=self.newcomers, ids=newcomers_ids, person=n)
 
     def mass_encounter(self, pop_lst=None, ids=None, person=None):
         pop_lst = pop_lst if pop_lst else self.Population
