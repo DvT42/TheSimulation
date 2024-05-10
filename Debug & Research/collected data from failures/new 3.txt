@@ -1,0 +1,226 @@
+
+                 [['y120', 'save both']] +
+                 [['load both', 'y120', 'save both']] * 10 +
+                 # [['load both', 'y50', 'save both']] * 20 +
+                 [['load both', 'y200', 'save both']] * 10 +
+                 # [['load both', 'y90', 'save both']] * 20 +
+                 [['load both', 'y120', 'save both']] * 20 +
+                 # [['load both', 'y150', 'save both']] * 20 +
+                 [['load both', 'y200', 'save both']] * 20)
+				 
+C:\Users\All\PycharmProjects\TheSimulation\venv\Scripts\python.exe C:\Users\All\PycharmProjects\TheSimulation\main.py 
+517:  10%|███▒░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░| 138/1440 [00:19<01:44, 12.45m/s]2000
+1: 100%|█████████████████████████████████████| 1440/1440 [00:39<00:00, 36.53m/s]
+82
+40.81s
+0.01s
+1.21s
+653:   9%|███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░| 131/1440 [00:38<02:23,  9.11m/s]2000
+1:  81%|██████████████████████████████░░░░░░░| 1170/1440 [01:21<00:18, 14.30m/s]
+77
+SPECIES GONE
+0
+81.85s
+0.01s
+1.20s
+557:   9%|███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░| 126/1440 [00:26<02:27,  8.89m/s]2000
+1:  81%|██████████████████████████████░░░░░░░| 1171/1440 [01:08<00:15, 16.99m/s]
+12
+SPECIES GONE
+0
+68.91s
+0.01s
+1.20s
+617:   9%|███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░| 130/1440 [00:30<02:26,  8.97m/s]2000
+1:  93%|██████████████████████████████████▒░░| 1342/1440 [01:16<00:05, 17.61m/s]
+114
+SPECIES GONE
+0
+76.23s
+0.01s
+2000:   0%|░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░| 0/1440 [00:00<?, ?m/s]1.16s
+405:  12%|████▒░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░| 175/1440 [01:03<02:54,  7.27m/s]2000
+1:  58%|█████████████████████▓░░░░░░░░░░░░░░░░| 830/1440 [01:22<01:00, 10.02m/s]
+5
+SPECIES GONE
+0
+82.85s
+0.00s
+0.96s
+2:  44%|████████████████▒░░░░░░░░░░░░░░░░░░░░░| 627/1440 [01:17<01:40,  8.10m/s]
+0
+SPECIES GONE
+0
+77.38s
+0.00s
+0.00s
+-2000
+SPECIES GONE
+0
+0.00s
+0:   0%|░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░| 0/1440 [00:00<?, ?m/s]
+Process Process-7:
+Traceback (most recent call last):
+  File "C:\Users\All\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\process.py", line 314, in _bootstrap
+    self.run()
+  File "C:\Users\All\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\All\PycharmProjects\TheSimulation\main.py", line 12, in runOnce
+    TS = ControlBoard.process_command(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\All\PycharmProjects\TheSimulation\Control_Board.py", line 97, in process_command
+    minds_to_pickle, male_lst, female_lst = sim.find_best_minds(sim.evaluate(), children_bearers='all')
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\All\PycharmProjects\TheSimulation\Simulation.py", line 410, in find_best_minds
+    gender_idx = np.argmax(sorted_his[:, 1])
+                           ~~~~~~~~~~^^^^^^
+IndexError: too many indices for array: array is 1-dimensional, but 2 were indexed
+0.00s
+-2000
+SPECIES GONE
+0
+0.00s
+0:   0%|░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░| 0/1440 [00:00<?, ?m/s]
+Process Process-8:
+Traceback (most recent call last):
+  File "C:\Users\All\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\process.py", line 314, in _bootstrap
+    self.run()
+  File "C:\Users\All\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\All\PycharmProjects\TheSimulation\main.py", line 12, in runOnce
+    TS = ControlBoard.process_command(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\All\PycharmProjects\TheSimulation\Control_Board.py", line 97, in process_command
+    minds_to_pickle, male_lst, female_lst = sim.find_best_minds(sim.evaluate(), children_bearers='all')
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\All\PycharmProjects\TheSimulation\Simulation.py", line 410, in find_best_minds
+    gender_idx = np.argmax(sorted_his[:, 1])
+                           ~~~~~~~~~~^^^^^^
+IndexError: too many indices for array: array is 1-dimensional, but 2 were indexed
+0:   0%|░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░| 0/1440 [00:00<?, ?m/s]
+Process Process-9:
+Traceback (most recent call last):
+  File "C:\Users\All\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\process.py", line 314, in _bootstrap
+    self.run()
+  File "C:\Users\All\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\All\PycharmProjects\TheSimulation\main.py", line 12, in runOnce
+    TS = ControlBoard.process_command(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\All\PycharmProjects\TheSimulation\Control_Board.py", line 97, in process_command
+    minds_to_pickle, male_lst, female_lst = sim.find_best_minds(sim.evaluate(), children_bearers='all')
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\All\PycharmProjects\TheSimulation\Simulation.py", line 410, in find_best_minds
+    gender_idx = np.argmax(sorted_his[:, 1])
+                           ~~~~~~~~~~^^^^^^
+IndexError: too many indices for array: array is 1-dimensional, but 2 were indexed
+0.00s
+-2000
+SPECIES GONE
+0
+0.00s
+0.00s
+-2000
+SPECIES GONE
+0
+0.00s
+0:   0%|░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░| 0/1440 [00:00<?, ?m/s]
+Process Process-10:
+Traceback (most recent call last):
+  File "C:\Users\All\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\process.py", line 314, in _bootstrap
+    self.run()
+  File "C:\Users\All\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\All\PycharmProjects\TheSimulation\main.py", line 12, in runOnce
+    TS = ControlBoard.process_command(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\All\PycharmProjects\TheSimulation\Control_Board.py", line 97, in process_command
+    minds_to_pickle, male_lst, female_lst = sim.find_best_minds(sim.evaluate(), children_bearers='all')
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\All\PycharmProjects\TheSimulation\Simulation.py", line 410, in find_best_minds
+    gender_idx = np.argmax(sorted_his[:, 1])
+                           ~~~~~~~~~~^^^^^^
+IndexError: too many indices for array: array is 1-dimensional, but 2 were indexed
+0.00s
+-2000
+SPECIES GONE
+0
+0.00s
+0:   0%|░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░| 0/1440 [00:00<?, ?m/s]
+Process Process-11:
+Traceback (most recent call last):
+  File "C:\Users\All\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\process.py", line 314, in _bootstrap
+    self.run()
+  File "C:\Users\All\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\All\PycharmProjects\TheSimulation\main.py", line 12, in runOnce
+    TS = ControlBoard.process_command(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\All\PycharmProjects\TheSimulation\Control_Board.py", line 97, in process_command
+    minds_to_pickle, male_lst, female_lst = sim.find_best_minds(sim.evaluate(), children_bearers='all')
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\All\PycharmProjects\TheSimulation\Simulation.py", line 410, in find_best_minds
+    gender_idx = np.argmax(sorted_his[:, 1])
+                           ~~~~~~~~~~^^^^^^
+IndexError: too many indices for array: array is 1-dimensional, but 2 were indexed
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "C:\Users\All\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\All\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\spawn.py", line 131, in _main
+    prepare(preparation_data)
+  File "C:\Users\All\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\spawn.py", line 246, in prepare
+    _fixup_main_from_path(data['init_main_from_path'])
+  File "C:\Users\All\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\spawn.py", line 297, in _fixup_main_from_path
+    main_content = runpy.run_path(main_path,
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\All\PycharmProjects\TheSimulation\main.py", line 3, in <module>
+    from map.Map import Map
+  File "C:\Users\All\PycharmProjects\TheSimulation\map\Map.py", line 7, in <module>
+    import seaborn as sns
+  File "C:\Users\All\PycharmProjects\TheSimulation\venv\Lib\site-packages\seaborn\__init__.py", line 5, in <module>
+    from .relational import *  # noqa: F401,F403
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\All\PycharmProjects\TheSimulation\venv\Lib\site-packages\seaborn\relational.py", line 21, in <module>
+    from ._statistics import EstimateAggregator, WeightedAggregator
+  File "C:\Users\All\PycharmProjects\TheSimulation\venv\Lib\site-packages\seaborn\_statistics.py", line 32, in <module>
+    from scipy.stats import gaussian_kde
+  File "C:\Users\All\PycharmProjects\TheSimulation\venv\Lib\site-packages\scipy\stats\__init__.py", line 608, in <module>
+    from ._stats_py import *
+  File "C:\Users\All\PycharmProjects\TheSimulation\venv\Lib\site-packages\scipy\stats\_stats_py.py", line 37, in <module>
+    from numpy.testing import suppress_warnings
+  File "C:\Users\All\PycharmProjects\TheSimulation\venv\Lib\site-packages\numpy\testing\__init__.py", line 11, in <module>
+    from ._private.utils import *
+  File "C:\Users\All\PycharmProjects\TheSimulation\venv\Lib\site-packages\numpy\testing\_private\utils.py", line 53, in <module>
+    IS_WASM = platform.machine() in ["wasm32", "wasm64"]
+              ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\All\AppData\Local\Programs\Python\Python312\Lib\platform.py", line 1022, in machine
+    return uname().machine
+           ^^^^^^^
+  File "C:\Users\All\AppData\Local\Programs\Python\Python312\Lib\platform.py", line 921, in uname
+    machine = machine or _get_machine_win32()
+                         ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\All\AppData\Local\Programs\Python\Python312\Lib\platform.py", line 774, in _get_machine_win32
+    [arch, *_] = _wmi_query('CPU', 'Architecture')
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\All\AppData\Local\Programs\Python\Python312\Lib\platform.py", line 326, in _wmi_query
+    data = _wmi.exec_query("SELECT {} FROM {}".format(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "C:\Users\All\PycharmProjects\TheSimulation\main.py", line 36, in <module>
+    p.join()  # this blocks until the process terminates
+    ^^^^^^^^
+  File "C:\Users\All\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\process.py", line 149, in join
+    res = self._popen.wait(timeout)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\All\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\popen_spawn_win32.py", line 109, in wait
+    res = _winapi.WaitForSingleObject(int(self._handle), msecs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+
+Process finished with exit code -1

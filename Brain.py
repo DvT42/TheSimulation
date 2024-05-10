@@ -9,11 +9,11 @@ class Collective:
     BASIC_POPULATION = 10000
 
     # brainpart constants:
-    INHERITANCE_RATIO = 0.5
+    INHERITANCE_RATIO = 0.3
     MUTATION_NORMALIZATION_RATIO = 0.3
 
     # PFC constants
-    CHOICE_RANDOMIZER = 0.083
+    CHOICE_RANDOMIZER = 0.0
     CHOICE_NUM = 10
 
     # HPC constants
@@ -65,7 +65,8 @@ class Brain:
 
             for part, bp in self.brainparts.items():
                 if bp.model:
-                    new_weights, new_biases = bp.gene_inheritance(father=f if not person.isManual else None,
+                    new_weights, new_biases = bp.gene_inheritance(gender=person.gender,
+                                                                  father=f if not person.isManual else None,
                                                                   mother=m if not person.isManual else None,
                                                                   part=part)
                     bp.model.set_weights(new_weights)
@@ -216,24 +217,24 @@ class Brain:
 
 
 class BrainPart:
-    def gene_inheritance(self, part: str, father, mother):
+    def gene_inheritance(self, gender, part: str, father, mother):
         if father and mother:
-            father_weights = father.brain.brainparts.get(part).model.get_weights()
-            mother_weights = mother.brain.brainparts.get(part).model.get_weights()
-            father_biases = father.brain.brainparts.get(part).model.get_biases()
-            mother_biases = mother.brain.brainparts.get(part).model.get_biases()
+            same_gender = father if gender == 1 else mother
+            other_gender = mother if gender == 0 else father
+
+            same_gender_weights = same_gender.brain.brainparts.get(part).model.get_weights()
+            other_gender_weights = other_gender.brain.brainparts.get(part).model.get_weights()
+            same_gender_biases = same_gender.brain.brainparts.get(part).model.get_biases()
+            other_gender_biases = other_gender.brain.brainparts.get(part).model.get_biases()
 
             # inheritance of parent's weights & biases
-            new_weights = father_weights.copy()
-            new_biases = father_biases.copy()
+            new_weights = same_gender_weights.copy()
+            new_biases = same_gender_biases.copy()
             for lnum, layer_weights in enumerate(new_weights):
-                for index, value in np.ndenumerate(layer_weights):
+                for index in range(len(layer_weights.T)):
                     if nprnd.uniform(0, 1) < Collective.INHERITANCE_RATIO:
-                        new_weights[lnum][index] = mother_weights[lnum][index]
-            for lnum, layer_biases in enumerate(new_biases):
-                for index, value in np.ndenumerate(layer_biases):
-                    if nprnd.uniform(0, 1) < Collective.INHERITANCE_RATIO:
-                        new_biases[lnum][index] = mother_biases[lnum][index]
+                        new_weights[lnum][:, index] = other_gender_weights[lnum][:, index]
+                        new_biases[lnum][0, index] = other_gender_biases[lnum][0, index]
 
             new_weights, new_biases = BrainPart.mutate(new_weights, new_biases)
 

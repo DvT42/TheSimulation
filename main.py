@@ -4,9 +4,9 @@ from map.Map import Map
 from multiprocessing import Process
 
 
-def runOnce(commands, done, is_new_leap):
+def runOnce(ts, commands, done, is_new_leap):
     sim_map = Map()
-    TS = None
+    TS = ts
     ControlBoard.IS_NEW_LEAP = is_new_leap
     for command in commands:
         start = datetime.now()
@@ -21,25 +21,21 @@ if __name__ == "__main__":
     # running code
     TS = None
     processes = [(
-            [['y35', 'save both']] +
-            [['load both', 'y35', 'save both']] * 20
+            [['load both', 'y35', 'save both']] +
+            [['load both', 'y35', 'save both']] * 4
     ), (
-            [['load both', 'y70', 'save both']] * 20
+            [['load both', 'y70', 'save both']] * 4
     ), (
-            [['load both', 'y100', 'save both']] * 20
+            [['load both', 'y100', 'save both']] * 4
     ), (
-            [['load both', 'y130', 'save both']] * 20)
+            [['load both', 'y130', 'save both']] * 4)
     ]
     done = False
     while True:
         for process in processes:
             isNewLeap = True
             for pro in process:
-                p = Process(target=runOnce, args=(pro, done, isNewLeap))
-                p.start()
-                p.join()  # this blocks until the process terminates
-                # runOnce(pro, done)
-                isNewLeap = False
+                runOnce(TS, pro, done, isNewLeap)
         done = True
         if not TS:
             break

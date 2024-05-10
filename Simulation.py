@@ -228,6 +228,7 @@ class Simulation:
     def handle_region(self, reg: Region):
         try:
             reg.clear()
+
             # person_exec = concurrent.futures.ThreadPoolExecutor()
             # futures_person = [person_exec.submit(self.handle_person, person, reg) for person in reg.Population]
             # concurrent.futures.wait(futures_person)

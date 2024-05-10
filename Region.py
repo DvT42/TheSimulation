@@ -110,18 +110,16 @@ class Region:
 
     # noinspection PyTypeChecker
     def introduce_newcomers(self):
-        newcomers_ids = [n.id for n in self.newcomers]
-        newcomers_exec = concurrent.futures.ThreadPoolExecutor()
-        futures_region = [newcomers_exec.submit(self.mass_encounter,
-                                                self.newcomers + self.Population, newcomers_ids + self.pop_id, n)
-                          for n in self.newcomers]
-        concurrent.futures.wait(futures_region)
+        # newcomers_exec = concurrent.futures.ThreadPoolExecutor()
+        # futures_region = [newcomers_exec.submit(self.mass_encounter, n)
+        #                   for n in self.newcomers]
+        # concurrent.futures.wait(futures_region)
+        #
+        # newcomers_exec.shutdown()
+        for n in self.newcomers:
+            self.mass_encounter(person=n)
 
-        newcomers_exec.shutdown()
-        # for n in self.newcomers:
-        #     self.mass_encounter(pop_lst=self.newcomers, ids=newcomers_ids, person=n)
-
-    def mass_encounter(self, pop_lst=None, ids=None, person=None):
+    def mass_encounter(self, person=None, pop_lst=None, ids=None):
         pop_lst = pop_lst if pop_lst else self.Population
         ids = ids if ids else self.pop_id
         info_batch = np.empty(shape=(len(pop_lst), 7))

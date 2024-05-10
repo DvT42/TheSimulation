@@ -35,7 +35,6 @@ class Person:
 
         self.readiness = 12 * 12 + int(random.normalvariate(0, 12))
 
-        self.brain = brain.copy() if brain else Brain(self, father, mother)
         self.partner = None
         self.child_num = 0
 
@@ -60,7 +59,6 @@ class Person:
             self.location = np.copy(mother.location)
 
             self.generation = max(father.generation, mother.generation) + 1
-            self.brain.update_location_history()
 
         # - Manual creation
         else:
@@ -72,8 +70,10 @@ class Person:
             # [2]
             self.location = np.copy(properties[2])
             self.generation = 0
-            self.brain.update_location_history(self.location, 0)
             self.age = Person.INITIAL_AGE
+
+        self.brain = brain.copy() if brain else Brain(self, father, mother)
+        self.brain.update_location_history(self.location, 0)
 
         # procreation availability.
         if self.gender == Gender.Female:
@@ -189,7 +189,7 @@ class Person:
     # Override of the conversion to string
     def __repr__(self):
         # basic information
-        txt = f";"
+        txt = f"{self.gender} {self.id}"
         return txt
 
     def display(self):

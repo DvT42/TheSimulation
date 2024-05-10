@@ -1,0 +1,31 @@
+for i, j in zip(*np.where(self.regions)):
+    if self.regions[i, j].Population and (i, j) not in self.region_iterator:
+        print(i, j)
+		
+				
+for i, j in zip(*np.where(self.regions)):
+    for p in self.regions[i, j].Population:
+        if self.regions[i, j].Population.count(p) != 1:
+            print(p.id, p.location)
+			
+for i, j in zip(*np.where(self.regions)):
+    for p in self.regions[i, j].Population:
+        if not p.isAlive:
+            print(p.id, p.location)				
+			
+[x for x in self.region_iterator if self.region_iterator.count(x) > 1]
+
+p = []
+for i, j in self.region_iterator:
+    x = [h for h in self.regions[i, j].pop_id if h in p]
+    if x:
+        print (x)
+    p.extend(self.regions[i, j].pop_id)
+	
+for p in self.collective.historical_population:
+    if p not in self.regions[p.location[1], p.location[0]].Population and p.isAlive:
+        print(p.id, (np.flip(p.location)))
+		
+pop = 0
+for i, j in zip(*np.where(self.regions)):
+    pop += len(self.regions[i, j].Population)

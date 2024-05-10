@@ -52,25 +52,25 @@ class ControlBoard:
             sim = new_sim
 
         elif com.lower() == 'load both':
-            # with open(ControlBoard.MALE_BRAINS_PATH, 'rb') as f:
-            #     male_models = pickle.load(file=f)
-            # with open(ControlBoard.FEMALE_BRAINS_PATH, 'rb') as f:
-            #     female_models = pickle.load(file=f)
+            with open(ControlBoard.MALE_BRAINS_PATH, 'rb') as f:
+                male_models = pickle.load(file=f)
+            with open(ControlBoard.FEMALE_BRAINS_PATH, 'rb') as f:
+                female_models = pickle.load(file=f)
             with open(ControlBoard.SAVED_BRAINS_PATH, 'rb') as f:
                 data = pickle.load(file=f)
                 if data:
                     models = np.array(data)
                     minds_to_pickle = models[:, 0]
                     female_lst = models[:, 1]
-                    # if len(male_models) > len(minds_to_pickle):
-                    #     minds_to_pickle = np.tile(minds_to_pickle, (len(male_models) // len(minds_to_pickle), 1))
-                    # if len(female_models) > len(female_lst):
-                    #     female_lst = np.tile(female_lst, (len(female_models) // len(female_lst), 1))
-                    # male_models = np.append(male_models,minds_to_pickle, axis=0) \
-                    #     if len(male_models) > 0 else minds_to_pickle
-                    # female_models = np.append(female_models, female_lst, axis=0) \
-                    #     if len(female_models) > 0 else female_lst
-            new_sim = Simulation(sim_map=sim_map, separated_imported=(minds_to_pickle, female_lst))
+                    if len(male_models) > len(minds_to_pickle):
+                        minds_to_pickle = np.tile(minds_to_pickle, (len(male_models) // len(minds_to_pickle), 1))
+                    if len(female_models) > len(female_lst):
+                        female_lst = np.tile(female_lst, (len(female_models) // len(female_lst), 1))
+                    male_models = np.append(male_models,minds_to_pickle, axis=0) \
+                        if len(male_models) > 0 else minds_to_pickle
+                    female_models = np.append(female_models, female_lst, axis=0) \
+                        if len(female_models) > 0 else female_lst
+            new_sim = Simulation(sim_map=sim_map, separated_imported=(male_models, female_models))
             sim = new_sim
 
         elif com.lower() == 'save':
@@ -93,23 +93,23 @@ class ControlBoard:
                 pickle.dump(np.append(male_lst, female_lst, axis=0), f2)
 
         elif com.lower() == 'save both':
-            # male_minds_to_pickle, female_minds_to_pickle = sim.evaluate(by_alive=True)
+            male_minds_to_pickle, female_minds_to_pickle = sim.evaluate(by_alive=True)
             minds_to_pickle, male_lst, female_lst = sim.find_best_minds(sim.evaluate(), children_bearers='all')
 
-            # with open(ControlBoard.MALE_BRAINS_PATH, 'rb') as f:
-            #     male_models = pickle.load(file=f)
-            # with open(ControlBoard.FEMALE_BRAINS_PATH, 'rb') as f:
-            #     female_models = pickle.load(file=f)
+            with open(ControlBoard.MALE_BRAINS_PATH, 'rb') as f:
+                male_models = pickle.load(file=f)
+            with open(ControlBoard.FEMALE_BRAINS_PATH, 'rb') as f:
+                female_models = pickle.load(file=f)
             with open(ControlBoard.SAVED_BRAINS_PATH, 'rb') as f:
                 data = pickle.load(file=f)
-            # if ControlBoard.IS_NEW_LEAP or len(male_minds_to_pickle) >= len(male_models):
-            #     with open(ControlBoard.MALE_BRAINS_PATH, 'wb') as f:
-            #         pickle.dump(male_minds_to_pickle, f)
-            #         print('saving male_minds_to_pickle: ', len(male_minds_to_pickle))
-            # if ControlBoard.IS_NEW_LEAP or len(female_minds_to_pickle) >= len(female_models):
-            #     with open(ControlBoard.FEMALE_BRAINS_PATH, 'wb') as f:
-            #         pickle.dump(female_minds_to_pickle, f)
-            #         print('saving female_minds_to_pickle: ', len(female_minds_to_pickle))
+            if ControlBoard.IS_NEW_LEAP or len(male_minds_to_pickle) >= len(male_models):
+                with open(ControlBoard.MALE_BRAINS_PATH, 'wb') as f:
+                    pickle.dump(male_minds_to_pickle, f)
+                    print('saving male_minds_to_pickle: ', len(male_minds_to_pickle))
+            if ControlBoard.IS_NEW_LEAP or len(female_minds_to_pickle) >= len(female_models):
+                with open(ControlBoard.FEMALE_BRAINS_PATH, 'wb') as f:
+                    pickle.dump(female_minds_to_pickle, f)
+                    print('saving female_minds_to_pickle: ', len(female_minds_to_pickle))
 
             if ControlBoard.IS_NEW_LEAP or len(minds_to_pickle) >= len(data):
                 with open(ControlBoard.SAVED_BRAINS_PATH, 'wb') as f:
@@ -152,7 +152,7 @@ class ControlBoard:
         elif info == 'locations':
             return sim.get_historical_figure(id)[0].brain.get_location_history()
         person, history = sim.get_historical_figure(id)
-        return (f'\n{person}'
+        return (f'\n{person.display()}'
                 f'\n{history}')
 
     @staticmethod
