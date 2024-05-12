@@ -110,7 +110,7 @@ class Brain:
         loc = region.location
         regional_biomes = region.surr_biomes
         regional_pop = region.surr_pop()
-        regional_resources = np.zeros(9)
+        regional_resources = region.surr_resources()
 
         return self.brainparts.get("PFC").decision_making(self.person.gender, self.person.age, self.person.strength,
                                                           preg, youngness, self.person.readiness, self.person.child_num,

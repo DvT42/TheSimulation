@@ -190,7 +190,8 @@ class ControlBoard:
                     break
 
             # number of children born. used to access a Simulation's success
-            print(sim.collective.population_size - Simulation.INITIAL_COUPLES * 2)
+            print(sim.get_number_of_children())
+            print(sim.divide_by_generation())
 
             if sim.Time < dest_time:
                 if failsafe:

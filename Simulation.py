@@ -1,4 +1,5 @@
 from Region import *
+import concurrent.futures
 
 
 class Simulation:
@@ -304,7 +305,7 @@ class Simulation:
             p.aging()  # handles growing up and old people's aging process.
 
             # print("P4: ", reg.location, p.id)
-            if p.natural_death_chance() and self.Time > Simulation.IMMUNITY_TIME:
+            if p.natural_death_chance(reg) and self.Time > Simulation.IMMUNITY_TIME:
                 reg.dead = p
                 # print("P5: ", reg.location, p.id)
                 return None
@@ -463,6 +464,18 @@ class Simulation:
 
     def pop_num(self):
         return self.collective.population_size - self.collective.dead
+
+    def divide_by_generation(self):
+        gens = []
+        for p in self.collective.historical_population:
+            if p.generation >= len(gens):
+                for i in range(p.generation - len(gens) + 1):
+                    gens.append(0)
+            gens[p.generation] += 1
+        return gens
+
+    def get_number_of_children(self):
+        return self.collective.population_size - Simulation.INITIAL_COUPLES * 2
 
     def __repr__(self):
         txt = f"Year: {self.Time // 12}"

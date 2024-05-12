@@ -106,8 +106,8 @@ class Person:
 
         return Person(collective=self.collective, father=f, mother=self)
 
-    def natural_death_chance(self):
-        death_chance = Person.DEATH_NORMALIZER * 0.06 * math.exp(-0.02 * self.strength)
+    def natural_death_chance(self, region):
+        death_chance = region.risk * 0.06 * math.exp(-0.02 * self.strength)
         random_number = random.random()
         return random_number < death_chance
 
@@ -119,7 +119,7 @@ class Person:
             # should improve attitudes/merge
             self.brain.set_history(self.age, 1)
         if decision == 1:
-            self.strength += Person.STRENGTH_MODIFIER
+            self.strength += Person.STRENGTH_MODIFIER * region.resources / region.pop()
             self.brain.set_history(self.age, 2)
         if decision in np.arange(2, 10):
             if decision == 2:

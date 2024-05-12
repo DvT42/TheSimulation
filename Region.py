@@ -1,11 +1,39 @@
 from Person import *
-import concurrent.futures
 
 
 class Region:
+    RESOURCE_LEGEND = {  # The numbers were taken from Gemini's estimations.
+        0: 0,
+        1: 10,
+        2: 30,
+        3: 300,
+        4: 20,
+        5: 500,
+        6: 1000,
+        7: 200,
+        8: 300,
+        9: 10,
+        10: 700
+    }
+    RISK_LEGEND = {  # The numbers are by my own estimations. changeable, obviously.
+        0: 2,
+        1: 1,
+        2: 0.5,
+        3: 0.4,
+        4: 0.7,
+        5: 0.4,
+        6: 0.8,
+        7: 0.3,
+        8: 0.4,
+        9: 1.2,
+        10: 0.4
+    }
+
     def __init__(self, location, surrounding_biomes, neighbors=np.empty((3, 3), dtype=object), population=None):
         self.location = np.array(location)
         self.biome = surrounding_biomes[1, 1]
+        self.resources = Region.RESOURCE_LEGEND[self.biome]
+        self.risk = Region.RISK_LEGEND[self.biome]
         self.surr_biomes = surrounding_biomes
         self._neighbors = neighbors
         self._neighbors[1, 1] = self
@@ -156,11 +184,21 @@ class Region:
         for p in self.Population:
             p.action_flag = False
 
+    def pop(self):
+        return len(self.Population)
+
     def surr_pop(self):
             lst = np.zeros(9).reshape((3, 3))
             for i, j in zip(*np.where(self.neighbors)):
-                lst[i, j] = len(self.neighbors[i, j].Population)
+                lst[i, j] = self.neighbors[i, j].pop()
             return lst.flatten()
+
+    def surr_resources(self):
+        lst = np.zeros(9).reshape((3, 3))
+        for i in range(len(self.neighbors)):
+            for j in range(len(self.neighbors[i])):
+                lst[i, j] = Region.RESOURCE_LEGEND[self.surr_biomes[i, j]]
+        return lst.flatten()
 
     def __iter__(self):
         return (p for p in self.Population)
