@@ -1,7 +1,6 @@
 from Control_Board import *
 from datetime import datetime
 from map.Map import Map
-from multiprocessing import Process, Lock
 
 
 def runOnce(ts, sim_map, command, is_new_leap):
@@ -19,7 +18,6 @@ def runOnce(ts, sim_map, command, is_new_leap):
 if __name__ == "__main__":
     # running code
     TS = None
-    lock = Lock()
     processes = [(
             [['load both', 'y150', 'save both']] +
             [['load both', 'y150', 'save both']] * 4
@@ -31,7 +29,10 @@ if __name__ == "__main__":
             [['load both', 'y230', 'save both']] * 4)
     ]
     done = True
+    MAP=False
     sim_map = Map()
+    if MAP:
+        sim_map.plot_map()
 
     while True:
         if done:

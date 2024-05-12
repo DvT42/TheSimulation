@@ -1,4 +1,6 @@
 import os
+import time
+
 import earthpy as et
 import geopandas as gpd
 import imageio
@@ -25,7 +27,8 @@ class Map:
     BIOME_MAP_PATH = BASE_PATH + r"\map" + r"\only_biome_map.png"
 
     def __init__(self):
-        self.points = []
+        self.points = gpd.GeoDataFrame(columns=['geometry'],
+                                       crs="ESRI:54001")
         self.colored_biome_map, self.biome_map = Map.analyze_biome_map()
 
         # Adjust plot font sizes
@@ -48,6 +51,8 @@ class Map:
         bbox_path = os.path.join(et.io.HOME, 'earth-analytics', "data", "spatial-vector-lidar", "global",
                                  "ne_110m_graticules_all", "ne_110m_wgs84_bounding_box.shp")
         self.bbox = gpd.read_file(bbox_path)
+        plt.ion()
+        self.fig, self.ax = plt.subplots(1, 1, figsize=(12, 8))
 
     def get_biome(self, coordinates):
         return self.biome_map[tuple(np.flip(coordinates, 0))]
@@ -96,53 +101,65 @@ class Map:
 
         return area
 
-    def place_points(self, locations: np.ndarray):
+    def convert_points(self, locations: np.ndarray):
         # Turn points into list of x,y shapely points, and translate them from km to m.
-        locations = [Point(xy) for xy in (locations * 1000)]
+        wgs84_locs = (locations - (800, 400)) / (800, 400) * (180, 90)
+        points = [Point(xy) for xy in wgs84_locs]
+
 
         # Create geodataframe using the points
-        locations = gpd.GeoDataFrame(locations,
-                                     columns=['geometry'],
-                                     crs="ESRI:54030")
+        gpds = gpd.GeoDataFrame(points,
+                                columns=['geometry'],
+                                crs="ESRI:54001")
 
         # Reproject point locations to the WGS84 projection
-        locations_WGS84 = locations.to_crs(self.worldBound.crs)
+        # locations_WGS84 = locations.to_crs(self.worldBound.crs)
 
-        self.points = locations_WGS84
+        # self.points = gpds
+        return gpds
 
     def plot_map(self):
-        fig, ax = plt.subplots(1, 1, figsize=(12, 8))
-
-        ax.imshow(self.colored_biome_map,
+        self.ax.imshow(self.colored_biome_map,
                   origin="upper",
                   extent=(-180, 180, -90, 90),
                   alpha=0.5,
                   zorder=0)
 
-        self.bbox.plot(ax=ax,
+        self.bbox.plot(ax=self.ax,
                        alpha=.1,
                        color='grey')
-        self.graticule.plot(ax=ax,
+        self.graticule.plot(ax=self.ax,
                             color='lightgrey')
         # worldBound.plot(ax=ax,
         #                       alpha=0.5,
         #                       cmap='Greys')
 
-        ax.set(title="World map",
+        self.ax.set(title="World map",
                xlabel="X Coordinates (degrees)",
                ylabel="Y Coordinates (degrees)")
 
-        self.points: gpd.GeoDataFrame
-        self.points.plot(ax=ax, markersize=100, color='black')
-
-        for axis in [ax.xaxis, ax.yaxis]:
+        for axis in [self.ax.xaxis, self.ax.yaxis]:
             formatter = ScalarFormatter()
             formatter.set_scientific(False)  # For converting units to scientific ones (1ex).
             axis.set_major_formatter(formatter)
 
         plt.axis('equal')
+        self.ax.relim()
+        self.ax.autoscale_view()
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
-        plt.show()
+    def update_map(self, locations):
+        gpd = self.convert_points(locations)
+        if self.points.empty:
+            self.points = gpd
+        else:
+            self.points.update(gpd)
+        self.points.plot(ax=self.ax, markersize=100, color='black')
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
+        # time.sleep(0.001)
+
 
     @staticmethod
     def analyze_biome_map():
@@ -175,5 +192,5 @@ if __name__ == "__main__":
                            [0, 5000],
                            [1500, -4500]])
     mymap = Map()
-    mymap.place_points(add_points)
+    mymap.convert_points(add_points)
     mymap.plot_map()

@@ -1,5 +1,6 @@
 from Region import *
 import concurrent.futures
+from multiprocessing import Process
 
 
 class Simulation:
@@ -23,6 +24,7 @@ class Simulation:
         Person.Person_reset()
 
         self.map = sim_map
+
         self.regions = np.empty((800, 1600), dtype=Region)  # an array containing all regions indexed by location.
         initial_region_index = tuple(np.flip(Simulation.STARTING_LOCATION, 0))
 
@@ -225,6 +227,8 @@ class Simulation:
 
         if self.pop_num() != pop:
             print(pop)
+
+        # self.map.update_map(np.flip(np.asarray(self.region_iterator), axis=1))
 
     def handle_region(self, reg: Region):
         try:
