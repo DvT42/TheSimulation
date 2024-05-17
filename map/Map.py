@@ -98,7 +98,7 @@ class Map:
             area[:2] = matrix[-2:, startx:endx + 1]
         else:
             area = matrix[starty: endy + 1,
-                                  startx: endx + 1]
+                   startx: endx + 1]
 
         return area
 
@@ -106,7 +106,6 @@ class Map:
         # Turn points into list of x,y shapely points, and translate them from km to m.
         wgs84_locs = (locations - (800, 400)) / (800, 400) * (180, 90)
         points = [Point(xy) for xy in wgs84_locs]
-
 
         # Create geodataframe using the points
         gpds = gpd.GeoDataFrame(points,
@@ -121,10 +120,10 @@ class Map:
 
     def plot_map(self):
         self.ax.imshow(self.colored_biome_map,
-                  origin="upper",
-                  extent=(-180, 180, -90, 90),
-                  alpha=0.5,
-                  zorder=0)
+                       origin="upper",
+                       extent=(-180, 180, -90, 90),
+                       alpha=0.5,
+                       zorder=0)
 
         self.bbox.plot(ax=self.ax,
                        alpha=.1,
@@ -136,8 +135,8 @@ class Map:
         #                       cmap='Greys')
 
         self.ax.set(title="World map",
-               xlabel="X Coordinates (degrees)",
-               ylabel="Y Coordinates (degrees)")
+                    xlabel="X Coordinates (degrees)",
+                    ylabel="Y Coordinates (degrees)")
 
         for axis in [self.ax.xaxis, self.ax.yaxis]:
             formatter = ScalarFormatter()
@@ -160,7 +159,6 @@ class Map:
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
         # time.sleep(0.001)
-
 
     @staticmethod
     def analyze_biome_map():

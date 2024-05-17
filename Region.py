@@ -191,10 +191,10 @@ class Region:
         return round(min(self.resources / self.pop(), 2), 2)
 
     def surr_pop(self):
-            lst = np.zeros(9).reshape((3, 3))
-            for i, j in zip(*np.where(self.neighbors)):
-                lst[i, j] = self.neighbors[i, j].pop()
-            return lst.flatten()
+        lst = np.zeros(9).reshape((3, 3))
+        for i, j in zip(*np.where(self.neighbors)):
+            lst[i, j] = self.neighbors[i, j].pop()
+        return lst.flatten()
 
     def surr_resources(self):
         lst = np.zeros(9).reshape((3, 3))

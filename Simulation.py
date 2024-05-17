@@ -1,6 +1,6 @@
-from Region import *
 import concurrent.futures
-from multiprocessing import Process
+
+from Region import *
 
 
 class Simulation:
@@ -108,9 +108,10 @@ class Simulation:
                 m.brain.transfer_brain(m)
 
                 # initiate the female from the couple.
-                f = Person(properties=[Gender.Female, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)],
-                           collective=self.collective,
-                           brain=brain_couple[1])
+                f = Person(
+                    properties=[Gender.Female, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)],
+                    collective=self.collective,
+                    brain=brain_couple[1])
                 f.brain.transfer_brain(f)
 
                 self.regions[initial_region_index].add_person(m)
@@ -133,7 +134,8 @@ class Simulation:
 
                     self.regions[initial_region_index].add_person(m)
 
-            for brain in actual_male_brains[:Simulation.INITIAL_COUPLES - len(self.regions[initial_region_index].Population)]:
+            for brain in actual_male_brains[
+                         :Simulation.INITIAL_COUPLES - len(self.regions[initial_region_index].Population)]:
                 # initiate the male from the couple.
                 m = Person(
                     properties=[Gender.Male, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)],
@@ -156,7 +158,8 @@ class Simulation:
 
                     self.regions[initial_region_index].add_person(f)
 
-            for brain in actual_female_brains[:Simulation.INITIAL_COUPLES * 2 - len(self.regions[initial_region_index].Population)]:
+            for brain in actual_female_brains[
+                         :Simulation.INITIAL_COUPLES * 2 - len(self.regions[initial_region_index].Population)]:
                 # initiate the female from the couple.
                 f = Person(
                     properties=[Gender.Female, Simulation.INITIAL_STRENGTH, np.array(Simulation.STARTING_LOCATION)],
@@ -228,7 +231,7 @@ class Simulation:
 
         if self.pop_num() != pop:
             print(pop)
-        
+
         if Simulation.VISUAL:
             self.map.update_map(np.flip(np.asarray(self.region_iterator), axis=1))
 
@@ -346,7 +349,7 @@ class Simulation:
                 else:
                     with (self.NEW_REGION_LOCK):
                         if self.new_regions.count(location) == 0 and \
-                           self.region_iterator.count(location) == 0:
+                                self.region_iterator.count(location) == 0:
                             self.new_regions.append(location)
                         new_reg = self.regions[location]
                         # print("P10: ", reg.location, p.id)
@@ -357,7 +360,8 @@ class Simulation:
                             neighbors = self.map.get_surroundings(self.regions, p.location, dtype=Region)
                             # print("P11c: ", reg.location, p.id)
                             new_reg = Region(location=p.location,
-                                             surrounding_biomes=self.map.get_surroundings(self.map.biome_map, p.location),
+                                             surrounding_biomes=self.map.get_surroundings(self.map.biome_map,
+                                                                                          p.location),
                                              neighbors=neighbors)
                             # print("P11d: ", reg.location, p.id)
                             new_reg.add_person(p)
@@ -491,7 +495,6 @@ class Simulation:
         txt = f"Year: {self.Time // 12}\n\n"
 
         for i, j in self.region_iterator:
-
             txt += self.regions[i, j].display()
             txt += '\n----------\n\n\n'
 

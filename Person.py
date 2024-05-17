@@ -1,5 +1,6 @@
-import math
 import enum
+import math
+
 from Brain import *
 
 
@@ -166,7 +167,7 @@ class Person:
     def partner_selection(self, region):
         if self.age > self.readiness:
             available_ids = region.pop_id.copy()
-            pop_size = min(np.max(available_ids)+1, self.collective.population_size)
+            pop_size = min(np.max(available_ids) + 1, self.collective.population_size)
             arr: np.ndarray = self.collective.world_attitudes[self.id, :pop_size]
             available = np.array([arr[i] for i in available_ids if i < pop_size])
             while (available > 0).any():

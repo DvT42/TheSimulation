@@ -1,6 +1,8 @@
-import pickle
 import os
+import pickle
+
 import tqdm
+
 from Simulation import *
 
 
@@ -12,7 +14,6 @@ class ControlBoard:
     SAVED_BRAINS_INFO_PATH = os.path.join(BASE_PATH, 'data', 'saved brains info.pkl')
     REGRESSIVE = 'partial'
     IS_NEW_LEAP = True
-
 
     @staticmethod
     def process_command(sim: Simulation, com: str, sim_map=None):
@@ -47,7 +48,7 @@ class ControlBoard:
                 models = np.append(models[:, 0], models[:, 1], axis=0)
                 with open(ControlBoard.SAVED_BRAINS_INFO_PATH, 'rb') as f2:
                     new_models, _, _ = Simulation.find_best_minds(
-                        (models, *(pickle.load(file=f2))[:,1:].T), children_bearers='enough')
+                        (models, *(pickle.load(file=f2))[:, 1:].T), children_bearers='enough')
                 new_sim = Simulation(sim_map=sim_map, imported=new_models, all_couples=True)
             sim = new_sim
 
@@ -66,7 +67,7 @@ class ControlBoard:
                         minds_to_pickle = np.tile(minds_to_pickle, (len(male_models) // len(minds_to_pickle), 1))
                     if len(female_models) > len(female_lst):
                         female_lst = np.tile(female_lst, (len(female_models) // len(female_lst), 1))
-                    male_models = np.append(male_models,minds_to_pickle, axis=0) \
+                    male_models = np.append(male_models, minds_to_pickle, axis=0) \
                         if len(male_models) > 0 else minds_to_pickle
                     female_models = np.append(female_models, female_lst, axis=0) \
                         if len(female_models) > 0 else female_lst

@@ -1,5 +1,6 @@
-from Control_Board import *
 from datetime import datetime
+
+from Control_Board import *
 from map.Map import Map
 
 

@@ -1,7 +1,9 @@
 import random
-from numpy import random as nprnd
-from Neural_Network import *
 from threading import Lock
+
+from numpy import random as nprnd
+
+from Neural_Network import *
 
 
 class Collective:
@@ -260,6 +262,7 @@ class PrefrontalCortex(BrainPart):
     """
     That is the part in the brain that is responsible for making decisions.
     """
+
     def __init__(self, model=None, mutate=True):
         if model:
             self.model = model.copy()
@@ -367,10 +370,10 @@ class Hippocampus(BrainPart):
     """
     The part of the brain responsible for memory.
     """
+
     def __init__(self):
         self.model = None
         self.history = np.zeros(Collective.SHOULD_PROBABLY_BE_DEAD * 12, dtype=int)
         self.location_history = []
 
         self.already_met = []
-
