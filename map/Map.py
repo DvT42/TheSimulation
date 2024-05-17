@@ -1,5 +1,4 @@
 import os
-import time
 
 import earthpy as et
 import geopandas as gpd
@@ -26,7 +25,7 @@ class Map:
                     10: ([214, 37, 255, 255], "mediterranean")}
     BIOME_MAP_PATH = BASE_PATH + r"\map" + r"\only_biome_map.png"
 
-    def __init__(self):
+    def __init__(self, visual):
         self.points = gpd.GeoDataFrame(columns=['geometry'],
                                        crs="ESRI:54001")
         self.colored_biome_map, self.biome_map = Map.analyze_biome_map()
@@ -51,8 +50,10 @@ class Map:
         bbox_path = os.path.join(et.io.HOME, 'earth-analytics', "data", "spatial-vector-lidar", "global",
                                  "ne_110m_graticules_all", "ne_110m_wgs84_bounding_box.shp")
         self.bbox = gpd.read_file(bbox_path)
-        plt.ion()
-        self.fig, self.ax = plt.subplots(1, 1, figsize=(12, 8))
+
+        if visual:
+            plt.ion()
+            self.fig, self.ax = plt.subplots(1, 1, figsize=(12, 8))
 
     def get_biome(self, coordinates):
         return self.biome_map[tuple(np.flip(coordinates, 0))]

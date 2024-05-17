@@ -4,10 +4,11 @@ from multiprocessing import Process
 
 
 class Simulation:
+    VISUAL = False
     IMMUNITY_TIME = 0 * 12
     SELECTED_COUPLES = 10
     INITIAL_COUPLES = 1000
-    STARTING_LOCATION = (850, 400)
+    STARTING_LOCATION = (770, 330)
     INITIAL_STRENGTH = 10
     NEW_REGION_LOCK = Lock()
     ACTION_POOL_LOCK = Lock()
@@ -227,8 +228,9 @@ class Simulation:
 
         if self.pop_num() != pop:
             print(pop)
-
-        # self.map.update_map(np.flip(np.asarray(self.region_iterator), axis=1))
+        
+        if Simulation.VISUAL:
+            self.map.update_map(np.flip(np.asarray(self.region_iterator), axis=1))
 
     def handle_region(self, reg: Region):
         try:

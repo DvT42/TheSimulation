@@ -18,8 +18,11 @@ def runOnce(ts, sim_map, command, is_new_leap):
 if __name__ == "__main__":
     # running code
     TS = None
+    done = True
+    VISUAL = False
+
     processes = [(
-            [['load both', 'y150', 'save both']] +
+            [['load both', 'y30', 'save both']] +
             [['load both', 'y150', 'save both']] * 4
     ), (
             [['load both', 'y170', 'save both']] * 4
@@ -28,10 +31,9 @@ if __name__ == "__main__":
     ), (
             [['load both', 'y230', 'save both']] * 4)
     ]
-    done = True
-    MAP=False
-    sim_map = Map()
-    if MAP:
+    sim_map = Map(visual=VISUAL)
+    if VISUAL:
+        Simulation.VISUAL = True
         sim_map.plot_map()
 
     while True:

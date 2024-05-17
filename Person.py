@@ -25,9 +25,6 @@ class Person:
             self.id = Person.runningID
             Person.runningID += 1
 
-        if self.id == 2000:
-            print(2000)
-
         self.collective = collective
 
         # Attributes that don't depend on the parents
@@ -119,7 +116,7 @@ class Person:
             # should improve attitudes/merge
             self.brain.set_history(self.age, 1)
         if decision == 1:
-            self.strength += Person.STRENGTH_MODIFIER * region.resources / region.pop()
+            self.strength += Person.STRENGTH_MODIFIER * region.resource_distribution()
             self.brain.set_history(self.age, 2)
         if decision in np.arange(2, 10):
             if decision == 2:

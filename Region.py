@@ -187,6 +187,9 @@ class Region:
     def pop(self):
         return len(self.Population)
 
+    def resource_distribution(self):
+        return round(min(self.resources / self.pop(), 2), 2)
+
     def surr_pop(self):
             lst = np.zeros(9).reshape((3, 3))
             for i, j in zip(*np.where(self.neighbors)):

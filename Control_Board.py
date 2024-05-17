@@ -130,6 +130,9 @@ class ControlBoard:
             else:
                 print(ControlBoard.info_search(sim, int(com[1:])))
 
+        elif com.lower() == 'display':
+            sim.display()
+
         elif com[0].lower() == "x":
             sim = None
 
@@ -242,7 +245,6 @@ class ControlBoard:
                     sim.display()
                     return sim
             else:
-                # sim.display()
                 return sim
 
 
