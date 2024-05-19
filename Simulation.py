@@ -463,15 +463,6 @@ class Simulation:
         unified_lst = np.append(male_lst, female_lst, axis=0)
         return reprocessed_best_minds, unified_lst
 
-    def kill_all_travelers(self):
-        for i, j in self.region_iterator:
-            if (i, j) != (400, 850):
-                self.regions[i, j]._Population = None
-                self.regions[i, j] = None
-                neighbors = self.map.get_surroundings(self.regions, (j, i), dtype=Region)
-                self.update_neighbors(neighbors)
-        self.region_iterator = [(400, 850)]
-
     def pop_num(self):
         return self.collective.population_size - self.collective.dead
 

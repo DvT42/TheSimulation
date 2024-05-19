@@ -137,11 +137,11 @@ class Brain:
 
     def get_mass_first_impressions(self, ids, info_batch):
         ids = np.array(ids)
-        destined_indexes = ids.astype(int)
+        # destined_indexes = ids.astype(int)
         impressions = self.brainparts.get("AMG").first_impression(info_batch).flatten()
-        self.brainparts.get("HPC").already_met.extend(ids)
+        # self.brainparts.get("HPC").already_met.extend(ids)
 
-        self.collective.world_attitudes[self.id, destined_indexes] = impressions
+        self.collective.world_attitudes[self.id, ids] = impressions
 
     @staticmethod
     def get_action_from_history(index, history):

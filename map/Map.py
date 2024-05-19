@@ -53,7 +53,7 @@ class Map:
 
         if visual:
             plt.ion()
-            self.fig, self.ax = plt.subplots(1, 1, figsize=(12, 8))
+        self.fig, self.ax = plt.subplots(1, 1, figsize=(12, 8))
 
     def get_biome(self, coordinates):
         return self.biome_map[tuple(np.flip(coordinates, 0))]
@@ -166,17 +166,15 @@ class Map:
         legend = Map.BIOME_LEGEND
         items = [item[1][0] for item in list(legend.items())]
         bins = np.array(items, dtype=int)
-        processed_map = num_map
-        biome_map = np.zeros(shape=(800, 1600), dtype=int)
-        for i, line in enumerate(num_map):
-            processed_map[i], biome_map[i] = Map.multidimensional_approximation(line, bins)
+        biome_map = Map.multidimensional_approximation(num_map, bins[:, np.newaxis, :])
+        processed_map = bins[biome_map]
         return processed_map, biome_map
 
     @staticmethod
     def multidimensional_approximation(arr, bins):
-        distances = np.sqrt(((arr - bins[:, np.newaxis, :]) ** 2).sum(axis=2))
+        distances = np.sqrt(((arr - bins[:, np.newaxis, :]) ** 2).sum(axis=len(arr.shape)))
         indexes = np.argmin(distances, axis=0)
-        return [bins[i] for i in indexes], indexes
+        return indexes
 
     @staticmethod
     def distance(point1, point2):
@@ -190,6 +188,7 @@ if __name__ == "__main__":
     add_points = np.array([[-5000, 0],
                            [0, 5000],
                            [1500, -4500]])
-    mymap = Map()
+    mymap = Map(visual=False)
     mymap.convert_points(add_points)
     mymap.plot_map()
+    plt.show()
