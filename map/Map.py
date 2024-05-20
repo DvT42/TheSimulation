@@ -11,6 +11,23 @@ from shapely.geometry import Point
 
 
 class Map:
+    """
+        Manages the graphical representation of the map, calculates distances, and divides the world into different biomes.
+
+        Attributes:
+            points (list): An updated list of points that can be displayed on the map when the visual display is activated.
+            colored_biome_map (numpy.ndarray): A 3D array of the size of the map that holds the image of the map, divided into biomes. The third axis holds the RGB values.
+            biome_map (numpy.ndarray): A 2D array that contains the biome division according to the numbers presented in the biome_legend.
+            worldbound (shapely.geometry.Polygon): The definition of the shape of the world, holds a shapely object.
+            graticule (shapely.geometry.LineString): Defines the lines drawn on the map, according to the angles of the world before its simplification to 2D.
+            bbox (shapely.geometry.Polygon): The bounding box of the map. Represents the shape to which the 3D will be distorted to 2D. In this case, the bbox will be in the projection of wgs84, or plate caree, where the sizes of the continents are preserved in the correct proportions on the y-axis, but not on the x-axis.
+
+        Constants:
+            BASE_PATH (str): Contains the path to the file from which the program is run.
+            BIOME_LEGEND (dict): A dictionary that interprets specific RGB colors as specific biomes.
+            BIOME_MAP_PATH (str): The path to the map file. The map is colored so that each color represents a biome.
+        """
+
     BASE_PATH = os.path.dirname(os.path.abspath("__file__"))
     BIOME_LEGEND = {0: ([0, 110, 184, 255], "Sea"),
                     1: ([255, 255, 255, 255], "Ice"),
@@ -25,7 +42,12 @@ class Map:
                     10: ([214, 37, 255, 255], "mediterranean")}
     BIOME_MAP_PATH = BASE_PATH + r"\map" + r"\only_biome_map.png"
 
-    def __init__(self, visual):
+    def __init__(self, visual=True):
+        """
+            Initializes the Map object by importing necessary components from Shapely and setting up the map representation.
+
+            :arg visual: a boolean variable. If set to True the Map will have a visualization method.
+        """
         self.points = gpd.GeoDataFrame(columns=['geometry'],
                                        crs="ESRI:54001")
         self.colored_biome_map, self.biome_map = Map.analyze_biome_map()
@@ -56,10 +78,31 @@ class Map:
         self.fig, self.ax = plt.subplots(1, 1, figsize=(12, 8))
 
     def get_biome(self, coordinates):
+        """
+            Retrieves the biome type at a specified location on the map.
+
+            Args:
+                coordinates (Tuple[int, int]): A tuple representing the (x, y) coordinates of the location on the map.
+
+            Returns:
+                int: The biome ID corresponding to the biome type at the given coordinates.
+        """
         return self.biome_map[tuple(np.flip(coordinates, 0))]
 
     @staticmethod
     def get_surroundings(matrix, coordinates, dtype=int):
+        """
+            Extracts a 3x3 neighborhood from a given map centered at the specified coordinates.
+
+            Args:
+                matrix (numpy.ndarray): The 2D array representing the map.
+                coordinates (Tuple[int, int]): The (x, y) coordinates of the center point within the map.
+                dtype (Optional[int]): The data type to use for padding values outside the map boundaries. Default is `int`.
+
+            Returns:
+                numpy.ndarray: A 3x3 subarray of the map centered at the given coordinates.
+        """
+
         coordinates = tuple(np.flip(coordinates, 0))
 
         starty = coordinates[0] - 1
@@ -103,6 +146,18 @@ class Map:
         return area
 
     def convert_points(self, locations: np.ndarray):
+        """
+            Converts locations specified in distance coordinates (using Robinson projection) to WGS84 coordinates for map display.
+
+            **Note:** This function is currently unused due to the complexity and performance implications of the Robinson projection.
+
+            Args:
+                locations (np.ndarray): A 2D NumPy array containing the locations in distance coordinates (x, y). The units are assumed to be kilometers.
+
+            Returns:
+                np.ndarray: A 2D NumPy array containing the converted locations in WGS84 coordinates (longitude, latitude).
+        """
+
         # Turn points into list of x,y shapely points, and translate them from km to m.
         wgs84_locs = (locations - (800, 400)) / (800, 400) * (180, 90)
         points = [Point(xy) for xy in wgs84_locs]
@@ -119,6 +174,9 @@ class Map:
         return gpds
 
     def plot_map(self):
+        """
+            Generates and displays the graphical representation of the map.
+        """
         self.ax.imshow(self.colored_biome_map,
                        origin="upper",
                        extent=(-180, 180, -90, 90),
@@ -150,6 +208,12 @@ class Map:
         self.fig.canvas.flush_events()
 
     def update_map(self, locations):
+        """
+            Updates the map visualization with new locations.
+
+            Args:
+                locations (List[]): A list of locations to be displayed on the map.
+        """
         gpd = self.convert_points(locations)
         if self.points.empty:
             self.points = gpd
@@ -162,6 +226,14 @@ class Map:
 
     @staticmethod
     def analyze_biome_map():
+        """
+        Analyzes the biome map and returns both a visualization-friendly representation and an informative data array.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]:
+                - visualization_map: A 2D NumPy array representing the biome divisions, where each element corresponds to a biome ID.
+                - biome_data: An array containing information about each biome, including its ID, name, and area.
+        """
         num_map = imageio.v3.imread(Map.BIOME_MAP_PATH)
         legend = Map.BIOME_LEGEND
         items = [item[1][0] for item in list(legend.items())]
@@ -172,12 +244,32 @@ class Map:
 
     @staticmethod
     def multidimensional_approximation(arr, bins):
+        """
+        Approximates a multidimensional array of values to a set of predefined bins.
+
+        Args:
+            arr (np.ndarray): The multidimensional array of values to be approximated.
+            bins (np.ndarray): A tuple of arrays representing the binning boundaries for each dimension.
+
+        Returns:
+            np.ndarray: The approximated array, where each value has been mapped to the closest bin center.
+        """
         distances = np.sqrt(((arr - bins[:, np.newaxis, :]) ** 2).sum(axis=len(arr.shape)))
         indexes = np.argmin(distances, axis=0)
         return indexes
 
     @staticmethod
     def distance(point1, point2):
+        """
+            Calculates the Manhattan distance (step distance) between two points on a coordinate grid.
+
+            Args:
+                point1 (Tuple[int, int]): The coordinates of the first point (x1, y1).
+                point2 (Tuple[int, int]): The coordinates of the second point (x2, y2).
+
+            Returns:
+                int: The Manhattan distance (step distance) between the two points.
+            """
         return np.max([abs(point1[0] - point2[0]), abs(point1[1] - point2[1])])
 
 

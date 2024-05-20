@@ -1,3 +1,14 @@
+"""
+    The main.py file handles the input from the user and passes the commands to the `ControlBoard` for processing.
+
+    This code is responsible for the following:
+
+    * Receiving input from the user
+    * Parsing the input into commands
+    * Passing the commands to the `ControlBoard` for processing
+    * Handling errors
+    """
+
 from datetime import datetime
 from multiprocessing import Process
 

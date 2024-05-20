@@ -1,12 +1,28 @@
 import os
 import pickle
-
 import tqdm
 
 from Simulation import *
 
 
 class ControlBoard:
+    """
+     A static class that manages the processing of user commands and mediates between the user and the simulation.
+
+     This class provides functionalities for:
+
+     * Processing user commands related to simulation control, brain data management, and learning processes.
+     * Mediating between the user and the simulation by loading/saving brain data, running simulations, and providing results.
+
+     Attributes:
+         BASE_PATH (str): The path to the file from which the program is launched.
+         SAVED_BRAINS_PATH (str): The path to the file of saved brains in pairs.
+         MALE_BRAINS_PATH (str): The path to the file of male brains (which are saved separately).
+         FEMALE_BRAINS_PATH (str): The path to the file of female brains (which are saved separately).
+         SAVED_BRAINS_INFO_PATH (str): The path to the file of information about the saved brains in pairs.
+         REGRESSIVE (str): A constant affecting the learning method from simulation to simulation. Can be 'full', 'partial', or 'none'.
+    """
+
     BASE_PATH = os.path.dirname(os.path.abspath("__file__"))
     SAVED_BRAINS_PATH = os.path.join(BASE_PATH, 'data', 'saved brains.pkl')
     MALE_BRAINS_PATH = os.path.join(BASE_PATH, 'data', 'saved male brains.pkl')
@@ -151,6 +167,17 @@ class ControlBoard:
 
     @staticmethod
     def info_search(sim: Simulation, id: int, info='basic'):
+        """
+            Search for specific information within a simulation.
+
+            Args:
+                sim: The current simulation object
+                id: The ID of the person for whom information is requested
+                info: A string indicating the specific information to retrieve. 'attitudes' to obtain the person's relationship list with others, and 'locations' to view their location history.
+
+            Returns:
+                The requested information in the form of a dictionary or list
+            """
         if info == 'attitudes':
             return sim.get_attitudes(id)
         elif info == 'locations':
@@ -164,7 +191,7 @@ class ControlBoard:
         """
         The function that handles the advancement of a Simulation over time.
 
-        :param take_enough: ?
+        :param take_enough: a boolean. if set to True will disregard Simulation.SELECTED_COUPLES.
         :param sim: the starting Simulation object.
         :param num: the number of months requested. The Simulation will advance by this number.
         :param failsafe: If true, the function will try to produce new Simulation until one succeeds to match the
@@ -199,7 +226,9 @@ class ControlBoard:
 
             if sim.Time < dest_time:
                 if failsafe:
-                    best_minds, male_lst, female_lst = sim.find_best_minds(sim.evaluate(), children_bearers='enough')
+                    best_minds, male_lst, female_lst = sim.find_best_minds(
+                        sim.evaluate(),
+                        children_bearers='enough' if take_enough else 'best')
                     processed_best_minds, unified_lst = Simulation.prepare_best_for_reprocess(best_minds,
                                                                                               male_lst[:, 1:],
                                                                                               female_lst[:, 1:])
@@ -250,5 +279,22 @@ class ControlBoard:
 
 
 class ProgressBar(tqdm.tqdm):
+    """
+        A wrapper class for the imported `tqdm` class. It is designed to display a custom progress bar.
+        This class provides the following features:
+
+        * A custom progress bar format
+        * The ability to run in a `for` loop
+    """
+
     def __init__(self, iterations):
+        """
+            Initialize the progress bar.
+
+            Args:
+                iterations: The total number of iterations for the progress bar.
+
+            Returns:
+                None
+        """
         super().__init__(range(iterations), ncols=80, ascii="░▒▓█", unit="m", colour="blue")

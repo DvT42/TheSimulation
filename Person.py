@@ -5,6 +5,48 @@ from Brain import *
 
 
 class Person:
+    """
+    Represents an individual person within the simulation environment.
+
+    This class encapsulates the attributes and behaviors of a single person, including their age, gender, health, relationships, and actions within the simulated world.
+
+    Attributes:
+        isAlive (bool): Indicates whether the person is alive or not.
+        isManual (bool): Indicates whether the person was created manually (by parents) or automatically (at the start of the simulation).
+        action_flag (bool): A flag to track whether the person has performed an action in the current month, preventing multiple actions per month.
+        id (int): A unique identifier for the person.
+        collective (Collective): The collective to which the person belongs.
+        gender (str): The person's gender ('male' or 'female').
+        readiness (int): The age in months at which the person becomes capable of reproduction.
+        brain (Brain): The person's brain object, representing their cognitive abilities.
+        partner (Person): The person's current partner (if any).
+        child_num (int): The number of children the person has fathered/birthed.
+        age (int): The person's age in months.
+        fatherID (int): The ID of the person's father (if applicable).
+        motherID (int): The ID of the person's mother (if applicable).
+        father_history (list): A list of the father's action history, potentially used for intergenerational learning.
+        mother_history (list): A list of the mother's action history, potentially used for intergenerational learning.
+        starting_strength (int): The person's initial strength, determined genetically.
+        strength (int): The person's current strength, inversely related to their mortality risk.
+        location (Region): The region in which the person is currently located.
+        generation (int): The person's generation. For manual individuals, this is 0; for others, it's 1 + the maximum generation of their parents.
+        pregnancy (int): A value representing the progress of pregnancy for female individuals, measured in months.
+        father_of_child (Person): A reference to the father of the unborn child (for pregnant females).
+        youth (int): A value that represents the remaining reproductive years for female individuals. As long as this value is greater than 0, they can bear children.
+
+    Class Constants:
+        AGING_STARTING_AGE (int): The age in months when aging starts to affect an individual.
+        DRASTIC_AGING_AGE (int): The age in months when aging becomes significantly impactful.
+        STRENGTH_MODIFIER (int): The amount by which an individual's strength increases if they focus on it in a given month.
+        DIFF_AGE (int): The maximum age difference allowed for marriage.
+        GIVE_UP_DISTANCE (int): The maximum distance between partners that the simulation allows for separation.
+        DEATH_NORMALIZER (float): A scaling factor for mortality risk.
+        INITIAL_AGE (int): The starting age for automatically generated individuals.
+        PREGNANCY_LENGTH (int): The duration of pregnancy in months.
+        LOVE_BAR (int): The minimum love level required for marriage.
+        runningID (int): A counter for generating unique IDs for new individuals.
+        _lock (Lock): A lock object to prevent concurrent modifications of person attributes.
+    """
     AGING_STARTING_AGE = 40 * 12
     DRASTIC_AGING_AGE = 75 * 12
     STRENGTH_MODIFIER = 0.75
@@ -18,6 +60,19 @@ class Person:
     _lock = Lock()
 
     def __init__(self, collective, father=None, mother=None, brain=None, properties=None):
+        """
+            Initializes a Person object with the specified attributes and properties.
+
+            This constructor sets up the fundamental characteristics of a person, including their collective affiliation, family relationships, cognitive abilities, and initial state.
+
+            Args:
+                collective (Collective): The collective to which the person belongs.
+                father (Person.Person): The person's father (if applicable).
+                mother (Person.Person): The person's mother (if applicable).
+                brain (Brain): The person's brain object, representing their cognitive abilities.
+                properties (list): A list containing optional properties for the person, such as starting strength.
+            """
+
         # ID assignment
         self.isAlive = True
         self.isManual = properties is not None
@@ -82,6 +137,14 @@ class Person:
                 self.youth -= (Person.INITIAL_AGE - 12 * 12) if Person.INITIAL_AGE > 12 * 12 else 0
 
     def prepare_next_generation(self, other):
+        """
+            Initiates the pregnancy process for the female Person object.
+
+            This method handles the initial stages of pregnancy, including tracking progress, updating population counts, and potentially involving the father.
+
+            Args:
+                other (Person): The partner involved in the pregnancy process.
+            """
         other: Person
         if self.gender == Gender.Female:
             if self.pregnancy == 0 and self.father_of_child is None and self.youth > 0:
@@ -95,6 +158,11 @@ class Person:
                 other.partner = self
 
     def birth(self):
+        """
+            Delivers the baby and creates a new Person object representing the newborn.
+
+            This method handles the final stages of pregnancy, including creating a new Person object, initializing its attributes, and updating relationships and population counts.
+            """
         f: Person = self.father_of_child
         self.father_of_child = None
 
@@ -105,12 +173,28 @@ class Person:
         return Person(collective=self.collective, father=f, mother=self)
 
     def natural_death_chance(self, region):
+        """
+            Calculates the probability of natural death for the Person object.
+
+            This method assesses the person's mortality risk based on their current strength and other factors.
+
+            Returns:
+                bool: whether the person died.
+            """
         death_chance = region.risk * 0.06 * math.exp(-0.02 * self.strength)
         random_number = random.random()
         return random_number < death_chance
 
     # noinspection PyTypeChecker
     def action(self, region):
+        """
+            Determines and executes the person's action for the current month.
+
+            This method serves as the core of the person's decision-making process, utilizing the brain to make choices and updating the person's attributes accordingly.
+
+            Args:
+                region (Region.Region): The region in which the person is currently located.
+            """
         decision = self.brain.call_decision_making(region=region)
 
         if decision == 0:
@@ -144,6 +228,11 @@ class Person:
         return decision
 
     def aging(self):
+        """
+            Simulates the effects of aging on the Person object.
+
+            This method handles the physical and cognitive changes associated with aging, including strength modifications and potential brain deterioration.
+            """
         if self.age < 15 * 12:
             self.strength += 0.25
 
@@ -153,6 +242,17 @@ class Person:
                 self.strength -= 1
 
     def is_possible_partner(self, other):
+        """
+            Determines whether the specified Person object is a potential romantic partner.
+
+            This method considers various factors, including age, strength, love bar, and gender, to assess compatibility.
+
+            Args:
+                other (Person): The other Person object to evaluate as a potential partner.
+
+            Returns:
+                bool: True if the other person is a potential partner, False otherwise.
+        """
         other: Person
         if other.isAlive:
             if (self.location == other.location).all():
@@ -165,6 +265,14 @@ class Person:
         return False
 
     def partner_selection(self, region):
+        """
+            Selects a potential romantic partner from the people in the current region.
+
+            This method evaluates all eligible individuals in the region using the `is_possible_partner()` method and chooses the most compatible one.
+
+            Args:
+                region (Region.Region): The region in which the person is currently located.
+            """
         if self.age > self.readiness:
             available_ids = region.pop_id.copy()
             pop_size = min(np.max(available_ids) + 1, self.collective.population_size)
@@ -178,19 +286,44 @@ class Person:
             return None
 
     def year(self):
+        """
+            Returns the person's age in years.
+
+            This method simply calculates the age based on the person's current `age` attribute.
+
+            Returns:
+                int: The person's age in years.
+            """
         return self.age // 12
 
     @staticmethod
     def Person_reset():
+        """
+            Resets the runningID counter for Person objects.
+
+            This method ensures that each newly created Person object receives a unique ID.
+            """
         Person.runningID = 0
 
-    # Override of the conversion to string
     def __repr__(self):
+        """
+            Returns a string representation of the Person object.
+
+            This method provides a concise and informative representation of the person's attributes.
+
+            Returns:
+                str: The string representation of the Person object.
+            """
         # basic information
         txt = f"{self.gender} {self.id}"
         return txt
 
     def display(self):
+        """
+            Prints all relevant information about the Person object.
+
+            This method provides a comprehensive overview of the person's attributes.
+        """
         # basic information
         if not self.isManual:
             txt = f"{self.id}: \n" \

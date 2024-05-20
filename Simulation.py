@@ -4,6 +4,33 @@ from Region import *
 
 
 class Simulation:
+    """
+      A class that manages the overall simulation process and handles macro-level interactions.
+
+      This class is responsible for:
+
+      * Initializing and managing the simulation environment
+      * Maintaining the state of the population and their interactions
+      * Simulating the passage of time and its effects
+      * Providing access to simulation data and statistics
+
+      Constants:
+          IMMUNITY_TIME (int): The initial immunity period after simulation start (in months) during which the mortality function is not applied.
+          SELECTED_COUPLES (int): The number of selected couples to include in the simulation (may be irrelevant depending on simulation settings).
+          INITIAL_COUPLES (int): The initial number of couples to populate the simulation (must be greater than SELECTED_COUPLES if both are used).
+          STARTING_LOCATION (tuple): The starting location on the map for all individuals.
+          INITIAL_STRENGTH (int): The initial strength value given to each individual.
+          NEW_REGION_LOCK (Lock): A lock to protect the creation of new regions, preventing concurrent region creation at the same location.
+          ACTION_POOL_LOCK (Lock): A lock to protect the modification of each region's action pool, a tool for visualizing action distribution within a region.
+
+      Attributes:
+          collective (Collective): A unique Collective object for each simulation.
+          map (Map): The Map object that manages distance calculations and the simulation grid.
+          regions (2D array): A 2D array of Region objects indexed by their location, or None if no region exists at that location.
+          region_iterator (list): An updated list of all regions with any population. This allows efficient iteration over the populated regions without traversing the entire array each time.
+          new_regions (list): A list that is reset each month and holds the regions that should be added to the region iterator in the current month. This ensures the iterator is not updated during runtime.
+          Time (int): The elapsed time since simulation start in simulated months.
+    """
     VISUAL = False
     IMMUNITY_TIME = 0 * 12
     SELECTED_COUPLES = 10
@@ -20,9 +47,11 @@ class Simulation:
         :param sim_map: A map with size (1600, 800) pixels. This map will determine the terrain on which the simulation
         will run.
         :param imported: a list containing couples of disassembled brains. imported.shape=(num, 2, 2)
+        :param all_couples: boolean parameter whether Simulation.SELECTED_COUPLES should be disregarded.
         """
         self.collective = Collective()
         Person.Person_reset()
+
 
         self.map = sim_map
 
@@ -193,6 +222,7 @@ class Simulation:
     def month_advancement(self, executors: concurrent.futures.ThreadPoolExecutor):
         """
         This function constitutes all operations needed to be preformed each month.
+        :parameter executors: parameter used to distribute work across regions.
         """
         self.Time += 1
         self.new_regions = []
@@ -236,6 +266,14 @@ class Simulation:
             self.map.update_map(np.flip(np.asarray(self.region_iterator), axis=1))
 
     def handle_region(self, reg: Region):
+        """
+            Handles region-level operations during a simulation month.
+
+            Args:
+                reg: The Region object to be processed
+
+            This function is called exclusively within the month advancement process. It performs all necessary region-level actions for a single simulation month.
+            """
         try:
             reg.clear()
 
@@ -246,54 +284,47 @@ class Simulation:
             for p in reg.Population:
                 self.handle_person(p, reg)
 
-            # print("3: ", reg.location)
             for newborn in reg.newborns:
-                # print("4a: ", reg.location)
                 self.collective.add_person(newborn)
                 reg.add_person(newborn)
-                # print("4b: ", reg.location)
 
             for social_connector in reg.social_connectors:
-                # print("5a: ", reg.location)
                 social_connector: Person
                 if social_connector.brain.is_friendly():  # whether he likes any other people.
                     social_connector.brain.improve_attitudes_toward_me(region=reg)
                     social_connector.brain.improve_my_attitudes(multiplier=0.5)
-                    # print("5b: ", reg.location)
 
                     if social_connector.partner:
                         if social_connector.partner in reg.social_connectors:
                             social_connector.prepare_next_generation(social_connector.partner)
-                            # print("5c: ", reg.location)
                         elif self.map.distance(social_connector.location,
                                                social_connector.partner.location) > Person.GIVE_UP_DISTANCE:
                             social_connector.partner = None
                     else:
-                        # print("5d: ", reg.location)
                         social_connector.partner = social_connector.partner_selection(region=reg)
-                        # print("5e: ", reg.location)
                         if social_connector.partner:
                             social_connector.partner.partner = social_connector
-                            # print("5f: ", reg.location)
                 else:
-                    # print("5g: ", reg.location)
                     social_connector.brain.improve_my_attitudes()
 
-            # print("6: ", reg.location)
             for d in reg.dead:
-                # print("7a: ", reg.location)
                 self.kill_person(d, reg)
-                # print("7b: ", reg.location)
             for rlp in reg.relocating_people:
-                # print("8a: ", reg.location)
                 reg.remove_person(rlp)
-                # print("8b: ", reg.location)
 
         except Exception as ex:
             print('handle_region - Exception caught:', ex)
 
     def handle_person(self, p: Person, reg: Region):
-        # print("P1: ", reg.location, p.id)
+        """
+            Handles individual-level operations during a simulation month.
+
+            Args:
+                p: The Person object to be processed
+                reg: The Region object in which the person resides
+
+            This function is called exclusively within the `handle_region()` function. It performs all necessary individual-level actions for a single simulation month.
+            """
         if not p.action_flag:
             # Person.ages[:Person.runningID] += 1 // might decide to transfer it to this format later
             p.age += 1
@@ -310,18 +341,13 @@ class Simulation:
                 elif p.age > p.readiness and p.youth > 0:
                     p.youth -= 1
 
-            # print("P3: ", reg.location, p.id)
             p.aging()  # handles growing up and old people's aging process.
 
-            # print("P4: ", reg.location, p.id)
             if p.natural_death_chance(reg) and self.Time > Simulation.IMMUNITY_TIME:
                 reg.dead = p
-                # print("P5: ", reg.location, p.id)
                 return None
 
-            # print("P6: ", reg.location, p.id)
             action = p.action(region=reg)
-            # print("P7: ", reg.location, p.id)
             if action == 0:  # social connection.
                 reg.social_connectors = p
                 with self.ACTION_POOL_LOCK:
@@ -333,57 +359,65 @@ class Simulation:
                 with self.ACTION_POOL_LOCK:
                     reg.action_pool[2] += 1
 
-                # print("P8: ", reg.location, p.id)
                 if p.location[1] >= 800 or p.location[1] < 0:  # if exited the boundaries of the map.
                     reg.dead = p
-                    # print("P9: ", reg.location, p.id)
                     return None
 
                 reg.relocating_people = p  # to not mess up the indexing in the original region.
                 location = tuple(np.flip(p.location))
                 new_reg = self.regions[location]
-                # print("P10: ", reg.location, p.id)
                 if new_reg and new_reg.Population:  # if tried to relocate into an occupied region.
                     new_reg.add_person(p)
-                    # print("P11a: ", reg.location, p.id)
                 else:
                     with (self.NEW_REGION_LOCK):
                         if self.new_regions.count(location) == 0 and \
                                 self.region_iterator.count(location) == 0:
                             self.new_regions.append(location)
                         new_reg = self.regions[location]
-                        # print("P10: ", reg.location, p.id)
                         if new_reg:  # if tried to relocate into an occupied region.
                             new_reg.add_person(p)
                         else:
-                            # print("P11b: ", reg.location, p.id)
                             neighbors = self.map.get_surroundings(self.regions, p.location, dtype=Region)
-                            # print("P11c: ", reg.location, p.id)
                             new_reg = Region(location=p.location,
                                              surrounding_biomes=self.map.get_surroundings(self.map.biome_map,
                                                                                           p.location),
                                              neighbors=neighbors)
-                            # print("P11d: ", reg.location, p.id)
                             new_reg.add_person(p)
-                            # print("P11e: ", reg.location, p.id)
                             self.update_neighbors(neighbors)  # informs the neighbors that a person joined new_reg.
-                            # print("P11f: ", reg.location, p.id)
                         self.regions[location] = new_reg
 
             p.action_flag = True  # so that it won't get iterated upon again if relocated.
-            # print("P12: ", reg.location, p.id)
 
     def is_eradicated(self):
+        """
+            Checks if the entire population has been eradicated.
+
+            Returns:
+                True if the population is extinct, False otherwise
+            """
         return not self.region_iterator
 
     @staticmethod
     def update_neighbors(area):
+        """
+           Updates neighboring regions with information about a newly added region.
+
+           Args:
+               area: A 3x3 2D array representing the surrounding area to be updated. The new region is located at the center.
+           """
         center = area[tuple(np.array(area.shape) // 2)]
         for i, j in zip(*np.where(area)):
             relative_position = np.array(area.shape) // 2 - [i, j]
             area[i, j].neighbors_update(tuple([1, 1] + relative_position), center)
 
     def kill_person(self, p, reg):
+        """
+            Handles the removal of a deceased person from the simulation.
+
+            Args:
+                p: The Person object representing the deceased individual
+                reg: The Region object from which the person should be removed
+            """
         self.collective.remove_person()
         reg.remove_person(p)
         p.isAlive = False
@@ -391,14 +425,54 @@ class Simulation:
             p.partner.partner = None
 
     def get_historical_figure(self, pid):
-        hf = self.collective.historical_population[pid]
-        history = hf.brain.get_history()[1:hf.age + 1]
-        return hf, np.reshape(np.append(history, np.zeros((12 - len(history) % 12) % 12)), (-1, 12))
+        """
+            Retrieves historical data about a specific person from the simulation.
+
+            Args:
+                pid (int): The unique identifier of the person to retrieve data for
+
+            Returns:
+                Person: An object representing the person with the specified ID, or None if no such person exists
+                np.ndarray: The person's history.
+
+            Raises:
+                KeyError: If the provided person ID is not found in the simulation's historical records
+            """
+        try:
+            hf = self.collective.historical_population[pid]
+            history = hf.brain.get_history()[1:hf.age + 1]
+            return hf, np.reshape(np.append(history, np.zeros((12 - len(history) % 12) % 12)), (-1, 12))
+        except KeyError:
+            print("ID not in the simulation")
 
     def get_attitudes(self, pid):
-        return self.collective.historical_population[pid].collective.world_attitudes[pid]
+        """
+            Retrieves the attitudes of a specific person from the simulation.
+
+            Args:
+                pid (int): The unique identifier of the person to retrieve attitudes for
+
+            Returns:
+                dict: A dictionary containing the person's attitudes towards various aspects of the simulation, or None if no such person exists
+
+            Raises:
+                KeyError: If the provided person ID is not found in the simulation's current population
+            """
+        try:
+            return self.collective.historical_population[pid].collective.world_attitudes[pid]
+        except KeyError:
+            print("ID not in the simulation")
 
     def evaluate(self, by_alive=False):
+        """
+            Evaluates the simulation and returns a summary of data for each individual.
+
+            Args:
+                by_alive (bool, optional): If True, filters the results to include only living individuals (default: False)
+
+            Returns:
+                tuple[list]: A tuple of lists, each containing summary data for a single individual.
+        """
         if by_alive:
             return ([p.brain.get_models()
                      for p in self.collective.historical_population if p.isAlive and p.gender == 1],
@@ -413,6 +487,19 @@ class Simulation:
 
     @staticmethod
     def find_best_minds(evaluated_list, children_bearers='best'):
+        """
+           Identifies the best individuals from a list of evaluated individuals and returns their data.
+
+           Args:
+               evaluated_list (tuple[list]): A 2D array containing individual evaluation data, typically obtained from the `evaluate()` function.
+              children_bearers (str, optional): Determines the selection of individuals for procreation:
+                   'all': Includes all individuals
+                   'best': Selects the top-performing individuals
+                   'enough': Selects enough individuals to fill the next simulation (default: 'best')
+
+           Returns:
+               tuple[list]: A tuple of lists containing data for the selected best individuals.
+           """
         neural_list, genders, children, ages = evaluated_list
         best_minds = []
         his = np.swapaxes(np.array([np.arange(len(neural_list)), genders, children, ages]), 0, 1)
@@ -453,6 +540,18 @@ class Simulation:
 
     @staticmethod
     def prepare_best_for_reprocess(best_minds, male_lst, female_lst):
+        """
+           Prepares the best individuals for reprocessing in the simulation.
+
+           Args:
+               best_minds (List[tuple[tuple[Neural_Network]]]): A list containing the minds of the best individuals.
+               male_lst (List): A list of data for all male individuals.
+               female_lst (List): A list of data for all female individuals.
+
+           Returns:
+               reprocessed_best_minds(List[tuple[Neural_Network]]): A list containing the minds of the best individuals, reorganized so that the first half is for the males and the second the females.
+               unified_lst(list): a list containing male_lst and female_lst along the same axis.
+           """
         reprocessed_best_minds = []
         temp = []
         for i in best_minds:
@@ -464,9 +563,21 @@ class Simulation:
         return reprocessed_best_minds, unified_lst
 
     def pop_num(self):
+        """
+            Calculates the current population size, counting only living individuals.
+
+            Returns:
+                int: The number of living individuals in the simulation.
+            """
         return self.collective.population_size - self.collective.dead
 
     def divide_by_generation(self):
+        """
+            Calculates the number of individuals in each generation based on the historical population data.
+
+            Returns:
+                List[int]: A list where each index represents a generation and the value at that index represents the number of individuals in that generation.
+        """
         gens = []
         for p in self.collective.historical_population:
             if p.generation >= len(gens):
@@ -476,13 +587,28 @@ class Simulation:
         return gens
 
     def get_number_of_children(self):
+        """
+            Calculates the number of children based on the current population size and initial number of couples.
+
+            Returns:
+                int: The number of children born in the simulation.
+            """
         return self.collective.population_size - Simulation.INITIAL_COUPLES * 2
 
     def __repr__(self):
+        """
+        Represents the Simulation object as a string for debugging and printing purposes.
+
+        Returns:
+            str: A string representation of the Simulation object, presenting its current Time.
+        """
         txt = f"Year: {self.Time // 12}"
         return txt
 
     def display(self):
+        """
+            Displays a summary of the current state of the simulation, including population details, regions, and the simulation year.
+        """
         txt = f"Year: {self.Time // 12}\n\n"
 
         for i, j in self.region_iterator:
