@@ -11,7 +11,6 @@
     Constants & important variables:
         done: If set to False, the program will perform the commands inside *processes* before giving the user the control on the simulation.
         processes: A list containing tuples of commands.
-        LIVE_VISUALIZATION: if set to True, the program will present a live and updating visualization of the simulation. **NOTE**: this slows the simulation dramatically. It is recommended to use the command 'visualize' instead.
 """
 
 from datetime import datetime
@@ -22,6 +21,14 @@ from map.Map import Map
 
 
 def runOnce(ts, sim_map, command, is_new_leap):
+    """
+    This function is used for passing a single command into the ControlBoard. Useful especially for memory and predetermined commands.
+    :param ts: the Simulation object on which the commands will be performed.
+    :param sim_map: the Map object which will be used in the simulation. if ts is passed, the Simulation's map must correspond with this parameter.
+    :param command: the requested command to be passed.
+    :param is_new_leap: A boolean. if True, the simulation will separate this run's result from the former. Used for certain sets of predestined commands, such as consecutive increasing number of years in the training process.
+    :return: The modified Simulation object that was passed, or an alternative one provided by ControlBoard.
+    """
     TS = ts
     ControlBoard.IS_NEW_LEAP = is_new_leap
     start = datetime.now()
@@ -36,7 +43,6 @@ def runOnce(ts, sim_map, command, is_new_leap):
 if __name__ == "__main__":
     # User-set variables
     done = True
-    LIVE_VISUALIZATION = False
 
     TS = None
     processes = [(
@@ -49,10 +55,7 @@ if __name__ == "__main__":
     ), (
             [['load both', 'y230', 'save both']] * 4)
     ]
-    sim_map = Map(live=LIVE_VISUALIZATION)
-    if LIVE_VISUALIZATION:
-        Simulation.VISUAL = True
-        sim_map.plot_map(mainloop=False)
+    sim_map = Map()
 
     while True:
         if done:

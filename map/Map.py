@@ -18,7 +18,7 @@ class Map:
             points (list): An updated list of points that can be displayed on the map when the visual display is activated.
             colored_biome_map (numpy.ndarray): A 3D array of the size of the map that holds the image of the map, divided into biomes. The third axis holds the RGB values.
             biome_map (numpy.ndarray): A 2D array that contains the biome division according to the numbers presented in the biome_legend.
-            worldbound (shapely.geometry.Polygon): The definition of the shape of the world, holds a shapely object.
+            worldBound (shapely.geometry.Polygon): The definition of the shape of the world, holds a shapely object.
             graticule (shapely.geometry.LineString): Defines the lines drawn on the map, according to the angles of the world before its simplification to 2D.
             bbox (shapely.geometry.Polygon): The bounding box of the map. Represents the shape to which the 3D will be distorted to 2D. In this case, the bbox will be in the projection of wgs84, or plate caree, where the sizes of the continents are preserved in the correct proportions on the y-axis, but not on the x-axis.
 
@@ -42,11 +42,9 @@ class Map:
                     10: ([214, 37, 255, 255], "mediterranean")}
     BIOME_MAP_PATH = BASE_PATH + r"\map" + r"\only_biome_map.png"
 
-    def __init__(self, live=True):
+    def __init__(self):
         """
             Initializes the Map object by importing necessary components from Shapely and setting up the map representation.
-
-            :arg live: a boolean variable. If set to True the Map will have a live  visualization method.
         """
         self.points = gpd.GeoDataFrame(columns=['geometry'],
                                        crs="ESRI:54001")
@@ -72,9 +70,6 @@ class Map:
         bbox_path = os.path.join(et.io.HOME, 'earth-analytics', "data", "spatial-vector-lidar", "global",
                                  "ne_110m_graticules_all", "ne_110m_wgs84_bounding_box.shp")
         self.bbox = gpd.read_file(bbox_path)
-
-        if live:
-            plt.ion()
 
     def get_biome(self, coordinates):
         """
@@ -172,7 +167,7 @@ class Map:
         # self.points = gpds
         return gpds
 
-    def plot_map(self, mainloop=True, locations=None, pops=None):
+    def plot_map(self, locations=None, pops=None):
         """
             Generates and displays the graphical representation of the map.
 
@@ -208,27 +203,8 @@ class Map:
             axis.set_major_formatter(formatter)
 
         plt.axis('equal')
-        if mainloop:
-            self.plot_points(locations, np.array(pops))
-            plt.show()
-        else:
-            self.ax.relim()
-            self.ax.autoscale_view()
-            self.fig.canvas.draw()
-            self.fig.canvas.flush_events()
-
-    def update_map(self, locations, pops):
-        """
-            Updates the map visualization with new locations.
-
-            Args:
-                locations (List): A list of locations to be displayed on the map.
-                pops (list): A list of population numbers corresponding with locations.
-        """
         self.plot_points(locations, np.array(pops))
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
-        # time.sleep(0.001)
+        plt.show()
 
     def plot_points(self, locations, pops):
         """
@@ -303,6 +279,6 @@ if __name__ == "__main__":
     add_points = np.array([[-5000, 0],
                            [0, 5000],
                            [1500, -4500]])
-    mymap = Map(live=False)
+    mymap = Map()
     mymap.convert_points(add_points)
     mymap.plot_map()

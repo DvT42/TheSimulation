@@ -31,7 +31,6 @@ class Simulation:
           new_regions (list): A list that is reset each month and holds the regions that should be added to the region iterator in the current month. This ensures the iterator is not updated during runtime.
           Time (int): The elapsed time since simulation start in simulated months.
     """
-    VISUAL = False
     IMMUNITY_TIME = 0 * 12
     SELECTED_COUPLES = 10
     INITIAL_COUPLES = 1000
@@ -260,9 +259,6 @@ class Simulation:
 
         if self.pop_num() != pop:
             print(pop)
-
-        if Simulation.VISUAL:
-            self.map.update_map(self.get_locations(), self.pop_density())
 
     def handle_region(self, reg: Region):
         """
@@ -586,6 +582,14 @@ class Simulation:
         return gens
 
     def pop_density(self):
+        """
+            Calculates the population density for each region in the grid environment.
+
+            This method iterates through each region in the environment and counts the number of individuals in the population for that region. It then appends this population count to a list, representing the population density for each region.
+
+            Returns:
+                list: A list containing the population density for each region in the grid environment.
+            """
         density = []
         for ij in self.region_iterator:
             density.append(len(self.regions[ij].Population))
@@ -601,6 +605,14 @@ class Simulation:
         return self.collective.population_size - Simulation.INITIAL_COUPLES * 2
 
     def get_locations(self):
+        """
+          Returns a NumPy array containing the coordinates of all regions in the environment.
+
+          This method transforms the internal region iterator into a NumPy array suitable for further analysis or manipulation. The array format allows for efficient indexing and operations on region locations.
+
+          Returns:
+              numpy.ndarray: A 2D NumPy array where each row represents the (row, column) coordinates of a region.
+          """
         return np.flip(np.asarray(self.region_iterator), axis=1)
 
     def __repr__(self):
