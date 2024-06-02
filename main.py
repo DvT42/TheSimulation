@@ -7,7 +7,12 @@
     * Parsing the input into commands
     * Passing the commands to the `ControlBoard` for processing
     * Handling errors
-    """
+
+    Constants & important variables:
+        done: If set to False, the program will perform the commands inside *processes* before giving the user the control on the simulation.
+        processes: A list containing tuples of commands.
+        LIVE_VISUALIZATION: if set to True, the program will present a live and updating visualization of the simulation. **NOTE**: this slows the simulation dramatically. It is recommended to use the command 'visualize' instead.
+"""
 
 from datetime import datetime
 from multiprocessing import Process
@@ -29,11 +34,11 @@ def runOnce(ts, sim_map, command, is_new_leap):
 
 
 if __name__ == "__main__":
-    # running code
-    TS = None
+    # User-set variables
     done = True
-    VISUAL = False
+    LIVE_VISUALIZATION = False
 
+    TS = None
     processes = [(
             [['load both', 'y30', 'save both']] +
             [['load both', 'y150', 'save both']] * 4
@@ -44,10 +49,10 @@ if __name__ == "__main__":
     ), (
             [['load both', 'y230', 'save both']] * 4)
     ]
-    sim_map = Map(visual=VISUAL)
-    if VISUAL:
+    sim_map = Map(live=LIVE_VISUALIZATION)
+    if LIVE_VISUALIZATION:
         Simulation.VISUAL = True
-        sim_map.plot_map()
+        sim_map.plot_map(mainloop=False)
 
     while True:
         if done:

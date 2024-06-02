@@ -42,11 +42,11 @@ class Map:
                     10: ([214, 37, 255, 255], "mediterranean")}
     BIOME_MAP_PATH = BASE_PATH + r"\map" + r"\only_biome_map.png"
 
-    def __init__(self, visual=True):
+    def __init__(self, live=True):
         """
             Initializes the Map object by importing necessary components from Shapely and setting up the map representation.
 
-            :arg visual: a boolean variable. If set to True the Map will have a visualization method.
+            :arg live: a boolean variable. If set to True the Map will have a live  visualization method.
         """
         self.points = gpd.GeoDataFrame(columns=['geometry'],
                                        crs="ESRI:54001")
@@ -73,9 +73,8 @@ class Map:
                                  "ne_110m_graticules_all", "ne_110m_wgs84_bounding_box.shp")
         self.bbox = gpd.read_file(bbox_path)
 
-        if visual:
+        if live:
             plt.ion()
-        self.fig, self.ax = plt.subplots(1, 1, figsize=(12, 8))
 
     def get_biome(self, coordinates):
         """
@@ -159,7 +158,7 @@ class Map:
         """
 
         # Turn points into list of x,y shapely points, and translate them from km to m.
-        wgs84_locs = (locations - (800, 400)) / (800, 400) * (180, 90)
+        wgs84_locs = (locations - (800, 400)) / (800, -400) * (180, 90)
         points = [Point(xy) for xy in wgs84_locs]
 
         # Create geodataframe using the points
@@ -173,10 +172,17 @@ class Map:
         # self.points = gpds
         return gpds
 
-    def plot_map(self):
+    def plot_map(self, mainloop=True, locations=None, pops=None):
         """
             Generates and displays the graphical representation of the map.
+
+            Args:
+                :arg mainloop: If set to true, the function will run a mainloop to present the map.
+                :arg locations: This parameter is needed if mainloop is set to True. contains the locations of the points needed to be plotted.
+                :arg pops: This parameter is needed if mainloop is set to True. contains the population numbers corresponding with the locations list.
         """
+        self.fig, self.ax = plt.subplots(figsize=(12, 8))
+
         self.ax.imshow(self.colored_biome_map,
                        origin="upper",
                        extent=(-180, 180, -90, 90),
@@ -202,27 +208,44 @@ class Map:
             axis.set_major_formatter(formatter)
 
         plt.axis('equal')
-        self.ax.relim()
-        self.ax.autoscale_view()
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
+        if mainloop:
+            self.plot_points(locations, np.array(pops))
+            plt.show()
+        else:
+            self.ax.relim()
+            self.ax.autoscale_view()
+            self.fig.canvas.draw()
+            self.fig.canvas.flush_events()
 
-    def update_map(self, locations):
+    def update_map(self, locations, pops):
         """
             Updates the map visualization with new locations.
 
             Args:
-                locations (List[]): A list of locations to be displayed on the map.
+                locations (List): A list of locations to be displayed on the map.
+                pops (list): A list of population numbers corresponding with locations.
         """
-        gpd = self.convert_points(locations)
-        if self.points.empty:
-            self.points = gpd
-        else:
-            self.points.update(gpd)
-        self.points.plot(ax=self.ax, markersize=100, color='black')
+        self.plot_points(locations, np.array(pops))
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
         # time.sleep(0.001)
+
+    def plot_points(self, locations, pops):
+        """
+            Plots relevant points on the map, via the Map object's axes and figure.
+
+            Args:
+                locations (List): A list of locations to be displayed on the map.
+                pops (ndarray): A list of population numbers corresponding with locations.
+        """
+        cmap = 'rainbow'
+        min_cmap = 0
+        max_cmap = np.max(pops)
+        self.points = self.convert_points(locations)
+        self.points.plot(ax=self.ax, markersize=100, column=pops, cmap=cmap, vmin=min_cmap, vmax=max_cmap)
+
+        self.fig.colorbar(mappable=plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(min_cmap, max_cmap)), ax=self.ax,
+                          orientation='vertical', format='%.0f', label="Population Density")
 
     @staticmethod
     def analyze_biome_map():
@@ -280,7 +303,6 @@ if __name__ == "__main__":
     add_points = np.array([[-5000, 0],
                            [0, 5000],
                            [1500, -4500]])
-    mymap = Map(visual=False)
+    mymap = Map(live=False)
     mymap.convert_points(add_points)
     mymap.plot_map()
-    plt.show()

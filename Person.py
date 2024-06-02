@@ -49,7 +49,8 @@ class Person:
     """
     AGING_STARTING_AGE = 40 * 12
     DRASTIC_AGING_AGE = 75 * 12
-    STRENGTH_MODIFIER = 0.75
+    STRENGTH_MODIFIER = 0.25
+    MAX_RESOURCE_CONSUMPTION = 1
     DIFF_AGE = 15 * 12
     GIVE_UP_DISTANCE = 1
     DEATH_NORMALIZER = 0.3
@@ -277,7 +278,14 @@ class Person:
             available_ids = region.pop_id.copy()
             pop_size = min(np.max(available_ids) + 1, self.collective.population_size)
             arr: np.ndarray = self.collective.world_attitudes[self.id, :pop_size]
-            available = np.array([arr[i] for i in available_ids if i < pop_size])
+            to_pop = []
+            for i in available_ids:
+                if i >= pop_size:
+                    to_pop.append(i)
+            for i in to_pop:
+                available_ids.remove(i)
+
+            available = np.array([arr[i] for i in available_ids])
             while (available > 0).any():
                 other = self.collective.historical_population[available_ids[np.argmax(available)]]
                 if self.is_possible_partner(other):

@@ -39,7 +39,7 @@ class Collective:
         _lock: A `Lock` object preventing concurrent modification of values in the `Collective` instance.
         """
     # Collective Constants:
-    BASIC_POPULATION = 10000
+    BASIC_POPULATION = 20000
 
     # brainpart constants:
     INHERITANCE_RATIO = 0.3

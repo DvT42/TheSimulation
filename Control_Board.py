@@ -2,6 +2,7 @@ import os
 import pickle
 import tqdm
 
+import map.Map
 from Simulation import *
 
 
@@ -32,7 +33,7 @@ class ControlBoard:
     IS_NEW_LEAP = True
 
     @staticmethod
-    def process_command(sim: Simulation, com: str, sim_map=None):
+    def process_command(sim: Simulation, com: str, sim_map: map.Map.Map=None):
         """
         The main function for operating with the simulation.
 
@@ -149,6 +150,10 @@ class ControlBoard:
 
         elif com.lower() == 'display':
             sim.display()
+
+        elif com.lower() == 'visualize':
+            sim_map.plot_map(locations=sim.get_locations(), pops=sim.pop_density())
+            return sim
 
         elif com[0].lower() == "x":
             sim = None

@@ -52,7 +52,6 @@ class Simulation:
         self.collective = Collective()
         Person.Person_reset()
 
-
         self.map = sim_map
 
         self.regions = np.empty((800, 1600), dtype=Region)  # an array containing all regions indexed by location.
@@ -263,7 +262,7 @@ class Simulation:
             print(pop)
 
         if Simulation.VISUAL:
-            self.map.update_map(np.flip(np.asarray(self.region_iterator), axis=1))
+            self.map.update_map(self.get_locations(), self.pop_density())
 
     def handle_region(self, reg: Region):
         """
@@ -586,6 +585,12 @@ class Simulation:
             gens[p.generation] += 1
         return gens
 
+    def pop_density(self):
+        density = []
+        for ij in self.region_iterator:
+            density.append(len(self.regions[ij].Population))
+        return density
+
     def get_number_of_children(self):
         """
             Calculates the number of children based on the current population size and initial number of couples.
@@ -594,6 +599,9 @@ class Simulation:
                 int: The number of children born in the simulation.
             """
         return self.collective.population_size - Simulation.INITIAL_COUPLES * 2
+
+    def get_locations(self):
+        return np.flip(np.asarray(self.region_iterator), axis=1)
 
     def __repr__(self):
         """

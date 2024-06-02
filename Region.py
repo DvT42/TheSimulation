@@ -36,30 +36,30 @@ class Region:
             pop_id (List): An updated list containing the unique IDs of all individuals in the `_population` list. Saves the need to recreate it repeatedly.
         """
     RESOURCE_LEGEND = {  # The numbers were taken from Gemini's estimations.
-        0: 0,
-        1: 10,
-        2: 30,
-        3: 300,
-        4: 20,
-        5: 500,
-        6: 1000,
-        7: 200,
-        8: 300,
-        9: 10,
-        10: 700
+        0: 0,     # "Sea"
+        1: 10,    # "Ice"
+        2: 30,    # "Tundra"
+        3: 300,   # "Taiga"
+        4: 20,    # "Montane"
+        5: 500,   # "Forest"
+        6: 1000,  # "Tropical Rainforest"
+        7: 200,   # "Steppe"
+        8: 300,   # "Savanna"
+        9: 10,    # "Desert"
+        10: 700,  # "mediterranean"
     }
     RISK_LEGEND = {  # The numbers are by my own estimations. changeable, obviously.
-        0: 2,
-        1: 1,
-        2: 0.5,
-        3: 0.4,
-        4: 0.7,
-        5: 0.4,
-        6: 0.8,
-        7: 0.3,
-        8: 0.4,
-        9: 1.2,
-        10: 0.4
+        0: 1000,  # "Sea"
+        1: 20,   # "Ice"
+        2: 0.5,   # "Tundra"
+        3: 0.4,   # "Taiga"
+        4: 10,   # "Montane"
+        5: 0.4,   # "Forest"
+        6: 0.8,   # "Tropical Rainforest"
+        7: 0.3,   # "Steppe"
+        8: 0.4,   # "Savanna"
+        9: 25,   # "Desert"
+        10: 0.4   # "mediterranean"
     }
 
     def __init__(self, location, surrounding_biomes, neighbors=np.empty((3, 3), dtype=object), population=None):
@@ -339,7 +339,7 @@ class Region:
             Returns:
                 float: The average resource availability per person, rounded to two decimal places.
         """
-        return round(min(self.resources / self.pop(), 2), 2)
+        return round(min(self.resources / self.pop(), 2), Person.MAX_RESOURCE_CONSUMPTION)
 
     def surr_pop(self):
         """
