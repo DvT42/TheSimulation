@@ -62,4 +62,5 @@ After the desired files have been placed in the data folder, the simulation can 
  - **s + num** - advances the simulation by the given number of months.
  - **y + num** - advances the simulation similarly to s + num, but in as many years as the given number.
  - **display** - shows the current simulation in terms of regions and living people.
+ - **visualize** - opens up a matplotlib representation of the current simulation.
  - **x** - stops the program.
