@@ -33,7 +33,7 @@ class ControlBoard:
     IS_NEW_LEAP = True
 
     @staticmethod
-    def process_command(sim: Simulation, com: str, sim_map: map.Map.Map=None):
+    def process_command(sim: Simulation, com: str, sim_map: map.Map.Map = None):
         """
         The main function for operating with the simulation.
 

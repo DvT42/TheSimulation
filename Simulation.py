@@ -592,7 +592,7 @@ class Simulation:
             """
         density = []
         for ij in self.region_iterator:
-            density.append(len(self.regions[ij].Population))
+            density.append(self.regions[ij].pop())
         return density
 
     def get_number_of_children(self):
@@ -607,8 +607,7 @@ class Simulation:
     def get_locations(self):
         """
           Returns a NumPy array containing the coordinates of all regions in the environment.
-
-          This method transforms the internal region iterator into a NumPy array suitable for further analysis or manipulation. The array format allows for efficient indexing and operations on region locations.
+          This method transforms the internal region iterator into a NumPy array suitable for further analysis or manipulation.
 
           Returns:
               numpy.ndarray: A 2D NumPy array where each row represents the (row, column) coordinates of a region.

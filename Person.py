@@ -37,7 +37,8 @@ class Person:
     Class Constants:
         AGING_STARTING_AGE (int): The age in months when aging starts to affect an individual.
         DRASTIC_AGING_AGE (int): The age in months when aging becomes significantly impactful.
-        STRENGTH_MODIFIER (int): The amount by which an individual's strength increases if they focus on it in a given month.
+        STRENGTH_MODIFIER (float): A modifier affecting the amount by which an individual's strength increases if they focus on it in a given month.
+        MAX_RESOURCE_CONSUMPTION (float): The maximum amount of regional resources a person can use in a month.
         DIFF_AGE (int): The maximum age difference allowed for marriage.
         GIVE_UP_DISTANCE (int): The maximum distance between partners that the simulation allows for separation.
         DEATH_NORMALIZER (float): A scaling factor for mortality risk.

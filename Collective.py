@@ -1,4 +1,5 @@
 from threading import Lock
+
 import numpy as np
 
 
@@ -6,38 +7,38 @@ class Collective:
     """
         Represents the collective population and global human-level data for the simulation.
 
+
         **Constants:**
+            BASIC_POPULATION: A large number representing the maximum expected population size in the simulation. Larger values may trade off memory usage for faster runtime, as long as the population does not exceed this limit.
 
-        BASIC_POPULATION: A large number representing the maximum expected population size in the simulation. Larger values may trade off memory usage for faster runtime, as long as the population does not exceed this limit.
+            INHERITANCE_RATIO: A user-defined value representing the extent to which an individual inherits traits from their parents. For instance, a value of 0.5 indicates that traits are inherited equally from both parents.
 
-        INHERITANCE_RATIO: A user-defined value representing the extent to which an individual inherits traits from their parents. For instance, a value of 0.5 indicates that traits are inherited equally from both parents.
+            MUTATION_NORMALIZATION_RATIO: A number inversely proportional to the degree of mutation in inherited brain traits from parents to offspring.
 
-        MUTATION_NORMALIZATION_RATIO: A number inversely proportional to the degree of mutation in inherited brain traits from parents to offspring.
+            CHOICE_RANDOMIZER: A random number between 0 and 1 representing the probability of an individual making a choice that deviates from their brain's preference. Each month, a random number between 0 and 1 is generated for each individual.
 
-        CHOICE_RANDOMIZER: A random number between 0 and 1 representing the probability of an individual making a choice that deviates from their brain's preference. Each month, a random number between 0 and 1 is generated for each individual.
+            CHOICE_NUM: The number of choices available to individuals.
 
-        CHOICE_NUM: The number of choices available to individuals.
+            SHOULD_PROBABLY_BE_DEAD: A number of months initialized as an improbable lifespan. Similar in concept to `BASIC_POPULATION`.
 
-        SHOULD_PROBABLY_BE_DEAD: A number of months initialized as an improbable lifespan. Similar in concept to `BASIC_POPULATION`.
+            ATTITUDE_IMPROVEMENT_BONUS: The extent to which relationships improve when individuals choose to be friendly (see flowchart).
 
-        ATTITUDE_IMPROVEMENT_BONUS: The extent to which relationships improve when individuals choose to be friendly (see flowchart).
-
-        SELF_ATTITUDE_IMPROVEMENT_BONUS: The extent to which individuals improve their self-attitude when they are not friendly (see flowchart).
+            SELF_ATTITUDE_IMPROVEMENT_BONUS: The extent to which individuals improve their self-attitude when they are not friendly (see flowchart).
 
         **Class Attributes:**
+            population_size: An integer representing the total number of individuals who have ever lived in the simulation.
 
-        population_size: An integer representing the total number of individuals who have ever lived in the simulation.
+            _dead: An integer representing the total number of individuals who have died in the simulation.
 
-        _dead: An integer representing the total number of individuals who have died in the simulation.
+            world_attitudes: A 2D NumPy array of size (population_size, population_size) storing the attitudes of all individuals towards each other.
 
-        world_attitudes: A 2D NumPy array of size (population_size, population_size) storing the attitudes of all individuals towards each other.
+            arranged_indexes: An auxiliary array containing all ordinal numbers up to `BASIC_POPULATION`.
 
-        arranged_indexes: An auxiliary array containing all ordinal numbers up to `BASIC_POPULATION`.
+            historical_population: A list containing all individuals who have ever lived in the simulation.
 
-        historical_population: A list containing all individuals who have ever lived in the simulation.
-
-        _lock: A `Lock` object preventing concurrent modification of values in the `Collective` instance.
+            _lock: A `Lock` object preventing concurrent modification of values in the `Collective` instance.
         """
+
     # Collective Constants:
     BASIC_POPULATION = 20000
 

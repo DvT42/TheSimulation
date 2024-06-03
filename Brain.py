@@ -360,6 +360,7 @@ class BrainPart:
             Simulates the inheritance of genetic information from parents to create a child's brain part model.
 
             Args:
+                gender (int): The child’s gender, used for determining inclination toward the parent with the same gender as the child’s.
                 father (Person.Person): The father's brain.
                 mother (Person.Person): The mother's brain.
                 part (str): The key (string) corresponding to the brain part in the `brainparts` dictionary within the `brain` class.

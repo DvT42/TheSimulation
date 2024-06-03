@@ -5,10 +5,10 @@ class Region:
     """
         Represents a region on the map with a population of individuals (or who once had a population).
 
-        :cvar RESOURCE_LEGEND:
-        :cvar RISK_LEGEND:
+        :cvar RESOURCE_LEGEND: A dictionary linking each biome to the amount of resources that will be found in it.
+        :cvar RISK_LEGEND: A dictionary linking each biome to the risk associated with being there for a month.
 
-        Attributes:
+        **Attributes:**
             location (Tuple[int, int]): The coordinates (x, y) of the region's location.
 
             biome (int): An integer representing the biome type of the region.
@@ -50,15 +50,15 @@ class Region:
     }
     RISK_LEGEND = {  # The numbers are by my own estimations. changeable, obviously.
         0: 1000,  # "Sea"
-        1: 20,   # "Ice"
+        1: 20,    # "Ice"
         2: 0.5,   # "Tundra"
         3: 0.4,   # "Taiga"
-        4: 10,   # "Montane"
+        4: 10,    # "Montane"
         5: 0.4,   # "Forest"
         6: 0.8,   # "Tropical Rainforest"
         7: 0.3,   # "Steppe"
         8: 0.4,   # "Savanna"
-        9: 25,   # "Desert"
+        9: 25,    # "Desert"
         10: 0.4   # "mediterranean"
     }
 
@@ -72,6 +72,7 @@ class Region:
                 surrounding_biomes (NumPy array): A 3x3 NumPy array representing the biomes of the surrounding regions.
 
                 neighbors (NumPy array, optional): A 3x3 NumPy array of `Region` objects representing the neighboring regions. Defaults to an empty array.
+
                 neighbors (NumPy array, optional): A 3x3 NumPy array of `Region` objects representing the neighboring regions. Defaults to an empty array.
 
                 population (List[Person], optional): An initial list of `Person` objects representing the existing population in the region. Defaults to `None`.

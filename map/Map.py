@@ -172,9 +172,8 @@ class Map:
             Generates and displays the graphical representation of the map.
 
             Args:
-                :arg mainloop: If set to true, the function will run a mainloop to present the map.
-                :arg locations: This parameter is needed if mainloop is set to True. contains the locations of the points needed to be plotted.
-                :arg pops: This parameter is needed if mainloop is set to True. contains the population numbers corresponding with the locations list.
+                :arg locations: This parameter contains the locations of the points needed to be plotted.
+                :arg pops: This parameter contains the population numbers corresponding with the locations list.
         """
         self.fig, self.ax = plt.subplots(figsize=(12, 8))
 
