@@ -18,25 +18,15 @@ Regardless of the installation method, ensure you install all the libraries list
 
 #### 2. Data Preparation
 
-#### Running the Data Acquisition Code:
-
-```python
-data = et.data.get_data('spatial-vector-lidar', verbose=True)
-```
-
-This code snippet imports the necessary maps and Shapely files for the "Map" class to function. Since it accesses the internet, users with firewalled computers will need to download the files manually:
 #### Manual download of Earthpy's data:
 
-[link to figshare download](https://help.figshare.com/article/usage-metrics)
+To abstain from needlessly installing earthpy as a dependency, it is required to download the shapely files that are at their database manually. this can be done easily using the following link:
 
-Identify the path stored in the `et.io.HOME` constant. You can achieve this by entering a simple `print` statement in any Python console connected to your virtual environment where EarthPy is installed:
+[link to figshare download](https://ndownloader.figshare.com/files/12459464)
 
-```python
-print(et.io.HOME)
-```
 The full path to which the downloaded files should be extracted is:
 ```
-et.io.HOME\earth-analytics\data\spatial-vector-lidar\
+DRIVER\Users\USER\earth-analytics\data\spatial-vector-lidar\
 ```
 It should be noted that the files are relatively massive, so they take time to download. Downloading them manually will take less time than downloading through earthpy's built-in interface according to my experience.
 
